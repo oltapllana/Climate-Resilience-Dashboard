@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,12 +12,13 @@ import {
 import { scenarioClimatology, forecast } from "../lib/projection.js";
 
 // Combined "climate scenarios" panel: a monthly (1–12) profile with the
-// historic line plus RCP4.5/RCP8.5 projected period lines, a scenario toggle,
-// and a next-5-months forecast — mirroring the reference dashboard's layout.
+// historic line (period of record) plus projected period bands up to 2050,
+// and a next-5-months forecast. The scenario (RCP8.5 worst-case by default,
+// RCP4.5, or All) is chosen in the left ConfigPanel.
 
-export default function ScenarioChart({ meas, t, unit, label }) {
-  const [scenario, setScenario] = useState("all");
+const scenarioName = (s, t) => (s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5");
 
+export default function ScenarioChart({ meas, scenario = "rcp85", t, unit, label }) {
   const scen = useMemo(() => scenarioClimatology(meas, scenario), [meas, scenario]);
   const fc = useMemo(() => forecast(meas, 5), [meas]);
 
@@ -32,18 +33,11 @@ export default function ScenarioChart({ meas, t, unit, label }) {
     <div className="card">
       <div className="section-title">
         <h2>{t("scenarioTitle")}</h2>
+        <span className="badge meteo">{scenarioName(scenario, t)}</span>
       </div>
       <p className="desc">
         {t("scenarioDesc")} · {label} ({unit})
       </p>
-
-      <div className="seg" style={{ marginBottom: 8 }}>
-        {["all", "rcp45", "rcp85"].map((s) => (
-          <button key={s} className={scenario === s ? "active" : ""} onClick={() => setScenario(s)}>
-            {s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5"}
-          </button>
-        ))}
-      </div>
 
       <ResponsiveContainer width="100%" height={270}>
         <LineChart data={climData} margin={{ top: 6, right: 14, left: 0, bottom: 4 }}>
@@ -57,7 +51,7 @@ export default function ScenarioChart({ meas, t, unit, label }) {
               key={ln.period}
               type="monotone"
               dataKey={ln.period}
-              name={ln.period === "historic" ? `${ln.label} (${t("historic")})` : `${ln.label} (${scenario === "all" ? t("allScenarios") : scenario === "rcp45" ? "RCP4.5" : "RCP8.5"})`}
+              name={ln.period === "historic" ? `${ln.label} (${t("historic")})` : `${ln.label} (${scenarioName(scenario, t)})`}
               stroke={ln.color}
               strokeWidth={ln.period === "historic" ? 2.5 : 2}
               dot={{ r: 2 }}

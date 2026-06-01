@@ -1,36 +1,9 @@
-import { useEffect, useState } from "react";
 import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart } from "./Charts.jsx";
 import ScenarioChart from "./ScenarioChart.jsx";
 
-function StatCards({ stats, unit, isSum, t }) {
-  const cards = [
-    { k: t("records"), v: stats.count.toLocaleString() },
-    { k: isSum ? t("total") : t("mean"), v: stats.overall, u: unit },
-    { k: t("min"), v: stats.min, u: unit },
-    { k: t("max"), v: stats.max, u: unit },
-  ];
-  return (
-    <div className="stat-grid">
-      {cards.map((c) => (
-        <div className="stat" key={c.k}>
-          <div className="k">{c.k}</div>
-          <div className="v">{c.v}</div>
-          <div className="u">{c.u || ""}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export default function Dashboard({ data, lang, t }) {
-  const [measId, setMeasId] = useState(null);
-
-  useEffect(() => {
-    if (!data) return;
-    const ids = Object.keys(data.measurements);
-    setMeasId((prev) => (prev && ids.includes(prev) ? prev : ids[0]));
-  }, [data]);
-
+// Charts area (right/below the map). Station + measurement + scenario are now
+// chosen in the left ConfigPanel and passed in as props.
+export default function Dashboard({ data, measId, scenario, lang, t }) {
   if (!data) {
     return (
       <div className="card">
@@ -54,28 +27,14 @@ export default function Dashboard({ data, lang, t }) {
           <h2>{name}</h2>
           <span className={`badge ${data.type}`}>{t(data.type)}</span>
           {data.imported && <span className="badge meteo">{t("imported")}</span>}
+          <span className="active-meas">· {label} ({unit})</span>
         </div>
         <p className="desc">
           {t("period")}: {m.stats.start} → {m.stats.end}
         </p>
-
-        <div className="controls">
-          <div className="seg">
-            {measIds.map((id) => {
-              const mm = data.measurements[id];
-              return (
-                <button key={id} className={id === measId ? "active" : ""} onClick={() => setMeasId(id)}>
-                  {lang === "sq" ? mm.label_sq : mm.label_en}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <StatCards stats={m.stats} unit={unit} isSum={isSum} t={t} />
       </div>
 
-      <ScenarioChart meas={m} t={t} unit={unit} label={label} />
+      <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} label={label} />
 
       <div className="charts">
         <div className="card chart-card">

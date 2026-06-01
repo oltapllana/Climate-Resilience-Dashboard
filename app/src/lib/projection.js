@@ -8,16 +8,18 @@
 // projection, not a climate model. Adjust the factors below as needed.
 
 export const SCENARIOS = {
+  rcp85: { factor: 1.8, label: "RCP8.5" }, // worst-case (high emissions) — the headline scenario
   rcp45: { factor: 1.0, label: "RCP4.5" },
-  rcp85: { factor: 1.8, label: "RCP8.5" },
   all: { factor: 1.4, label: "All scenarios" }, // median-ish of the two
 };
 
-// Future periods, matching the reference dashboard's period bands.
+// Future periods. The historic line is the period of record (~2021–2026); the
+// projection fans out across three near-term bands up to 2050, per the project
+// spec (2026–2030 / 2031–2040 / 2041–2050).
 export const PERIODS = [
-  { id: "p2040", midYear: 2040, label: "2011–2040", color: "#4a9d4a" },
-  { id: "p2070", midYear: 2070, label: "2041–2070", color: "#2bb6d8" },
-  { id: "p2100", midYear: 2100, label: "2071–2100", color: "#d6453d" },
+  { id: "p2030", midYear: 2028, label: "2026–2030", color: "#4a9d4a" },
+  { id: "p2040", midYear: 2035, label: "2031–2040", color: "#e0a52b" },
+  { id: "p2050", midYear: 2045, label: "2041–2050", color: "#d6453d" },
 ];
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
