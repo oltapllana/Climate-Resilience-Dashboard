@@ -159,7 +159,6 @@ export default function App() {
           <Dashboard data={activeData} measId={measId} scenario={scenario} lang={lang} t={t} />
         </main>
 
-        <footer className="foot">{t("dataNote")}</footer>
       </div>
     </>
   );

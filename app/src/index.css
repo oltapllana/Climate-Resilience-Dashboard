@@ -8,8 +8,8 @@
   --line: #e5e7eb;
   --bg: #f4f7f4;
   --card: #ffffff;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --radius: 12px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --radius: 8px;
   --top-h: 546px; /* shared height of the map + config panel top row */
 }
 
@@ -78,8 +78,17 @@ header.masthead {
   box-shadow: var(--shadow);
   padding: 16px;
 }
-.card h2 { margin: 0 0 2px; font-size: 16px; color: var(--green-dark); }
+.card h2 { margin: 0 0 10px; font-size: 16px; color: var(--green-dark); }
 .card h2 + .desc { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; }
+.chart-subtitle {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.scenario-chart-block {
+  margin-bottom: 48px;
+}
 
 /* map — fixed height; Leaflet fills the area below the head */
 .map-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; height: var(--top-h); }
@@ -164,5 +173,5 @@ footer.foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align
 .badge.hydro { background: #e3f0fa; color: var(--blue); }
 .badge.meteo { background: var(--green-light); color: var(--green-dark); }
 
-.section-title { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; }
+.section-title { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; flex-wrap: wrap; }
 .section-title h2 { margin: 0; }

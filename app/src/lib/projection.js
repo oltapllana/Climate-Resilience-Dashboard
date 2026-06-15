@@ -185,3 +185,37 @@ export function forecast(meas, nMonths = 5, historyMonths = 30) {
   ];
   return { rows, slope, future };
 }
+
+// ---- annual long-term projection (2021..2050) -----------------------------
+// Uses the observed deseasonalized monthly trend without the climatology clamp
+// used by the monthly profile. For summed measurements, the monthly trend delta
+// is scaled across the year so annual totals evolve on the correct unit basis.
+export function longTermProjection(meas) {
+  const observedAnnual = annualSeries(meas.monthly, meas.kind).filter((r) => r.year >= 2021 && r.year <= 2026);
+  const slope = trendPerYear(meas.monthly, meas.climatology);
+  const { baseYear } = periodOfRecord(meas.monthly);
+  const scale = meas.kind === "sum" ? 12 : 1;
+  const annualClim = (meas.climatology || []).map((c) => c.v).filter((v) => v != null);
+  const climBase = annualClim.length
+    ? meas.kind === "sum"
+      ? annualClim.reduce((a, b) => a + b, 0)
+      : annualClim.reduce((a, b) => a + b, 0) / annualClim.length
+    : null;
+  const latestObserved = observedAnnual[observedAnnual.length - 1] || annualSeries(meas.monthly, meas.kind).slice(-1)[0];
+  const baseValue = latestObserved?.v ?? climBase ?? 0;
+  const baseAt2026 = +(baseValue + slope * scale * (2026 - (latestObserved?.year ?? baseYear ?? 2026))).toFixed(3);
+
+  const rows = [];
+  for (let year = 2021; year <= 2050; year += 1) {
+    const observed = observedAnnual.find((r) => r.year === year)?.v ?? null;
+    const yearsAhead = year - 2026;
+    rows.push({
+      year,
+      observed,
+      rcp45: year >= 2026 ? +(baseAt2026 + slope * scale * SCENARIOS.rcp45.factor * yearsAhead).toFixed(3) : null,
+      rcp85: year >= 2026 ? +(baseAt2026 + slope * scale * SCENARIOS.rcp85.factor * yearsAhead).toFixed(3) : null,
+    });
+  }
+
+  return { rows, slope, baseAt2026 };
+}
