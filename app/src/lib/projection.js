@@ -140,14 +140,17 @@ export function scenarioClimatology(meas, scenario = "all") {
 // ---- short-term forecast: next N months -----------------------------------
 // Builds recent history + a forecast for each scenario, using the
 // climatological value of each upcoming calendar month plus the trend offset.
-export function forecast(meas, nMonths = 5, historyMonths = 30) {
+// historyMonths = null (default) includes the full period of record;
+// pass a number to show only the last N months of observations.
+export function forecast(meas, nMonths = 5, historyMonths = null) {
   const cm = climMap(meas.climatology);
   const slope = trendPerYear(meas.monthly, meas.climatology);
   const { baseYear } = periodOfRecord(meas.monthly);
   const cap = 0.5 * climAmplitude(meas.climatology);
 
   const monthly = meas.monthly || [];
-  const history = monthly.slice(-historyMonths).map((r) => ({ m: r.m, actual: r.v }));
+  const history = (historyMonths == null ? monthly : monthly.slice(-historyMonths))
+    .map((r) => ({ m: r.m, actual: r.v }));
 
   if (!monthly.length) return { rows: [], slope };
 
