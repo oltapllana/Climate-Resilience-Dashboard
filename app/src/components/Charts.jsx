@@ -126,8 +126,36 @@ export function DailyChart({ series, t, unit, isSum, color = GREEN_DARK }) {
     d: d.d,
     v: d.v,
     lo: d.lo ?? d.v,
+    hi: d.hi ?? null,
     band: d.hi != null && d.lo != null ? +(d.hi - d.lo).toFixed(3) : 0,
   }));
+
+  function DailyTooltip({ active, payload, label }) {
+    if (!active || !payload?.length) return null;
+    const row = payload[0]?.payload;
+    if (!row) return null;
+    const hasRange = row.lo != null && row.hi != null;
+    return (
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #d9e2ec",
+          borderRadius: 6,
+          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.14)",
+          color: "#1f2937",
+          fontSize: 12,
+          lineHeight: 1.4,
+          padding: "8px 10px",
+          pointerEvents: "none",
+        }}
+      >
+        <p style={{ fontWeight: 700, margin: "0 0 6px" }}>{label}</p>
+        <p style={{ margin: "2px 0" }}>{isSum ? t("total") : t("mean")}: {fmt(row.v)} {unit}</p>
+        {hasRange && <p style={{ margin: "2px 0" }}>{t("min")}: {fmt(row.lo)} {unit}</p>}
+        {hasRange && <p style={{ margin: "2px 0" }}>{t("max")}: {fmt(row.hi)} {unit}</p>}
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={250}>
@@ -135,10 +163,7 @@ export function DailyChart({ series, t, unit, isSum, color = GREEN_DARK }) {
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
         <XAxis dataKey="d" tick={{ fontSize: 11 }} minTickGap={40} label={xLabel(t("date"))} />
         <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-        <Tooltip
-          formatter={(v, name) => (name === "v" ? [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")] : null)}
-          labelStyle={{ fontWeight: 600 }}
-        />
+        <Tooltip content={<DailyTooltip />} />
         {!isSum && <Area dataKey="lo" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />}
         {!isSum && <Area dataKey="band" stackId="band" stroke="none" fill={color} fillOpacity={0.12} isAnimationActive={false} />}
         {isSum ? (
