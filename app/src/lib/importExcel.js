@@ -164,8 +164,8 @@ function stationMeta(rows) {
 }
 
 // ---- public API -----------------------------------------------------------
-export async function importWorkbook(file, { lat = 42.663, lon = 21.162 } = {}) {
-  // default location = Prishtina center (imported stations placed here unless edited)
+export async function importWorkbook(file, { lat = null, lon = null } = {}) {
+  // no hardcoded coordinates: the caller geocodes the station name via Nominatim
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { cellDates: true });
   const baseName = file.name.replace(/\.[^.]+$/, "");

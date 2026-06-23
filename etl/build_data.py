@@ -3,7 +3,9 @@ ETL: convert the raw hydro-meteo sensor files (Llap/*.xlsx, Lluzhan/*.txt,
 Shajkoc/*.xls) into compact aggregated JSON for the dashboard frontend.
 
 Output (written to ../app/public/data/):
-  stations.json          -> index of stations (id, name, coords, measurements)
+  stations.json          -> index of stations (id, name, measurements)
+                            coordinates are NOT stored: the frontend geocodes
+                            each station name via Nominatim at runtime
   <station_id>.json       -> per-station series with daily / monthly / climatology aggregates
 
 Run:  python etl/build_data.py
@@ -40,19 +42,19 @@ MEAS = {
 }
 
 # ---------------------------------------------------------------------------
-# Stations: id, names, approximate coordinates (Podujevë municipality, Kosovo).
-# NOTE: coordinates are approximate village/river locations -- adjust if needed.
+# Stations: id, names, type (Podujevë municipality, Kosovo).
+# NOTE: no coordinates here -- the frontend resolves each name via Nominatim.
 # ---------------------------------------------------------------------------
 STATIONS = {
-    "lluzhan":  {"name_en": "Lluzhan (Llapi river)",   "name_sq": "Lluzhan (Lumi Llap)",        "lat": 42.8650, "lon": 21.1300, "type": "hydro"},
-    "turiqice": {"name_en": "Turiqicë / Orllan",       "name_sq": "Turiqicë / Orllan",          "lat": 42.8620, "lon": 21.3000, "type": "hydro"},
-    "lupc":     {"name_en": "Lupç (Ep.)",              "name_sq": "Lupç (Ep.)",                 "lat": 42.9450, "lon": 21.1050, "type": "hydro"},
-    "millosheve":{"name_en": "Milloshevë",             "name_sq": "Milloshevë",                 "lat": 42.7850, "lon": 21.1250, "type": "hydro"},
-    "batllave": {"name_en": "Batllavë (reservoir)",    "name_sq": "Batllavë (liqeni)",          "lat": 42.8380, "lon": 21.3100, "type": "meteo"},
-    "kerpimeh": {"name_en": "Kërpimeh",                "name_sq": "Kërpimeh",                   "lat": 42.8300, "lon": 21.1750, "type": "meteo"},
-    "podujeve": {"name_en": "Podujevë (town)",         "name_sq": "Podujevë (qyteti)",          "lat": 42.9110, "lon": 21.1930, "type": "meteo"},
-    "pollate":  {"name_en": "Pollatë",                 "name_sq": "Pollatë",                    "lat": 42.9500, "lon": 21.2200, "type": "meteo"},
-    "shajkoc":  {"name_en": "Shajkoc (auto meteo)",    "name_sq": "Shajkoc (meteo automatike)", "lat": 42.8800, "lon": 21.2500, "type": "meteo"},
+    "lluzhan":  {"name_en": "Lluzhan (Llapi river)",   "name_sq": "Lluzhan (Lumi Llap)",        "type": "hydro"},
+    "turiqice": {"name_en": "Turiqicë / Orllan",       "name_sq": "Turiqicë / Orllan",          "type": "hydro"},
+    "lupc":     {"name_en": "Lupç (Ep.)",              "name_sq": "Lupç (Ep.)",                 "type": "hydro"},
+    "millosheve":{"name_en": "Milloshevë",             "name_sq": "Milloshevë",                 "type": "hydro"},
+    "batllave": {"name_en": "Batllavë (reservoir)",    "name_sq": "Batllavë (liqeni)",          "type": "meteo"},
+    "kerpimeh": {"name_en": "Kërpimeh",                "name_sq": "Kërpimeh",                   "type": "meteo"},
+    "podujeve": {"name_en": "Podujevë (town)",         "name_sq": "Podujevë (qyteti)",          "type": "meteo"},
+    "pollate":  {"name_en": "Pollatë",                 "name_sq": "Pollatë",                    "type": "meteo"},
+    "shajkoc":  {"name_en": "Shajkoc (auto meteo)",    "name_sq": "Shajkoc (meteo automatike)", "type": "meteo"},
 }
 
 # ---------------------------------------------------------------------------
@@ -212,7 +214,7 @@ def main():
         # write per-station file
         out = {
             "id": sid,
-            **{k: st[k] for k in ("name_en", "name_sq", "lat", "lon", "type")},
+            **{k: st[k] for k in ("name_en", "name_sq", "type")},
             "measurements": {
                 mid: {**{k: MEAS[mid][k] for k in ("label_en", "label_sq", "unit", "cat", "kind")},
                       **series[mid]}
@@ -224,7 +226,7 @@ def main():
         index.append({
             "id": sid,
             "name_en": st["name_en"], "name_sq": st["name_sq"],
-            "lat": st["lat"], "lon": st["lon"], "type": st["type"],
+            "type": st["type"],
             "measurements": [
                 {"id": mid, "label_en": MEAS[mid]["label_en"], "label_sq": MEAS[mid]["label_sq"],
                  "unit": MEAS[mid]["unit"], "cat": MEAS[mid]["cat"], "kind": MEAS[mid]["kind"],

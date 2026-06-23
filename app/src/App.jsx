@@ -4,6 +4,7 @@ import Dashboard from "./components/Dashboard.jsx";
 import ConfigPanel from "./components/ConfigPanel.jsx";
 import { makeT } from "./i18n.js";
 import { importWorkbook } from "./lib/importExcel.js";
+import { geocodePlace } from "./lib/geocode.js";
 
 export default function App() {
   const [lang, setLang] = useState("en");
@@ -21,15 +22,33 @@ export default function App() {
   const baseT = useMemo(() => makeT(lang), [lang]);
   const t = (k) => baseT(k);
 
-  // load station index
+  // load station index, then locate every station purely via Nominatim geocoding
+  // (the hardcoded lat/lon from stations.json are dropped on purpose)
   useEffect(() => {
+    let cancelled = false;
     fetch(`${import.meta.env.BASE_URL}data/stations.json`)
       .then((r) => r.json())
-      .then((d) => {
-        setBuiltin(d.stations);
-        const def = d.stations.find((s) => s.id === "podujeve") || d.stations[0];
+      .then(async (d) => {
+        const stripped = d.stations.map((s) => ({ ...s, lat: null, lon: null }));
+        setBuiltin(stripped);
+        const def = stripped.find((s) => s.id === "podujeve") || stripped[0];
         setSelectedId(def?.id ?? null);
+        // sequential + throttled: Nominatim allows ~1 request/second
+        for (const s of stripped) {
+          if (cancelled) return;
+          const geo = await geocodePlace(s.name_en);
+          if (cancelled) return;
+          if (geo) {
+            setBuiltin((prev) =>
+              prev.map((x) => (x.id === s.id ? { ...x, lat: geo.lat, lon: geo.lon } : x))
+            );
+          }
+          await new Promise((r) => setTimeout(r, 1100));
+        }
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // resolve full data for the selected station (imported in-memory, else fetch)
@@ -65,19 +84,20 @@ export default function App() {
 
   // combined markers for map + list
   const markers = useMemo(
-    () => [
-      ...builtin.map((s) => ({ ...s, measCount: s.measurements.length })),
-      ...imported.map((s) => ({
-        id: s.id,
-        name_en: s.name_en,
-        name_sq: s.name_sq,
-        lat: s.lat,
-        lon: s.lon,
-        type: s.type,
-        imported: true,
-        measCount: Object.keys(s.measurements).length,
-      })),
-    ],
+    () =>
+      [
+        ...builtin.map((s) => ({ ...s, measCount: s.measurements.length })),
+        ...imported.map((s) => ({
+          id: s.id,
+          name_en: s.name_en,
+          name_sq: s.name_sq,
+          lat: s.lat,
+          lon: s.lon,
+          type: s.type,
+          imported: true,
+          measCount: Object.keys(s.measurements).length,
+        })),
+      ].filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lon)),
     [builtin, imported]
   );
 
@@ -88,6 +108,12 @@ export default function App() {
     setImportError("");
     try {
       const station = await importWorkbook(file);
+      // Auto-locate: geocode the station name; keep the Prishtina fallback if not found.
+      const geo = await geocodePlace(station.name_en);
+      if (geo) {
+        station.lat = geo.lat;
+        station.lon = geo.lon;
+      }
       setImported((prev) => {
         const others = prev.filter((s) => s.id !== station.id);
         return [...others, station];
