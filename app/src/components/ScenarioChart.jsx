@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceArea,
 } from "recharts";
 import { scenarioClimatology, forecast, longTermProjection } from "../lib/projection.js";
 
@@ -58,6 +59,65 @@ function xLabel(value) {
   };
 }
 
+// Drag-to-zoom for a Recharts LineChart. Operates on data indices so it works
+// for both categorical (month name) and numeric (year) x-axes. Drag across the
+// plot to select a horizontal range; release to zoom into it.
+function useChartZoom(data, dataKey) {
+  const [left, setLeft] = useState(null);
+  const [right, setRight] = useState(null);
+  const [range, setRange] = useState(null); // { start, end } indices into data
+
+  const indexOf = (label) => data.findIndex((d) => String(d[dataKey]) === String(label));
+
+  const onMouseDown = (e) => {
+    if (e && e.activeLabel != null) {
+      setLeft(e.activeLabel);
+      setRight(e.activeLabel);
+    }
+  };
+  const onMouseMove = (e) => {
+    if (left != null && e && e.activeLabel != null) setRight(e.activeLabel);
+  };
+  const onMouseUp = () => {
+    if (left != null && right != null && String(left) !== String(right)) {
+      let a = indexOf(left);
+      let b = indexOf(right);
+      if (a > b) [a, b] = [b, a];
+      if (a >= 0 && b >= 0) setRange({ start: a, end: b });
+    }
+    setLeft(null);
+    setRight(null);
+  };
+  const reset = () => {
+    setRange(null);
+    setLeft(null);
+    setRight(null);
+  };
+
+  const displayData = range ? data.slice(range.start, range.end + 1) : data;
+  const refArea =
+    left != null && right != null && String(left) !== String(right) ? (
+      <ReferenceArea x1={left} x2={right} strokeOpacity={0.3} fill="#6b5bb5" fillOpacity={0.12} />
+    ) : null;
+
+  return {
+    displayData,
+    isZoomed: range != null,
+    reset,
+    refArea,
+    handlers: { onMouseDown, onMouseMove, onMouseUp, onMouseLeave: onMouseUp },
+  };
+}
+
+function ResetZoomButton({ show, onClick, t }) {
+  if (!show) return null;
+  return (
+    <button type="button" className="zoom-reset" onClick={onClick}>
+      {t("resetZoom")}
+    </button>
+  );
+}
+
 export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
   const scen = useMemo(() => scenarioClimatology(meas, scenario), [meas, scenario]);
   const annual = useMemo(() => longTermProjection(meas), [meas]);
@@ -69,21 +129,37 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
     return row;
   });
 
+  const climZoom = useChartZoom(climData, "month");
+  const annualZoom = useChartZoom(annual.rows, "year");
+  const yearTicks = [2021, 2026, 2030, 2035, 2040, 2045, 2050];
+  const annualData = annualZoom.displayData;
+  const yearDomain = annualZoom.isZoomed
+    ? [annualData[0]?.year, annualData[annualData.length - 1]?.year]
+    : [2021, 2050];
+  let visibleYearTicks = yearTicks.filter((y) => y >= yearDomain[0] && y <= yearDomain[1]);
+  // when a zoom window falls between the fixed ticks, label the window edges instead
+  if (annualZoom.isZoomed && visibleYearTicks.length < 2) {
+    visibleYearTicks = [...new Set([yearDomain[0], ...visibleYearTicks, yearDomain[1]])].sort((a, b) => a - b);
+  }
+
   return (
     <div className="card">
       <div className="section-title">
         <h2>{t("scenarioTitle")}</h2>
         <span className="badge meteo">{scenarioName(scenario, t)}</span>
+        <span className="zoom-hint">{t("zoomHint")}</span>
+        <ResetZoomButton show={climZoom.isZoomed} onClick={climZoom.reset} t={t} />
       </div>
 
       <div className="scenario-chart-block">
         <ResponsiveContainer width="100%" height={270}>
-        <LineChart data={climData} margin={scenarioChartMargin}>
+        <LineChart data={climZoom.displayData} margin={scenarioChartMargin} {...climZoom.handlers}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-          <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} />
+          <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} allowDataOverflow />
           <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
           <Legend {...scenarioLegend} />
+          {climZoom.refArea}
           {scen.lines.map((ln) => (
             <Line
               key={ln.period}
@@ -104,22 +180,26 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
 
       <div className="section-title">
         <h2>{t("longTermProjection")}</h2>
+        <span className="zoom-hint">{t("zoomHint")}</span>
+        <ResetZoomButton show={annualZoom.isZoomed} onClick={annualZoom.reset} t={t} />
       </div>
       <div className="scenario-chart-block">
         <ResponsiveContainer width="100%" height={270}>
-        <LineChart data={annual.rows} margin={scenarioChartMargin}>
+        <LineChart data={annualData} margin={scenarioChartMargin} {...annualZoom.handlers}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
           <XAxis
             dataKey="year"
             type="number"
-            domain={[2021, 2050]}
-            ticks={[2021, 2026, 2030, 2035, 2040, 2045, 2050]}
+            domain={yearDomain}
+            ticks={visibleYearTicks}
+            allowDataOverflow
             tick={{ fontSize: 11 }}
             label={xLabel(t("year"))}
           />
           <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
           <Legend {...scenarioLegend} />
+          {annualZoom.refArea}
           <Line type="monotone" dataKey="observed" name={t("observed")} stroke="#6b5bb5" strokeWidth={3.2} dot={false} activeDot={{ r: 4 }} connectNulls />
           <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={1.9} strokeOpacity={0.78} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
           <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={1.9} strokeOpacity={0.78} strokeDasharray="2 4" dot={false} activeDot={{ r: 3 }} connectNulls />

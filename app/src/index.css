@@ -71,6 +71,28 @@ header.masthead {
 .import-btn-block { width: 100%; margin-top: 10px; text-align: center; }
 .active-meas { color: var(--muted); font-size: 13px; font-weight: 500; }
 
+/* dashboard filter bar — measurement · scenario · period, side by side so the
+   whole thing fits without scrolling */
+.filter-card { display: flex; flex-direction: column; gap: 14px; }
+.filter-bar {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 28px;
+  align-items: start;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.filter-sec { min-width: 0; }
+.filter-sec .cfg-hint { max-width: 320px; }
+@media (max-width: 900px) {
+  .filter-bar { grid-template-columns: 1fr; gap: 16px; }
+}
+/* compact stats so 4 cards fit in the period column */
+.stat-grid.compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat-grid.compact .stat { padding: 8px 10px; }
+.stat-grid.compact .v { font-size: 18px; }
+@media (max-width: 560px) { .stat-grid.compact { grid-template-columns: repeat(2, 1fr); } }
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -89,6 +111,29 @@ header.masthead {
 .scenario-chart-block {
   margin-bottom: 48px;
 }
+
+/* drag-to-zoom affordances on the projection charts */
+.zoom-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 500;
+  user-select: none;
+}
+.zoom-reset {
+  margin-left: auto;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--green-dark);
+  background: #eef6ef;
+  border: 1px solid #cfe3cf;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.zoom-reset:hover { background: #e2efe2; }
+/* hint cursor inside the zoomable plot area */
+.scenario-chart-block .recharts-surface { cursor: crosshair; }
 
 /* map — fixed height; Leaflet fills the area below the head */
 .map-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; height: var(--top-h); }

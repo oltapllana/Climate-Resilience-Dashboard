@@ -158,11 +158,6 @@ export default function App() {
             markers={markers}
             selectedId={selectedId}
             onSelect={setSelectedId}
-            data={activeData}
-            measId={measId}
-            setMeasId={setMeasId}
-            scenario={scenario}
-            setScenario={setScenario}
             lang={lang}
             t={t}
             onImportClick={() => fileRef.current?.click()}
@@ -182,7 +177,15 @@ export default function App() {
 
         {/* charts span the full width below */}
         <main className="charts-area">
-          <Dashboard data={activeData} measId={measId} scenario={scenario} lang={lang} t={t} />
+          <Dashboard
+            data={activeData}
+            measId={measId}
+            setMeasId={setMeasId}
+            scenario={scenario}
+            setScenario={setScenario}
+            lang={lang}
+            t={t}
+          />
         </main>
 
       </div>
