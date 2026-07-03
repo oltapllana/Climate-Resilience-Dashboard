@@ -50,8 +50,58 @@ Build for deployment: `npm run build` (output in `app/dist/`).
   temperature, rainfall, rainfall intensity; Shajkoc adds humidity, pressure,
   solar radiation, wind speed & direction.
 
-> Station coordinates in `etl/build_data.py` (`STATIONS`) are **approximate** —
+> Station coordinates in `etl/build_data.py` (`STATION_GIS`) are **approximate** —
 > adjust the `lat`/`lon` values to the exact sensor locations if you have them.
+> Exact GPS coordinates are not available in the raw sensor files. When a
+> station matches a real settlement polygon, the map keeps the original
+> `lat`/`lon` as approximate metadata but renders the station marker at a
+> computed point inside the matched settlement boundary. If no settlement
+> polygon matches, the marker falls back to the approximate `lat`/`lon` and the
+> app logs a GIS warning.
+
+## Settlement boundary GeoJSON
+
+The map is prepared for a Kosovo-wide settlement boundary file named
+`settlements-kosovo.geojson`. This should be a real GIS boundary layer containing
+village, town, or settlement polygons across Kosovo. Place it here:
+
+```text
+app/public/settlements-kosovo.geojson
+```
+
+Expected GeoJSON shape:
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "municipality": "Podujevë",
+        "settlement": "Lluzhan"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": []
+      }
+    }
+  ]
+}
+```
+
+The matcher accepts common property names, including `municipality`, `komuna`,
+`mun_name`, `admin2` for municipalities and `settlement`, `village`, `name`,
+`vendbanimi`, `place` for settlements.
+
+Stations match polygons by normalized `municipality + settlement`. Example:
+a station with `"municipality": "Podujevë"` and `"settlement": "Lluzhan"` will
+match a GeoJSON feature with the same municipality and settlement, ignoring
+case, punctuation, and common Kosovo diacritics such as `ë/e` and `ç/c`.
+
+If `settlements-kosovo.geojson` is missing, the app keeps all station markers
+visible, shows fallback settlement labels from station metadata, logs a clear
+`[GIS warning]`, and does not create fake polygons.
 
 ## Climate scenarios & forecast (RCP4.5 / RCP8.5)
 

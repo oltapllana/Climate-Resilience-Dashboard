@@ -22,29 +22,18 @@ export default function App() {
   const baseT = useMemo(() => makeT(lang), [lang]);
   const t = (k) => baseT(k);
 
-  // load station index, then locate every station purely via Nominatim geocoding
-  // (the hardcoded lat/lon from stations.json are dropped on purpose)
+  // Load station index with explicit GIS metadata. Built-in stations should carry
+  // municipality, settlement, lat, and lon; geocoding is only a fallback for imports.
   useEffect(() => {
     let cancelled = false;
     fetch(`${import.meta.env.BASE_URL}data/stations.json`)
       .then((r) => r.json())
-      .then(async (d) => {
-        const stripped = d.stations.map((s) => ({ ...s, lat: null, lon: null }));
-        setBuiltin(stripped);
-        const def = stripped.find((s) => s.id === "podujeve") || stripped[0];
+      .then((d) => {
+        if (cancelled) return;
+        const stations = Array.isArray(d.stations) ? d.stations : [];
+        setBuiltin(stations);
+        const def = stations.find((s) => s.id === "podujeve") || stations[0];
         setSelectedId(def?.id ?? null);
-        // sequential + throttled: Nominatim allows ~1 request/second
-        for (const s of stripped) {
-          if (cancelled) return;
-          const geo = await geocodePlace(s.name_en);
-          if (cancelled) return;
-          if (geo) {
-            setBuiltin((prev) =>
-              prev.map((x) => (x.id === s.id ? { ...x, lat: geo.lat, lon: geo.lon } : x))
-            );
-          }
-          await new Promise((r) => setTimeout(r, 1100));
-        }
       });
     return () => {
       cancelled = true;
@@ -91,6 +80,8 @@ export default function App() {
           id: s.id,
           name_en: s.name_en,
           name_sq: s.name_sq,
+          municipality: s.municipality,
+          settlement: s.settlement,
           lat: s.lat,
           lon: s.lon,
           type: s.type,
@@ -108,12 +99,17 @@ export default function App() {
     setImportError("");
     try {
       const station = await importWorkbook(file);
-      // Auto-locate: geocode the station name; keep the Prishtina fallback if not found.
-      const geo = await geocodePlace(station.name_en);
-      if (geo) {
-        station.lat = geo.lat;
-        station.lon = geo.lon;
+      // Imported files may not include GIS metadata. Keep geocoding as a best-effort
+      // fallback, but built-in station coordinates come from stations.json.
+      if (!Number.isFinite(station.lat) || !Number.isFinite(station.lon)) {
+        const geo = await geocodePlace(station.name_en);
+        if (geo) {
+          station.lat = geo.lat;
+          station.lon = geo.lon;
+        }
       }
+      if (!station.settlement) station.settlement = station.name_en;
+      if (!station.municipality) station.municipality = "";
       setImported((prev) => {
         const others = prev.filter((s) => s.id !== station.id);
         return [...others, station];

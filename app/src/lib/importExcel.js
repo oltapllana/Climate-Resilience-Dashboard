@@ -164,8 +164,10 @@ function stationMeta(rows) {
 }
 
 // ---- public API -----------------------------------------------------------
-export async function importWorkbook(file, { lat = null, lon = null } = {}) {
-  // no hardcoded coordinates: the caller geocodes the station name via Nominatim
+export async function importWorkbook(
+  file,
+  { municipality = "", settlement = "", lat = null, lon = null } = {}
+) {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { cellDates: true });
   const baseName = file.name.replace(/\.[^.]+$/, "");
@@ -209,6 +211,8 @@ export async function importWorkbook(file, { lat = null, lon = null } = {}) {
     id,
     name_en: baseName,
     name_sq: baseName,
+    municipality,
+    settlement: settlement || baseName,
     lat,
     lon,
     type,

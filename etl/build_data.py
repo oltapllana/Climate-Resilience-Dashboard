@@ -3,9 +3,7 @@ ETL: convert the raw hydro-meteo sensor files (Llap/*.xlsx, Lluzhan/*.txt,
 Shajkoc/*.xls) into compact aggregated JSON for the dashboard frontend.
 
 Output (written to ../app/public/data/):
-  stations.json          -> index of stations (id, name, measurements)
-                            coordinates are NOT stored: the frontend geocodes
-                            each station name via Nominatim at runtime
+  stations.json          -> index of stations (id, name, GIS metadata, measurements)
   <station_id>.json       -> per-station series with daily / monthly / climatology aggregates
 
 Run:  python etl/build_data.py
@@ -42,8 +40,8 @@ MEAS = {
 }
 
 # ---------------------------------------------------------------------------
-# Stations: id, names, type (Podujevë municipality, Kosovo).
-# NOTE: no coordinates here -- the frontend resolves each name via Nominatim.
+# Stations: id, names, and type. GIS fields are attached from STATION_GIS.
+# GIS fields are attached from STATION_GIS below.
 # ---------------------------------------------------------------------------
 STATIONS = {
     "lluzhan":  {"name_en": "Lluzhan (Llapi river)",   "name_sq": "Lluzhan (Lumi Llap)",        "type": "hydro"},
@@ -55,6 +53,22 @@ STATIONS = {
     "podujeve": {"name_en": "Podujevë (town)",         "name_sq": "Podujevë (qyteti)",          "type": "meteo"},
     "pollate":  {"name_en": "Pollatë",                 "name_sq": "Pollatë",                    "type": "meteo"},
     "shajkoc":  {"name_en": "Shajkoc (auto meteo)",    "name_sq": "Shajkoc (meteo automatike)", "type": "meteo"},
+}
+
+# ---------------------------------------------------------------------------
+# GIS metadata: municipality + settlement drive settlement-boundary matching.
+# Coordinates are explicit so the app does not geocode built-in stations at runtime.
+# ---------------------------------------------------------------------------
+STATION_GIS = {
+    "lluzhan":    {"municipality": "Podujevë", "settlement": "Lluzhan",    "lat": 42.898, "lon": 21.145},
+    "turiqice":   {"municipality": "Podujevë", "settlement": "Turiqicë",   "lat": 42.833, "lon": 21.318},
+    "lupc":       {"municipality": "Podujevë", "settlement": "Lupç i Epërm", "lat": 42.934, "lon": 21.107},
+    "millosheve": {"municipality": "Obiliq",   "settlement": "Milloshevë", "lat": 42.731, "lon": 21.080},
+    "batllave":   {"municipality": "Podujevë", "settlement": "Batllavë",   "lat": 42.841, "lon": 21.269},
+    "kerpimeh":   {"municipality": "Podujevë", "settlement": "Kërpimeh",   "lat": 42.970, "lon": 21.189},
+    "podujeve":   {"municipality": "Podujevë", "settlement": "Podujevë",   "lat": 42.911, "lon": 21.193},
+    "pollate":    {"municipality": "Podujevë", "settlement": "Pollatë",    "lat": 43.004, "lon": 21.142},
+    "shajkoc":    {"municipality": "Podujevë", "settlement": "Shajkoc",    "lat": 42.979, "lon": 21.227},
 }
 
 # ---------------------------------------------------------------------------
@@ -208,6 +222,7 @@ def main():
 
     index = []
     for sid, st in STATIONS.items():
+        gis = STATION_GIS.get(sid, {})
         series = station_data[sid]["series"]
         if not series:
             continue
@@ -215,6 +230,7 @@ def main():
         out = {
             "id": sid,
             **{k: st[k] for k in ("name_en", "name_sq", "type")},
+            **gis,
             "measurements": {
                 mid: {**{k: MEAS[mid][k] for k in ("label_en", "label_sq", "unit", "cat", "kind")},
                       **series[mid]}
@@ -227,6 +243,7 @@ def main():
             "id": sid,
             "name_en": st["name_en"], "name_sq": st["name_sq"],
             "type": st["type"],
+            **gis,
             "measurements": [
                 {"id": mid, "label_en": MEAS[mid]["label_en"], "label_sq": MEAS[mid]["label_sq"],
                  "unit": MEAS[mid]["unit"], "cat": MEAS[mid]["cat"], "kind": MEAS[mid]["kind"],
