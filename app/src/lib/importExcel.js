@@ -44,6 +44,78 @@ function guessMeasId(...texts) {
   return "generic";
 }
 
+// ---- station name from file name ------------------------------------------
+// Files for the same place arrive as "Te_dhenat_Shajkoc - Drejtimi i Eres",
+// "Te_dhenat_Shajkoc - Intensiteti i reshjeve", "Hydro_Lluzhan_Water_Level_2026...",
+// etc. To group them under one station (the way etl/build_data.py does with its
+// SOURCES table), strip measurement words / timestamps off the end and generic
+// prefixes off the front, leaving just the place name ("Shajkoc", "Lluzhan").
+const MEAS_WORDS = new Set([
+  "level", "niveli", "nivel", "water", "uji", "ujit",
+  "temp", "tem", "temperature", "temperatura",
+  "intensity", "intensiteti", "reshjet", "reshjeve", "rain", "rainfall", "precipitation",
+  "conductivity", "percueshmeria", "salinity", "salanity", "kripshmeria", "tds",
+  "humidity", "lageshtija", "lageshtia", "pressure", "shtypja",
+  "solar", "radiation", "rrezatimi",
+  "wind", "eres", "erës", "era", "speed", "shpejtesia", "shpejtësia",
+  "drejtimi", "direction", "ajrit", "air",
+  "i", "e", "se", "of", "the",
+]);
+const PREFIX_WORDS = new Set(["te", "të", "dhenat", "dhënat", "data", "hydro", "meteo", "st"]);
+
+export function stationNameFromFile(baseName) {
+  const tokens = baseName
+    .replace(/([a-zëç])([A-Z])/g, "$1 $2") // split camelCase ("SolarRadiation")
+    .split(/[_\s\-–]+/)
+    .filter(Boolean);
+  // drop trailing measurement words, connectives and numeric timestamps
+  while (tokens.length > 1) {
+    const last = tokens[tokens.length - 1].toLowerCase().replace(/\d+$/, ""); // "eres1" -> "eres"
+    if (last === "" || MEAS_WORDS.has(last)) tokens.pop();
+    else break;
+  }
+  // drop generic "data"/sensor-type prefixes
+  while (tokens.length > 1 && PREFIX_WORDS.has(tokens[0].toLowerCase())) tokens.shift();
+  return tokens.join(" ") || baseName;
+}
+
+// ---- known stations --------------------------------------------------------
+// The fixed set of monitoring stations for the Podujevë municipality. Every
+// uploaded file is routed to one of these by matching the file name against
+// the aliases, so e.g. "Batllave_Reshjet" and "Batllave_Intensity" both land
+// in the Batllavë station. `fallbackAliases` catch files whose name carries no
+// place at all (Temp_Ujit, Conductivity, TDS, ... belong to Turiqicë/Orllan,
+// same as in etl/build_data.py). Files matching nothing get their own station
+// named after the file.
+// Coordinates are fixed (verified against OpenStreetMap) so the known stations
+// always land exactly where they belong; only unknown uploads get geocoded.
+export const KNOWN_STATIONS = [
+  { id: "imported_lluzhan", municipality: "Podujevë", settlement: "Lluzhan",         name_en: "Lluzhan (Llapi river)", name_sq: "Lluzhan (Lumi Llap)", lat: 42.82224, lon: 21.16759, aliases: ["lluzhan"] },
+  { id: "imported_turiqice_orllan", municipality: "Podujevë", settlement: "Turiqicë", name_en: "Turiqicë / Orllan",     name_sq: "Turiqicë / Orllan",   lat: 42.85400, lon: 21.33355, aliases: ["turiqic", "orllan"],
+    fallbackAliases: ["temp_ujit", "conductivity", "salanity", "salinity", "tds"] },
+  { id: "imported_lupc", municipality: "Podujevë", settlement: "Lupç i Epërm",            name_en: "Lupç (Ep.)",            name_sq: "Lupç (Ep.)",          lat: 42.85432, lon: 21.09473, aliases: ["lupc", "lupe"] },
+  { id: "imported_millosheve", municipality: "Obiliq", settlement: "Milloshevë",      name_en: "Milloshevë",            name_sq: "Milloshevë",          lat: 42.72261, lon: 21.08361, aliases: ["milloshev"] },
+  { id: "imported_batllave", municipality: "Podujevë", settlement: "Batllavë",        name_en: "Batllavë (reservoir)",  name_sq: "Batllavë (liqeni)",   lat: 42.83674, lon: 21.25282, aliases: ["batllav"] },
+  { id: "imported_kerpimeh", municipality: "Podujevë", settlement: "Kërpimeh",        name_en: "Kërpimeh",              name_sq: "Kërpimeh",            lat: 42.99384, lon: 21.15722, aliases: ["kerpimeh"] },
+  { id: "imported_podujeve", municipality: "Podujevë", settlement: "Podujevë",        name_en: "Podujevë (town)",       name_sq: "Podujevë (qyteti)",   lat: 42.90780, lon: 21.19253, aliases: ["podujev"] },
+  { id: "imported_pollate", municipality: "Podujevë", settlement: "Pollatë",         name_en: "Pollatë",               name_sq: "Pollatë",             lat: 43.05227, lon: 21.11822, aliases: ["pollat"] },
+  { id: "imported_shajkoc", municipality: "Podujevë", settlement: "Shajkoc",         name_en: "Shajkoc (auto meteo)",  name_sq: "Shajkoc (meteo automatike)", lat: 42.85690, lon: 21.24971, aliases: ["shajkoc"] },
+];
+
+// lowercase + strip diacritics so "Lupë"/"Kërpimeh" match plain-ascii aliases
+const fold = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+export function matchStation(fileName) {
+  const s = fold(fileName);
+  for (const st of KNOWN_STATIONS) {
+    if (st.aliases.some((a) => s.includes(a))) return st;
+  }
+  for (const st of KNOWN_STATIONS) {
+    if ((st.fallbackAliases || []).some((a) => s.includes(a))) return st;
+  }
+  return null;
+}
+
 // ---- date parsing ---------------------------------------------------------
 function parseTs(v) {
   if (v == null || v === "") return null;
@@ -101,17 +173,91 @@ function aggregate(samples, kind) {
     return { month: mo, v: round(kind === "sum" ? sum(a) / nMonths : mean(a)) };
   });
 
-  const all = samples.map((s) => s.val);
+  // loop instead of Math.min(...all): spreading 100k+ samples overflows the stack
+  let mn = Infinity, mx = -Infinity, total = 0;
+  for (const { val } of samples) {
+    if (val < mn) mn = val;
+    if (val > mx) mx = val;
+    total += val;
+  }
   const stats = {
     count: samples.length,
     start: ymd(samples[0].ts),
     end: ymd(samples[samples.length - 1].ts),
-    min: round(Math.min(...all)),
-    max: round(Math.max(...all)),
-    mean: round(mean(all)),
-    overall: round(kind === "sum" ? sum(all) : mean(all)),
+    min: round(mn),
+    max: round(mx),
+    mean: round(total / samples.length),
+    overall: round(kind === "sum" ? total : total / samples.length),
   };
   return { daily, monthly, climatology, stats };
+}
+
+// ---- duplicate-measurement cleanup ----------------------------------------
+// Older imports split multi-sensor sheets into "wind_dir" + "wind_dir_2".
+// Fold such suffixed duplicates back into the base measurement by merging the
+// aggregated series (union of days/months; overlapping entries are averaged
+// for "avg" measurements and added for "sum" ones).
+function mergeMeas(a, b) {
+  const kind = a.kind;
+  const byD = new Map(a.daily.map((x) => [x.d, x]));
+  for (const x of b.daily) {
+    const cur = byD.get(x.d);
+    if (!cur) byD.set(x.d, x);
+    else if (kind === "sum") byD.set(x.d, { d: x.d, v: round(cur.v + x.v) });
+    else
+      byD.set(x.d, {
+        d: x.d,
+        v: round((cur.v + x.v) / 2),
+        lo: round(Math.min(cur.lo ?? cur.v, x.lo ?? x.v)),
+        hi: round(Math.max(cur.hi ?? cur.v, x.hi ?? x.v)),
+      });
+  }
+  const daily = [...byD.values()].sort((p, q) => (p.d < q.d ? -1 : 1));
+
+  const byM = new Map(a.monthly.map((x) => [x.m, x]));
+  for (const x of b.monthly) {
+    const cur = byM.get(x.m);
+    if (!cur) byM.set(x.m, x);
+    else byM.set(x.m, { m: x.m, v: round(kind === "sum" ? cur.v + x.v : (cur.v + x.v) / 2) });
+  }
+  const monthly = [...byM.values()].sort((p, q) => (p.m < q.m ? -1 : 1));
+
+  const climG = {};
+  for (const x of monthly) {
+    if (x.v == null) continue;
+    const mo = +x.m.slice(5);
+    (climG[mo] = climG[mo] || []).push(x.v);
+  }
+  const climatology = Object.keys(climG).map(Number).sort((p, q) => p - q)
+    .map((mo) => ({ month: mo, v: round(climG[mo].reduce((s, v) => s + v, 0) / climG[mo].length) }));
+
+  const n = a.stats.count + b.stats.count;
+  const stats = {
+    count: n,
+    start: a.stats.start < b.stats.start ? a.stats.start : b.stats.start,
+    end: a.stats.end > b.stats.end ? a.stats.end : b.stats.end,
+    min: Math.min(a.stats.min, b.stats.min),
+    max: Math.max(a.stats.max, b.stats.max),
+    mean: round((a.stats.mean * a.stats.count + b.stats.mean * b.stats.count) / n),
+    overall:
+      kind === "sum"
+        ? round(a.stats.overall + b.stats.overall)
+        : round((a.stats.mean * a.stats.count + b.stats.mean * b.stats.count) / n),
+  };
+  return { ...a, daily, monthly, climatology, stats };
+}
+
+// Returns the same object when nothing needed fixing, so callers can detect change.
+export function dedupeMeasurements(measurements) {
+  let out = measurements;
+  for (const key of Object.keys(measurements)) {
+    const m = key.match(/^(.+)_\d+$/);
+    if (!m || !out[m[1]]) continue;
+    if (out === measurements) out = { ...measurements };
+    out[m[1]] = mergeMeas(out[m[1]], out[key]);
+    delete out[key];
+  }
+  return out;
 }
 
 // ---- sheet -> samples -----------------------------------------------------
@@ -164,16 +310,17 @@ function stationMeta(rows) {
 }
 
 // ---- public API -----------------------------------------------------------
-export async function importWorkbook(
-  file,
-  { municipality = "", settlement = "", lat = null, lon = null } = {}
-) {
+export async function importWorkbook(file, { lat = null, lon = null } = {}) {
+  // no hardcoded coordinates: the caller geocodes the station name via Nominatim
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { cellDates: true });
   const baseName = file.name.replace(/\.[^.]+$/, "");
 
-  const measurements = {};
-  let type = "meteo";
+  // Collect samples per measurement across ALL sheets first, then aggregate
+  // once: sheets like "Shpejtesia eres1"/"Shpejtesia eres2" are two sensors of
+  // the same series and must become ONE "Wind speed" measurement (the same way
+  // etl/build_data.py concatenated them), not "Wind speed" + "Wind speed (2)".
+  const byMeas = {}; // measId -> { samples, unit }
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
@@ -183,21 +330,22 @@ export async function importWorkbook(
 
     const metaName = stationMeta(rows);
     const measId = guessMeasId(sheetName, metaName, baseName, unit);
+    const slot = (byMeas[measId] = byMeas[measId] || { samples: [], unit: "" });
+    for (const s of samples) slot.samples.push(s); // no spread: sheets can hold 100k+ rows
+    if (!slot.unit && unit) slot.unit = unit;
+  }
+
+  const measurements = {};
+  let type = "meteo";
+  for (const [measId, { samples, unit }] of Object.entries(byMeas)) {
     const def = MEAS[measId] || MEAS.generic;
-    const agg = aggregate(samples, def.kind);
-
-    // ensure a unique key if the same measurement appears twice
-    let key = measId;
-    let n = 2;
-    while (measurements[key]) key = `${measId}_${n++}`;
-
-    measurements[key] = {
-      label_en: def.label_en + (key !== measId ? ` (${sheetName})` : ""),
-      label_sq: def.label_sq + (key !== measId ? ` (${sheetName})` : ""),
+    measurements[measId] = {
+      label_en: def.label_en,
+      label_sq: def.label_sq,
       unit: unit || def.unit,
       cat: def.cat,
       kind: def.kind,
-      ...agg,
+      ...aggregate(samples, def.kind),
     };
     if (def.cat === "hydro") type = "hydro";
   }
@@ -206,15 +354,25 @@ export async function importWorkbook(
     throw new Error("No recognizable time-series found in this file.");
   }
 
-  const id = "imported_" + baseName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  // group by station: files are routed to one of the known monitoring stations
+  // via file-name aliases (so every "Te_dhenat_Shajkoc - ..." upload lands in
+  // Shajkoc); unrecognized files get their own station named after the file
+  const known = matchStation(baseName);
+  const fileName = stationNameFromFile(baseName);
+  const name_en = known ? known.name_en : fileName;
+  const name_sq = known ? known.name_sq : fileName;
+  const id = known
+    ? known.id
+    : "imported_" + fileName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   return {
     id,
-    name_en: baseName,
-    name_sq: baseName,
-    municipality,
-    settlement: settlement || baseName,
-    lat,
-    lon,
+    name_en,
+    name_sq,
+    // municipality/settlement drive the settlement-boundary overlay on the map
+    municipality: known ? known.municipality : "",
+    settlement: known ? known.settlement : fileName,
+    lat: known ? known.lat : lat,
+    lon: known ? known.lon : lon,
     type,
     imported: true,
     measurements,

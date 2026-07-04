@@ -68,6 +68,12 @@ export const STRINGS = {
     imported: "Imported",
     importError: "Could not read this file",
     removeStation: "Remove",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    emailPlaceholder: "you@example.com",
+    passwordPlaceholder: "Password",
+    signedInAs: "Signed in as",
+    authError: "Could not sign in",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -135,6 +141,13 @@ export const STRINGS = {
     imported: "Të importuara",
     importError: "Skedari nuk u lexua dot",
     removeStation: "Hiq",
+    signIn: "Kyçu",
+    signOut: "Dil",
+    signInToUpload: "Kyçu për të ngarkuar të dhëna",
+    emailPlaceholder: "ju@shembull.com",
+    passwordPlaceholder: "Fjalëkalimi",
+    signedInAs: "I kyçur si",
+    authError: "Kyçja dështoi",
   },
 };
 

@@ -11,6 +11,7 @@ export default function ConfigPanel({
   onImportClick,
   importing,
   removeImported,
+  canUpload,
 }) {
   return (
     <aside className="config-panel">
@@ -30,7 +31,6 @@ export default function ConfigPanel({
                     <br />
                     <span className="meta">
                       {s.measCount} {t("measurements")} · {t(s.type)}
-                      {s.imported ? ` · ${t("imported")}` : ""}
                     </span>
                   </span>
                 </button>
@@ -42,9 +42,11 @@ export default function ConfigPanel({
               </div>
             ))}
           </div>
-          <button className="import-btn import-btn-block" onClick={onImportClick} disabled={importing}>
-            {importing ? t("importing") : `⬆ ${t("importData")}`}
-          </button>
+          {canUpload && (
+            <button className="import-btn import-btn-block" onClick={onImportClick} disabled={importing}>
+              {importing ? t("importing") : `⬆ ${t("importData")}`}
+            </button>
+          )}
         </div>
       </div>
     </aside>

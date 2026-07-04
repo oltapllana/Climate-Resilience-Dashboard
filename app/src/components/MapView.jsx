@@ -36,17 +36,15 @@ const STATION_STYLE = {
 
 function FlyToStation({ station }) {
   const map = useMap();
+  const lat = station?.displayLat ?? station?.lat;
+  const lon = station?.displayLon ?? station?.lon;
   useEffect(() => {
-    if (station) {
-      map.flyTo(
-        [station.displayLat ?? station.lat, station.displayLon ?? station.lon],
-        12,
-        { duration: 0.7 }
-      );
-    } else {
-      map.flyTo(STUDY_AREA_CENTER, 11, { duration: 0.7 });
+    // fly only when the selected station has coordinates; while it is still
+    // being located stay put instead of snapping back to the default view
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      map.flyTo([lat, lon], 12, { duration: 0.7 });
     }
-  }, [station, map]);
+  }, [station?.id, lat, lon, map]);
   return null;
 }
 

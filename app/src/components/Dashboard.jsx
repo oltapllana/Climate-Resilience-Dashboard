@@ -31,7 +31,12 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
   }
 
   const name = lang === "sq" ? data.name_sq : data.name_en;
-  const measIds = Object.keys(data.measurements);
+  // chips sorted alphabetically by their label in the active language
+  const measIds = Object.keys(data.measurements).sort((a, b) => {
+    const la = lang === "sq" ? data.measurements[a].label_sq : data.measurements[a].label_en;
+    const lb = lang === "sq" ? data.measurements[b].label_sq : data.measurements[b].label_en;
+    return la.localeCompare(lb, lang);
+  });
   const m = data.measurements[measId] || data.measurements[measIds[0]];
   const measurementName = lang === "sq" ? m.label_sq : m.label_en;
   const isSum = m.kind === "sum";
@@ -50,9 +55,12 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
 
         {/* extracted filters: measurement · scenario · period of record */}
         <div className="filter-bar">
-          <div className="filter-sec">
-            <label className="cfg-label">{t("measurement")}</label>
-            <div className="seg">
+          {/* measurement gets its own full-width row so many chips wrap cleanly */}
+          <div className="filter-sec filter-meas">
+            <label className="cfg-label">
+              {t("measurement")} <span className="meas-count">({measIds.length})</span>
+            </label>
+            <div className="seg seg-wrap">
               {measIds.map((id) => {
                 const mm = data.measurements[id];
                 return (
@@ -64,23 +72,25 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
             </div>
           </div>
 
-          <div className="filter-sec">
-            <label className="cfg-label">{t("scenario")}</label>
-            <div className="seg">
-              {["rcp85", "rcp45", "all"].map((s) => (
-                <button key={s} className={scenario === s ? "active" : ""} onClick={() => setScenario(s)}>
-                  {s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5"}
-                </button>
-              ))}
+          <div className="filter-row">
+            <div className="filter-sec">
+              <label className="cfg-label">{t("scenario")}</label>
+              <div className="seg">
+                {["rcp85", "rcp45", "all"].map((s) => (
+                  <button key={s} className={scenario === s ? "active" : ""} onClick={() => setScenario(s)}>
+                    {s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5"}
+                  </button>
+                ))}
+              </div>
+              {scenario === "rcp85" && <p className="cfg-hint">{t("rcp85Hint")}</p>}
             </div>
-            {scenario === "rcp85" && <p className="cfg-hint">{t("rcp85Hint")}</p>}
-          </div>
 
-          <div className="filter-sec">
-            <label className="cfg-label">
-              {t("period")}: {m.stats.start} → {m.stats.end}
-            </label>
-            <StatCards stats={m.stats} unit={unit} isSum={isSum} t={t} />
+            <div className="filter-sec">
+              <label className="cfg-label">
+                {t("period")}: {m.stats.start} → {m.stats.end}
+              </label>
+              <StatCards stats={m.stats} unit={unit} isSum={isSum} t={t} />
+            </div>
           </div>
         </div>
       </div>

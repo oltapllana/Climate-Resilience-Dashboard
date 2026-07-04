@@ -48,6 +48,26 @@ header.masthead {
 }
 .lang-toggle button.active { background: var(--green); color: #fff; }
 
+.header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.auth-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.auth-user { font-size: 13px; color: var(--muted); }
+.auth-note { font-size: 13px; color: var(--green-dark); }
+.auth-error { font-size: 12px; color: #b3261e; width: 100%; }
+.auth-btn {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 7px 14px; cursor: pointer; font-weight: 600; color: var(--green-dark); font-size: 13px;
+}
+.auth-btn:hover { background: var(--green); color: #fff; border-color: var(--green); }
+.auth-btn:disabled { opacity: .6; cursor: default; }
+.auth-form { display: flex; gap: 6px; align-items: center; }
+.auth-form input {
+  border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-size: 13px; min-width: 180px;
+}
+.import-hint-signin {
+  width: 100%; margin-top: 10px; text-align: center; font-size: 13px; color: var(--muted);
+  padding: 9px; border: 1px dashed var(--line); border-radius: 8px;
+}
+
 /* layout: config panel (left) + map (right), charts full-width below */
 .top-row { display: grid; grid-template-columns: 380px 1fr; gap: 18px; align-items: start; }
 @media (max-width: 1050px) {
@@ -75,17 +95,31 @@ header.masthead {
    whole thing fits without scrolling */
 .filter-card { display: flex; flex-direction: column; gap: 14px; }
 .filter-bar {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  gap: 28px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   border-top: 1px solid var(--line);
   padding-top: 14px;
 }
+/* scenario + period share a row below the full-width measurement picker */
+.filter-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: start;
+}
 .filter-sec { min-width: 0; }
 .filter-sec .cfg-hint { max-width: 320px; }
+.meas-count { color: var(--muted); font-weight: 500; }
+/* measurement chips spread across the whole card and wrap in an even grid */
+.filter-meas .seg-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+.filter-meas .seg-wrap button { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 900px) {
-  .filter-bar { grid-template-columns: 1fr; gap: 16px; }
+  .filter-row { grid-template-columns: 1fr; gap: 16px; }
 }
 /* compact stats so 4 cards fit in the period column */
 .stat-grid.compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
