@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   ReferenceArea,
+  ReferenceLine,
 } from "recharts";
 import { scenarioClimatology, forecast, longTermProjection } from "../lib/projection.js";
 
@@ -57,6 +58,33 @@ function xLabel(value) {
     offset: -4,
     style: { textAnchor: "middle", fill: AXIS, fontSize: 12, fontWeight: 600 },
   };
+}
+
+function mean(values) {
+  const nums = values.filter((v) => v != null && Number.isFinite(Number(v)));
+  if (!nums.length) return null;
+  return nums.reduce((s, v) => s + Number(v), 0) / nums.length;
+}
+
+// Dashed horizontal line marking the average of the observed/historic series.
+// Plain function (not a component) so Recharts receives a real ReferenceLine child.
+function meanLine(value, t, unit) {
+  if (value == null) return null;
+  return (
+    <ReferenceLine
+      y={value}
+      stroke="#64748b"
+      strokeDasharray="6 4"
+      strokeWidth={1.2}
+      label={{
+        value: `${t("mean")}: ${fmt(value)} ${unit}`,
+        position: "insideTopRight",
+        fill: AXIS,
+        fontSize: 11,
+        fontWeight: 600,
+      }}
+    />
+  );
 }
 
 // Drag-to-zoom for a Recharts LineChart. Operates on data indices so it works
@@ -129,6 +157,12 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
     return row;
   });
 
+  // Averages of the observed/historic series (full record, unaffected by zoom).
+  const histLine = scen.lines.find((ln) => ln.period === "historic") || scen.lines[0];
+  const climAvg = mean(histLine.data.map((d) => d.v));
+  const annualAvg = mean(annual.rows.map((r) => r.observed));
+  const fcAvg = mean(fc.rows.map((r) => r.actual));
+
   const climZoom = useChartZoom(climData, "month");
   const annualZoom = useChartZoom(annual.rows, "year");
   const yearTicks = [2021, 2026, 2030, 2035, 2040, 2045, 2050];
@@ -160,6 +194,7 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
           <Legend {...scenarioLegend} />
           {climZoom.refArea}
+          {meanLine(climAvg, t, unit)}
           {scen.lines.map((ln) => (
             <Line
               key={ln.period}
@@ -200,6 +235,7 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
           <Legend {...scenarioLegend} />
           {annualZoom.refArea}
+          {meanLine(annualAvg, t, unit)}
           <Line type="monotone" dataKey="observed" name={t("observed")} stroke="#6b5bb5" strokeWidth={3.2} dot={false} activeDot={{ r: 4 }} connectNulls />
           <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={1.9} strokeOpacity={0.78} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
           <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={1.9} strokeOpacity={0.78} strokeDasharray="2 4" dot={false} activeDot={{ r: 3 }} connectNulls />
@@ -217,6 +253,7 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
           <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
           <Legend {...scenarioLegend} />
+          {meanLine(fcAvg, t, unit)}
           <Line type="monotone" dataKey="actual" name={t("observed")} stroke="#1f6b35" strokeWidth={3} dot={false} activeDot={{ r: 4 }} connectNulls />
           <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={1.8} strokeOpacity={0.72} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
           <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={1.8} strokeOpacity={0.72} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />

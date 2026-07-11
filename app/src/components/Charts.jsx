@@ -59,6 +59,33 @@ function xLabel(value) {
 
 const chartMargin = { top: 8, right: 18, left: 18, bottom: 28 };
 
+function mean(values) {
+  const nums = values.filter((v) => v != null && Number.isFinite(Number(v)));
+  if (!nums.length) return null;
+  return nums.reduce((s, v) => s + Number(v), 0) / nums.length;
+}
+
+// Dashed horizontal line marking the average of the plotted values. Plain
+// function (not a component) so Recharts receives a real ReferenceLine child.
+function meanLine(value, t, unit) {
+  if (value == null) return null;
+  return (
+    <ReferenceLine
+      y={value}
+      stroke="#64748b"
+      strokeDasharray="6 4"
+      strokeWidth={1.2}
+      label={{
+        value: `${t("mean")}: ${fmt(value)} ${unit}`,
+        position: "insideTopRight",
+        fill: AXIS,
+        fontSize: 11,
+        fontWeight: 600,
+      }}
+    />
+  );
+}
+
 export function ClimatologyChart({ series, t, unit, isSum }) {
   const data = (series.climatology || []).map((c) => ({
     month: t("months")[c.month - 1],
@@ -72,6 +99,7 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
         <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} />
         <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
         <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
+        {meanLine(mean(data.map((d) => d.v)), t, unit)}
         <Bar dataKey="v" fill={GREEN} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
@@ -88,6 +116,7 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
         <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} label={xLabel(t("month"))} />
         <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
         <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
+        {meanLine(mean(data.map((d) => d.v)), t, unit)}
         <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2.8} dot={false} activeDot={{ r: 4 }} />
       </LineChart>
     </ResponsiveContainer>
@@ -111,6 +140,7 @@ export function AnomaliesChart({ series, t, unit }) {
         <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
         <Tooltip formatter={(v) => [`${v > 0 ? "+" : ""}${fmt(v)} ${unit}`, v >= 0 ? t("anomalyAbove") : t("anomalyBelow")]} />
         <ReferenceLine y={0} stroke="#9ca3af" />
+        {meanLine(mean(data.map((d) => d.anom)), t, unit)}
         <Bar dataKey="anom">
           {data.map((d, i) => (
             <Cell key={i} fill={d.anom >= 0 ? RED : BLUE} />
@@ -164,6 +194,7 @@ export function DailyChart({ series, t, unit, isSum, color = GREEN_DARK }) {
         <XAxis dataKey="d" tick={{ fontSize: 11 }} minTickGap={40} label={xLabel(t("date"))} />
         <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
         <Tooltip content={<DailyTooltip />} />
+        {meanLine(mean(data.map((d) => d.v)), t, unit)}
         {!isSum && <Area dataKey="lo" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />}
         {!isSum && <Area dataKey="band" stackId="band" stroke="none" fill={color} fillOpacity={0.12} isAnimationActive={false} />}
         {isSum ? (
