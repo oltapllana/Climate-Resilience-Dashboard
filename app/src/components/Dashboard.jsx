@@ -95,7 +95,9 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         </div>
       </div>
 
-      <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />
+      {/* a compass bearing has no trend to extrapolate: "wind direction in 2050"
+          is not a meaningful projection, so the scenario panel is omitted */}
+      {!m.circular && <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />}
 
       <div className="charts">
         <div className="card chart-card">

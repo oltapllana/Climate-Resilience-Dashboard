@@ -126,10 +126,16 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
 export function AnomaliesChart({ series, t, unit }) {
   const clim = {};
   (series.climatology || []).forEach((c) => (clim[c.month] = c.v));
+  // a bearing 10° off a 350° normal is +20°, not -340°
+  const wrap = (d) => ((d + 540) % 360) - 180;
   const data = (series.monthly || []).map((m) => {
     const month = Number(m.m.slice(5, 7));
     const base = clim[month];
-    return { m: m.m, anom: base != null && m.v != null ? +(m.v - base).toFixed(3) : null };
+    if (base == null || m.v == null) return { m: m.m, anom: null };
+    const d = series.circular ? wrap(m.v - base) : m.v - base;
+    // a partly observed month has a partly observed total: its "anomaly" would
+    // just measure how much of the month the sensor was running
+    return { m: m.m, anom: m.partial ? null : +d.toFixed(3) };
   });
 
   return (

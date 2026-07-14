@@ -22,21 +22,30 @@ os.makedirs(OUT, exist_ok=True)
 # ---------------------------------------------------------------------------
 # Measurement metadata: category + canonical unit + how to aggregate
 # kind: "avg" -> daily mean/min/max, monthly mean ; "sum" -> daily/monthly total
+#
+# qc: the physically plausible range of a single sample. Sensor dropouts would
+#     otherwise enter the aggregates as real observations (the Podujevë air-temp
+#     file carries a -55 °C reading). Samples outside the range are discarded.
+# circular: a bearing in degrees, which must be vector-averaged rather than
+#     arithmetically averaged (the mean of 350° and 10° is 0°, not 180°).
+#
+# Keep in sync with the browser-side catalogue in app/src/lib/importExcel.js.
 # ---------------------------------------------------------------------------
 MEAS = {
-    "water_level":   {"label_en": "Water level",        "label_sq": "Niveli i ujit",        "unit": "m",      "cat": "hydro",  "kind": "avg"},
-    "water_temp":    {"label_en": "Water temperature",  "label_sq": "Temperatura e ujit",   "unit": "°C",     "cat": "hydro",  "kind": "avg"},
-    "conductivity":  {"label_en": "Conductivity",       "label_sq": "Përçueshmëria",        "unit": "mS",     "cat": "hydro",  "kind": "avg"},
-    "salinity":      {"label_en": "Salinity",           "label_sq": "Kripshmëria",          "unit": "SAL",    "cat": "hydro",  "kind": "avg"},
-    "tds":           {"label_en": "TDS",                "label_sq": "TDS",                  "unit": "g/l",    "cat": "hydro",  "kind": "avg"},
-    "air_temp":      {"label_en": "Air temperature",    "label_sq": "Temperatura e ajrit",  "unit": "°C",     "cat": "meteo",  "kind": "avg"},
-    "rainfall":      {"label_en": "Rainfall",           "label_sq": "Reshjet",              "unit": "mm",     "cat": "meteo",  "kind": "sum"},
-    "rain_intensity":{"label_en": "Rainfall intensity", "label_sq": "Intensiteti i reshjeve","unit": "mm/min","cat": "meteo",  "kind": "avg"},
-    "humidity":      {"label_en": "Humidity",           "label_sq": "Lagështia",            "unit": "%",      "cat": "meteo",  "kind": "avg"},
-    "pressure":      {"label_en": "Air pressure",       "label_sq": "Shtypja e ajrit",      "unit": "hPa",    "cat": "meteo",  "kind": "avg"},
-    "solar":         {"label_en": "Solar radiation",    "label_sq": "Rrezatimi diellor",    "unit": "W/m²",   "cat": "meteo",  "kind": "avg"},
-    "wind_speed":    {"label_en": "Wind speed",         "label_sq": "Shpejtësia e erës",    "unit": "m/s",    "cat": "meteo",  "kind": "avg"},
-    "wind_dir":      {"label_en": "Wind direction",     "label_sq": "Drejtimi i erës",      "unit": "°",      "cat": "meteo",  "kind": "avg"},
+    "water_level":   {"label_en": "Water level",        "label_sq": "Niveli i ujit",        "unit": "m",      "cat": "hydro",  "kind": "avg", "qc": (-10, 50)},
+    "water_temp":    {"label_en": "Water temperature",  "label_sq": "Temperatura e ujit",   "unit": "°C",     "cat": "hydro",  "kind": "avg", "qc": (-5, 40)},
+    "conductivity":  {"label_en": "Conductivity",       "label_sq": "Përçueshmëria",        "unit": "mS",     "cat": "hydro",  "kind": "avg", "qc": (0, 100)},
+    "salinity":      {"label_en": "Salinity",           "label_sq": "Kripshmëria",          "unit": "SAL",    "cat": "hydro",  "kind": "avg", "qc": (0, 100)},
+    "tds":           {"label_en": "TDS",                "label_sq": "TDS",                  "unit": "g/l",    "cat": "hydro",  "kind": "avg", "qc": (0, 100)},
+    # Kosovo's record low is about -32.5 °C and its record high about 42 °C
+    "air_temp":      {"label_en": "Air temperature",    "label_sq": "Temperatura e ajrit",  "unit": "°C",     "cat": "meteo",  "kind": "avg", "qc": (-35, 45)},
+    "rainfall":      {"label_en": "Rainfall",           "label_sq": "Reshjet",              "unit": "mm",     "cat": "meteo",  "kind": "sum", "qc": (0, 500)},
+    "rain_intensity":{"label_en": "Rainfall intensity", "label_sq": "Intensiteti i reshjeve","unit": "mm/min","cat": "meteo",  "kind": "avg", "qc": (0, 2000)},
+    "humidity":      {"label_en": "Humidity",           "label_sq": "Lagështia",            "unit": "%",      "cat": "meteo",  "kind": "avg", "qc": (0, 100)},
+    "pressure":      {"label_en": "Air pressure",       "label_sq": "Shtypja e ajrit",      "unit": "hPa",    "cat": "meteo",  "kind": "avg", "qc": (800, 1100)},
+    "solar":         {"label_en": "Solar radiation",    "label_sq": "Rrezatimi diellor",    "unit": "W/m²",   "cat": "meteo",  "kind": "avg", "qc": (-50, 1500), "clamp_lo": 0},
+    "wind_speed":    {"label_en": "Wind speed",         "label_sq": "Shpejtësia e erës",    "unit": "m/s",    "cat": "meteo",  "kind": "avg", "qc": (0, 75)},
+    "wind_dir":      {"label_en": "Wind direction",     "label_sq": "Drejtimi i erës",      "unit": "°",      "cat": "meteo",  "kind": "avg", "qc": (0, 360), "circular": True},
 }
 
 # ---------------------------------------------------------------------------
@@ -123,39 +132,115 @@ def clean(v):
     return None if v is None or (isinstance(v, float) and (math.isnan(v) or math.isinf(v))) else round(float(v), 3)
 
 
-def aggregate(df, kind):
+def circ_mean(vals):
+    """Vector mean of directions in degrees: the mean of 350 and 10 is 0, not 180."""
+    vals = [v for v in vals if v is not None and not math.isnan(v)]
+    if not vals:
+        return None
+    s = sum(math.sin(math.radians(v)) for v in vals)
+    c = sum(math.cos(math.radians(v)) for v in vals)
+    if abs(s) < 1e-9 and abs(c) < 1e-9:
+        return None  # opposing directions cancel: no mean bearing
+    return math.degrees(math.atan2(s, c)) % 360
+
+
+def aggregate(df, meas):
+    kind = meas["kind"]
+    circular = meas.get("circular", False)
+
+    # QC: drop physically impossible samples (sensor dropouts such as the -55 °C
+    # air temperature at Podujevë) before they can set the min/max or the band.
+    lo, hi = meas.get("qc", (-math.inf, math.inf))
+    n_raw = len(df)
+    df = df[(df["val"] >= lo) & (df["val"] <= hi)]
+    if df.empty:
+        return None
+    if meas.get("clamp_lo") is not None:  # sensor noise around zero (solar at night)
+        df.loc[df["val"] < meas["clamp_lo"], "val"] = meas["clamp_lo"]
+    dropped = n_raw - len(df)
+
     df = df.set_index("ts").sort_index()
+    agg = circ_mean if circular else "mean"
+
     if kind == "sum":
-        daily = df["val"].resample("D").sum()
-        monthly = df["val"].resample("ME").sum()
-        daily_out = [{"d": d.strftime("%Y-%m-%d"), "v": clean(v)} for d, v in daily.items() if v is not None]
-        monthly_out = [{"m": d.strftime("%Y-%m"), "v": clean(v)} for d, v in monthly.items()]
-        clim = df["val"].groupby(df.index.month).sum() / df.index.to_series().dt.to_period("M").nunique()
+        # min_count=1 so a gap in the record stays NaN instead of becoming 0.0:
+        # resample().sum() fills empty bins with zero, which drew sensor outages
+        # (Pollatë had no data at all for June and July 2025) as a summer drought.
+        daily = df["val"].resample("D").sum(min_count=1)
+        monthly = df["val"].resample("ME").sum(min_count=1)
+        daily_out = [{"d": d.strftime("%Y-%m-%d"), "v": clean(v)} for d, v in daily.items() if pd.notna(v)]
+        monthly_rows = [(d, v) for d, v in monthly.items() if pd.notna(v)]
     else:
         dr = df["val"].resample("D")
-        daily = dr.mean()
+        daily = dr.apply(circ_mean) if circular else dr.mean()
         dmin, dmax = dr.min(), dr.max()
         daily_out = [
-            {"d": d.strftime("%Y-%m-%d"), "v": clean(v), "lo": clean(dmin[d]), "hi": clean(dmax[d])}
-            for d, v in daily.items() if not (isinstance(v, float) and math.isnan(v))
+            # a min/max bearing is meaningless on a compass, so directions get no band
+            {"d": d.strftime("%Y-%m-%d"), "v": clean(v)}
+            if circular
+            else {"d": d.strftime("%Y-%m-%d"), "v": clean(v), "lo": clean(dmin[d]), "hi": clean(dmax[d])}
+            for d, v in daily.items()
+            if pd.notna(v)
         ]
-        monthly = df["val"].resample("ME").mean()
-        monthly_out = [{"m": d.strftime("%Y-%m"), "v": clean(v)} for d, v in monthly.items() if not (isinstance(v, float) and math.isnan(v))]
-        clim = df["val"].groupby(df.index.month).mean()
+        monthly = df["val"].resample("ME").apply(agg) if circular else df["val"].resample("ME").mean()
+        monthly_rows = [(d, v) for d, v in monthly.items() if pd.notna(v)]
 
-    climatology = [{"month": int(m), "v": clean(v)} for m, v in clim.items()]
-    overall = clean(df["val"].sum() if kind == "sum" else df["val"].mean())
+    # The first and last month of a record are only partly observed, so their
+    # TOTALS are not comparable with a whole month's. They stay in the charts as
+    # real observations but are excluded from the climatology and annual totals.
+    start, end = df.index.min(), df.index.max()
+    partial = set()
+    if kind == "sum":
+        if start.day != 1:
+            partial.add(start.strftime("%Y-%m"))
+        if end.day != end.days_in_month:
+            partial.add(end.strftime("%Y-%m"))
+
+    monthly_out = []
+    for d, v in monthly_rows:
+        row = {"m": d.strftime("%Y-%m"), "v": clean(v)}
+        if row["m"] in partial:
+            row["partial"] = True
+        monthly_out.append(row)
+
+    # Climatology = the average January, the average February, ...
+    if kind == "sum":
+        # the mean of the monthly TOTALS for that calendar month. The old divisor
+        # was the number of months in the whole record, so a 5-year January sum
+        # was divided by ~60 instead of 5 -- rainfall came out ~12x too low
+        # (47 mm/year for Podujevë, which actually gets ~600 mm).
+        whole = [r for r in monthly_out if r["v"] is not None and not r.get("partial")]
+        if not whole:  # record too short to hold a single whole month
+            whole = [r for r in monthly_out if r["v"] is not None]
+        buckets = {}
+        for r in whole:
+            buckets.setdefault(int(r["m"][5:7]), []).append(r["v"])
+        clim = {m: sum(v) / len(v) for m, v in buckets.items()}
+    else:
+        g = df["val"].groupby(df.index.month)
+        clim = (g.apply(lambda s: circ_mean(list(s))) if circular else g.mean()).to_dict()
+
+    climatology = [{"month": int(m), "v": clean(v)} for m, v in sorted(clim.items())]
+
+    if kind == "sum":
+        overall = clean(df["val"].sum())
+        mean_v = clean(df["val"].mean())
+    else:
+        mean_v = clean(circ_mean(list(df["val"])) if circular else df["val"].mean())
+        overall = mean_v
+
     return {
         "daily": daily_out,
         "monthly": monthly_out,
         "climatology": climatology,
         "stats": {
             "count": int(len(df)),
-            "start": df.index.min().strftime("%Y-%m-%d"),
-            "end": df.index.max().strftime("%Y-%m-%d"),
+            "dropped": int(dropped),
+            "start": start.strftime("%Y-%m-%d"),
+            "end": end.strftime("%Y-%m-%d"),
             "min": clean(df["val"].min()),
             "max": clean(df["val"].max()),
-            "mean": clean(df["val"].mean()),
+            "mean": mean_v,
             "overall": overall,
         },
     }
@@ -214,9 +299,14 @@ def main():
             if df.empty:
                 print("EMPTY, skipped")
                 continue
-            agg = aggregate(df, MEAS[mid]["kind"])
+            agg = aggregate(df, MEAS[mid])
+            if agg is None:
+                print("no plausible samples, skipped")
+                continue
             station_data[sid]["series"][mid] = agg
-            print(f"ok  n={agg['stats']['count']:>6}  {agg['stats']['start']}..{agg['stats']['end']}")
+            dropped = agg["stats"]["dropped"]
+            flag = f"  (dropped {dropped} implausible)" if dropped else ""
+            print(f"ok  n={agg['stats']['count']:>6}  {agg['stats']['start']}..{agg['stats']['end']}{flag}")
         except Exception as e:
             print(f"ERROR {e}")
 
@@ -233,6 +323,7 @@ def main():
             **gis,
             "measurements": {
                 mid: {**{k: MEAS[mid][k] for k in ("label_en", "label_sq", "unit", "cat", "kind")},
+                      **({"circular": True} if MEAS[mid].get("circular") else {}),
                       **series[mid]}
                 for mid in series
             },

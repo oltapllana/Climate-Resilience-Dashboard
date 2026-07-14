@@ -31,22 +31,35 @@ function climMap(climatology) {
   return m;
 }
 
-// annual aggregate from monthly series (mean for avg-kind, sum for sum-kind)
+// Annual aggregate from the monthly series (mean for avg-kind, sum for sum-kind).
+//
+// Only WHOLE years are returned. A year observed from April to December is not
+// comparable with a full one: its rainfall total is short by a quarter, and its
+// mean temperature is biased warm because the missing months are winter ones.
+// Including them made the observed line dive at both ends of the record (the
+// first and last year of a station are always incomplete) and, worse, anchored
+// the projection to that stub — the 2026 rainfall base was ~193 mm, a third of
+// the true annual total, because only January–April had been recorded.
 export function annualSeries(monthly, kind) {
   const byYear = {};
   (monthly || []).forEach((row) => {
     if (row.v == null) return;
     const y = Number(row.m.slice(0, 4));
-    (byYear[y] = byYear[y] || []).push(row.v);
+    (byYear[y] = byYear[y] || []).push(row);
   });
   return Object.keys(byYear)
     .map(Number)
     .sort((a, b) => a - b)
     .map((y) => {
-      const arr = byYear[y];
-      const v = kind === "sum" ? arr.reduce((a, b) => a + b, 0) : arr.reduce((a, b) => a + b, 0) / arr.length;
+      const rows = byYear[y];
+      const months = new Set(rows.map((r) => r.m.slice(5, 7)));
+      const complete = months.size === 12 && !rows.some((r) => r.partial);
+      if (!complete) return null;
+      const vals = rows.map((r) => r.v);
+      const v = kind === "sum" ? vals.reduce((a, b) => a + b, 0) : vals.reduce((a, b) => a + b, 0) / vals.length;
       return { year: y, v };
-    });
+    })
+    .filter(Boolean);
 }
 
 // Deseasonalized trend (units per year). We subtract the climatological monthly
@@ -59,7 +72,9 @@ export function trendPerYear(monthly, climatology) {
   const pts = [];
   (monthly || []).forEach((r) => {
     const mo = Number(r.m.slice(5, 7));
-    if (r.v == null || cm[mo] == null) return;
+    // a half-observed month reads as a large negative anomaly for totals, which
+    // would tilt the regression purely from where the record happens to start
+    if (r.v == null || r.partial || cm[mo] == null) return;
     const x = Number(r.m.slice(0, 4)) + (mo - 0.5) / 12;
     pts.push([x, r.v - cm[mo]]);
   });
@@ -199,12 +214,14 @@ export function longTermProjection(meas) {
   const { baseYear } = periodOfRecord(meas.monthly);
   const scale = meas.kind === "sum" ? 12 : 1;
   const annualClim = (meas.climatology || []).map((c) => c.v).filter((v) => v != null);
+  // the climatological year: 12 average months summed for a total, averaged for
+  // a mean. This is the fallback base when no whole year was ever observed.
   const climBase = annualClim.length
     ? meas.kind === "sum"
-      ? annualClim.reduce((a, b) => a + b, 0)
+      ? (annualClim.reduce((a, b) => a + b, 0) / annualClim.length) * 12
       : annualClim.reduce((a, b) => a + b, 0) / annualClim.length
     : null;
-  const latestObserved = observedAnnual[observedAnnual.length - 1] || annualSeries(meas.monthly, meas.kind).slice(-1)[0];
+  const latestObserved = observedAnnual[observedAnnual.length - 1];
   const baseValue = latestObserved?.v ?? climBase ?? 0;
   const baseAt2026 = +(baseValue + slope * scale * (2026 - (latestObserved?.year ?? baseYear ?? 2026))).toFixed(3);
 

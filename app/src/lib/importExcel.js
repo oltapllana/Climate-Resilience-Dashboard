@@ -8,20 +8,29 @@
 import * as XLSX from "xlsx";
 
 // measurement catalogue (mirrors etl/build_data.py MEAS)
+//
+// `qc` is the physically plausible range for a single sample: sensor dropouts
+// otherwise enter the aggregates as real observations (the Podujevë air-temp
+// file carries a -55 °C reading, which set the station minimum and stretched
+// the daily min/max band). Samples outside the range are discarded.
+//
+// `circular` marks a direction in degrees. It must NOT be averaged
+// arithmetically -- the mean of 350° and 10° is 0° (north), not 180° (south).
 const MEAS = {
-  water_level:   { label_en: "Water level",         label_sq: "Niveli i ujit",          unit: "m",      cat: "hydro", kind: "avg" },
-  water_temp:    { label_en: "Water temperature",   label_sq: "Temperatura e ujit",     unit: "°C",     cat: "hydro", kind: "avg" },
-  conductivity:  { label_en: "Conductivity",        label_sq: "Përçueshmëria",          unit: "mS",     cat: "hydro", kind: "avg" },
-  salinity:      { label_en: "Salinity",            label_sq: "Kripshmëria",            unit: "SAL",    cat: "hydro", kind: "avg" },
-  tds:           { label_en: "TDS",                 label_sq: "TDS",                    unit: "g/l",    cat: "hydro", kind: "avg" },
-  air_temp:      { label_en: "Air temperature",     label_sq: "Temperatura e ajrit",    unit: "°C",     cat: "meteo", kind: "avg" },
-  rainfall:      { label_en: "Rainfall",            label_sq: "Reshjet",                unit: "mm",     cat: "meteo", kind: "sum" },
-  rain_intensity:{ label_en: "Rainfall intensity",  label_sq: "Intensiteti i reshjeve", unit: "mm/min", cat: "meteo", kind: "avg" },
-  humidity:      { label_en: "Humidity",            label_sq: "Lagështia",              unit: "%",      cat: "meteo", kind: "avg" },
-  pressure:      { label_en: "Air pressure",        label_sq: "Shtypja e ajrit",        unit: "hPa",    cat: "meteo", kind: "avg" },
-  solar:         { label_en: "Solar radiation",     label_sq: "Rrezatimi diellor",      unit: "W/m²",   cat: "meteo", kind: "avg" },
-  wind_speed:    { label_en: "Wind speed",          label_sq: "Shpejtësia e erës",      unit: "m/s",    cat: "meteo", kind: "avg" },
-  wind_dir:      { label_en: "Wind direction",      label_sq: "Drejtimi i erës",        unit: "°",      cat: "meteo", kind: "avg" },
+  water_level:   { label_en: "Water level",         label_sq: "Niveli i ujit",          unit: "m",      cat: "hydro", kind: "avg", qc: [-10, 50] },
+  water_temp:    { label_en: "Water temperature",   label_sq: "Temperatura e ujit",     unit: "°C",     cat: "hydro", kind: "avg", qc: [-5, 40] },
+  conductivity:  { label_en: "Conductivity",        label_sq: "Përçueshmëria",          unit: "mS",     cat: "hydro", kind: "avg", qc: [0, 100] },
+  salinity:      { label_en: "Salinity",            label_sq: "Kripshmëria",            unit: "SAL",    cat: "hydro", kind: "avg", qc: [0, 100] },
+  tds:           { label_en: "TDS",                 label_sq: "TDS",                    unit: "g/l",    cat: "hydro", kind: "avg", qc: [0, 100] },
+  // Kosovo's record low is about -32.5 °C and its record high about 42 °C
+  air_temp:      { label_en: "Air temperature",     label_sq: "Temperatura e ajrit",    unit: "°C",     cat: "meteo", kind: "avg", qc: [-35, 45] },
+  rainfall:      { label_en: "Rainfall",            label_sq: "Reshjet",                unit: "mm",     cat: "meteo", kind: "sum", qc: [0, 500] },
+  rain_intensity:{ label_en: "Rainfall intensity",  label_sq: "Intensiteti i reshjeve", unit: "mm/min", cat: "meteo", kind: "avg", qc: [0, 2000] },
+  humidity:      { label_en: "Humidity",            label_sq: "Lagështia",              unit: "%",      cat: "meteo", kind: "avg", qc: [0, 100] },
+  pressure:      { label_en: "Air pressure",        label_sq: "Shtypja e ajrit",        unit: "hPa",    cat: "meteo", kind: "avg", qc: [800, 1100] },
+  solar:         { label_en: "Solar radiation",     label_sq: "Rrezatimi diellor",      unit: "W/m²",   cat: "meteo", kind: "avg", qc: [-50, 1500], clampLo: 0 },
+  wind_speed:    { label_en: "Wind speed",          label_sq: "Shpejtësia e erës",      unit: "m/s",    cat: "meteo", kind: "avg", qc: [0, 75] },
+  wind_dir:      { label_en: "Wind direction",      label_sq: "Drejtimi i erës",        unit: "°",      cat: "meteo", kind: "avg", qc: [0, 360], circular: true },
   generic:       { label_en: "Value",               label_sq: "Vlera",                  unit: "",       cat: "meteo", kind: "avg" },
 };
 
@@ -147,47 +156,118 @@ const ym = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0"
 const round = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
 
 // ---- aggregation (mirrors etl/build_data.py aggregate) --------------------
-function aggregate(samples, kind) {
-  samples.sort((a, b) => a.ts - b.ts);
+const sum = (a) => a.reduce((x, y) => x + y, 0);
+const mean = (a) => sum(a) / a.length;
+
+// Vector (circular) mean for directions in degrees.
+function circMean(a) {
+  let s = 0, c = 0;
+  for (const v of a) {
+    const r = (v * Math.PI) / 180;
+    s += Math.sin(r);
+    c += Math.cos(r);
+  }
+  // opposing directions cancel out -> no meaningful mean direction
+  if (Math.abs(s) < 1e-9 && Math.abs(c) < 1e-9) return null;
+  const d = (Math.atan2(s, c) * 180) / Math.PI;
+  return d < 0 ? d + 360 : d;
+}
+
+const daysInMonth = (y, m) => new Date(y, m, 0).getDate(); // m is 1-based
+
+// A month at either end of the record is only partly observed, so its TOTAL is
+// not comparable with a full month's (a station starting on the 14th shows a
+// half-month of rain). Such months stay in the daily/monthly charts -- they are
+// real observations -- but are excluded from the climatology and from the
+// annual totals, where they would otherwise read as dry anomalies.
+function partialMonths(first, last, kind) {
+  const p = new Set();
+  if (kind !== "sum") return p; // a mean over half a month is still a valid mean
+  if (first.getDate() !== 1) p.add(ym(first));
+  if (last.getDate() !== daysInMonth(last.getFullYear(), last.getMonth() + 1)) p.add(ym(last));
+  return p;
+}
+
+function aggregate(samples, def) {
+  const kind = def.kind;
+  const [lo, hi] = def.qc || [-Infinity, Infinity];
+
+  // QC: drop physically impossible samples before anything else reads them
+  const clean = [];
+  let dropped = 0;
+  for (const s of samples) {
+    if (s.val < lo || s.val > hi) {
+      dropped++;
+      continue;
+    }
+    // small negative excursions are sensor noise around zero (e.g. solar at night)
+    const val = def.clampLo != null && s.val < def.clampLo ? def.clampLo : s.val;
+    clean.push({ ts: s.ts, val });
+  }
+  if (!clean.length) return null;
+  clean.sort((a, b) => a.ts - b.ts);
+
   const dayG = {}, monG = {}, climG = {};
-  for (const { ts, val } of samples) {
-    const dk = ymd(ts), mk = ym(ts), mo = ts.getMonth() + 1;
+  for (const { ts, val } of clean) {
+    const dk = ymd(ts), mk = ym(ts);
     (dayG[dk] = dayG[dk] || []).push(val);
     (monG[mk] = monG[mk] || []).push(val);
-    (climG[mo] = climG[mo] || []).push(val);
   }
-  const sum = (a) => a.reduce((x, y) => x + y, 0);
-  const mean = (a) => sum(a) / a.length;
+
+  const avg = def.circular ? circMean : mean;
+  const partial = partialMonths(clean[0].ts, clean[clean.length - 1].ts, kind);
 
   const daily = Object.keys(dayG).sort().map((d) => {
     const a = dayG[d];
-    return kind === "sum"
-      ? { d, v: round(sum(a)) }
-      : { d, v: round(mean(a)), lo: round(Math.min(...a)), hi: round(Math.max(...a)) };
+    if (kind === "sum") return { d, v: round(sum(a)) };
+    // a min/max direction is meaningless on a compass, so directions get no band
+    if (def.circular) return { d, v: round(circMean(a)) };
+    return { d, v: round(mean(a)), lo: round(Math.min(...a)), hi: round(Math.max(...a)) };
   });
-  const monthly = Object.keys(monG).sort().map((m) => ({ m, v: round(kind === "sum" ? sum(monG[m]) : mean(monG[m])) }));
 
-  const nMonths = Object.keys(monG).length || 1;
-  const climatology = Object.keys(climG).map(Number).sort((a, b) => a - b).map((mo) => {
-    const a = climG[mo];
-    return { month: mo, v: round(kind === "sum" ? sum(a) / nMonths : mean(a)) };
+  const monthly = Object.keys(monG).sort().map((m) => {
+    const row = { m, v: round(kind === "sum" ? sum(monG[m]) : avg(monG[m])) };
+    if (partial.has(m)) row.partial = true;
+    return row;
   });
+
+  // Climatology = the average January, the average February, ...
+  if (kind === "sum") {
+    // the mean of the monthly TOTALS for that calendar month. NOT the grand
+    // total over the month count, which divides a 5-year January sum by the ~60
+    // months of the record and so lands ~12x too low (47 mm/year of rain).
+    for (const row of monthly) {
+      if (row.v == null || row.partial) continue;
+      (climG[+row.m.slice(5)] ||= []).push(row.v);
+    }
+    // a record too short to contain one whole month would otherwise have no
+    // climatology at all: fall back to the partial months rather than nothing
+    if (!Object.keys(climG).length) {
+      for (const row of monthly) if (row.v != null) (climG[+row.m.slice(5)] ||= []).push(row.v);
+    }
+  } else {
+    // means are taken over the samples themselves
+    for (const { ts, val } of clean) (climG[ts.getMonth() + 1] ||= []).push(val);
+  }
+  const climatology = Object.keys(climG).map(Number).sort((a, b) => a - b)
+    .map((mo) => ({ month: mo, v: round(avg(climG[mo])) }));
 
   // loop instead of Math.min(...all): spreading 100k+ samples overflows the stack
   let mn = Infinity, mx = -Infinity, total = 0;
-  for (const { val } of samples) {
+  for (const { val } of clean) {
     if (val < mn) mn = val;
     if (val > mx) mx = val;
     total += val;
   }
   const stats = {
-    count: samples.length,
-    start: ymd(samples[0].ts),
-    end: ymd(samples[samples.length - 1].ts),
+    count: clean.length,
+    dropped,
+    start: ymd(clean[0].ts),
+    end: ymd(clean[clean.length - 1].ts),
     min: round(mn),
     max: round(mx),
-    mean: round(total / samples.length),
-    overall: round(kind === "sum" ? total : total / samples.length),
+    mean: round(def.circular ? circMean(clean.map((s) => s.val)) : total / clean.length),
+    overall: round(kind === "sum" ? total : def.circular ? circMean(clean.map((s) => s.val)) : total / clean.length),
   };
   return { daily, monthly, climatology, stats };
 }
@@ -199,11 +279,13 @@ function aggregate(samples, kind) {
 // for "avg" measurements and added for "sum" ones).
 function mergeMeas(a, b) {
   const kind = a.kind;
+  const avg = a.circular ? circMean : mean;
   const byD = new Map(a.daily.map((x) => [x.d, x]));
   for (const x of b.daily) {
     const cur = byD.get(x.d);
     if (!cur) byD.set(x.d, x);
     else if (kind === "sum") byD.set(x.d, { d: x.d, v: round(cur.v + x.v) });
+    else if (a.circular) byD.set(x.d, { d: x.d, v: round(circMean([cur.v, x.v])) });
     else
       byD.set(x.d, {
         d: x.d,
@@ -218,18 +300,24 @@ function mergeMeas(a, b) {
   for (const x of b.monthly) {
     const cur = byM.get(x.m);
     if (!cur) byM.set(x.m, x);
-    else byM.set(x.m, { m: x.m, v: round(kind === "sum" ? cur.v + x.v : (cur.v + x.v) / 2) });
+    else
+      byM.set(x.m, {
+        ...cur,
+        m: x.m,
+        v: round(kind === "sum" ? cur.v + x.v : avg([cur.v, x.v])),
+        // the merged month is only whole if it was whole in both series
+        ...(cur.partial || x.partial ? { partial: true } : {}),
+      });
   }
   const monthly = [...byM.values()].sort((p, q) => (p.m < q.m ? -1 : 1));
 
   const climG = {};
   for (const x of monthly) {
-    if (x.v == null) continue;
-    const mo = +x.m.slice(5);
-    (climG[mo] = climG[mo] || []).push(x.v);
+    if (x.v == null || x.partial) continue;
+    (climG[+x.m.slice(5)] ||= []).push(x.v);
   }
   const climatology = Object.keys(climG).map(Number).sort((p, q) => p - q)
-    .map((mo) => ({ month: mo, v: round(climG[mo].reduce((s, v) => s + v, 0) / climG[mo].length) }));
+    .map((mo) => ({ month: mo, v: round(avg(climG[mo])) }));
 
   const n = a.stats.count + b.stats.count;
   const stats = {
@@ -300,6 +388,28 @@ function rowsToSamples(rows) {
   return { samples, unit };
 }
 
+// The Lluzhan loggers export tab-separated text, not a workbook. Handing that to
+// XLSX.read({cellDates:true}) lets it guess at the date strings with US
+// conventions, so "12.04.2026" (12 April) comes back as 4 December 2026 -- every
+// timestamp whose day is <= 12 silently lands in the wrong month, and dates in
+// the future appear. The format is fixed and documented, so parse it directly:
+//   <dd.mm.yyyy HH:MM:SS> \t <value> \t <unit>
+function parseDelimitedText(text) {
+  const samples = [];
+  let unit = "";
+  for (const line of text.split(/\r?\n/)) {
+    const parts = line.split("\t");
+    if (parts.length < 2) continue;
+    if (!/^\d{2}\.\d{2}\.\d{4}/.test(parts[0])) continue; // skip the header block
+    const ts = parseTs(parts[0]);
+    const val = num(parts[1]);
+    if (!ts || val == null) continue;
+    samples.push({ ts, val });
+    if (!unit && parts[2]) unit = String(parts[2]).trim();
+  }
+  return { samples, unit };
+}
+
 function stationMeta(rows) {
   // try to read "Station name :" from Llap header
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
@@ -313,7 +423,6 @@ function stationMeta(rows) {
 export async function importWorkbook(file, { lat = null, lon = null } = {}) {
   // no hardcoded coordinates: the caller geocodes the station name via Nominatim
   const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { cellDates: true });
   const baseName = file.name.replace(/\.[^.]+$/, "");
 
   // Collect samples per measurement across ALL sheets first, then aggregate
@@ -321,31 +430,47 @@ export async function importWorkbook(file, { lat = null, lon = null } = {}) {
   // the same series and must become ONE "Wind speed" measurement (the same way
   // etl/build_data.py concatenated them), not "Wind speed" + "Wind speed (2)".
   const byMeas = {}; // measId -> { samples, unit }
-  for (const sheetName of wb.SheetNames) {
-    const ws = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
-    if (!rows.length) continue;
-    const { samples, unit } = rowsToSamples(rows);
-    if (samples.length < 2) continue;
-
-    const metaName = stationMeta(rows);
-    const measId = guessMeasId(sheetName, metaName, baseName, unit);
+  const add = (measId, samples, unit) => {
     const slot = (byMeas[measId] = byMeas[measId] || { samples: [], unit: "" });
     for (const s of samples) slot.samples.push(s); // no spread: sheets can hold 100k+ rows
     if (!slot.unit && unit) slot.unit = unit;
+  };
+
+  if (/\.(txt|csv)$/i.test(file.name)) {
+    const text = new TextDecoder("utf-8").decode(buf);
+    const { samples, unit } = parseDelimitedText(text);
+    if (samples.length >= 2) add(guessMeasId(baseName, unit), samples, unit);
+  } else {
+    const wb = XLSX.read(buf, { cellDates: true });
+    for (const sheetName of wb.SheetNames) {
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+      if (!rows.length) continue;
+      const { samples, unit } = rowsToSamples(rows);
+      if (samples.length < 2) continue;
+
+      const metaName = stationMeta(rows);
+      add(guessMeasId(sheetName, metaName, baseName, unit), samples, unit);
+    }
   }
 
   const measurements = {};
   let type = "meteo";
   for (const [measId, { samples, unit }] of Object.entries(byMeas)) {
     const def = MEAS[measId] || MEAS.generic;
+    const agg = aggregate(samples, def);
+    if (!agg) continue; // every sample failed the plausibility check
     measurements[measId] = {
       label_en: def.label_en,
       label_sq: def.label_sq,
-      unit: unit || def.unit,
+      // the catalogue unit wins for known measurements: the raw files carry
+      // mis-encoded unit strings ("Â°C") that then fail to match the axis
+      // labels in Charts.jsx. Only an unrecognized series keeps the file's unit.
+      unit: measId === "generic" ? unit || def.unit : def.unit,
       cat: def.cat,
       kind: def.kind,
-      ...aggregate(samples, def.kind),
+      ...(def.circular ? { circular: true } : {}),
+      ...agg,
     };
     if (def.cat === "hydro") type = "hydro";
   }
