@@ -60,6 +60,7 @@ export const STRINGS = {
     forecastTitle: "Forecast",
     forecastDesc: "Full observed record extended by a 5-month projection under each scenario",
     observed: "Observed",
+    partialDataNote: "Starts {start}",
     projectionNote:
       "Note: scenarios are a simplified statistical projection of the observed trend in the local data (RCP8.5 = stronger trend), not IPCC climate-model output.",
     importData: "Import Excel",
@@ -133,6 +134,7 @@ export const STRINGS = {
     forecastTitle: "Parashikimi",
     forecastDesc: "Gjithë historia e vëzhguar e zgjatur me një projeksion 5-mujor sipas çdo skenari",
     observed: "Të vëzhguara",
+    partialDataNote: "Fillon {start}",
     projectionNote:
       "Shënim: skenarët janë një projeksion statistikor i thjeshtuar i trendit të vëzhguar në të dhënat lokale (RCP8.5 = trend më i fortë), jo rezultat i modeleve klimatike IPCC.",
     importData: "Importo Excel",

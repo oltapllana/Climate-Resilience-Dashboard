@@ -66,6 +66,22 @@ function mean(values) {
   return nums.reduce((s, v) => s + Number(v), 0) / nums.length;
 }
 
+function formatRecordStart(start, months) {
+  if (!start) return null;
+  const parts = String(start).slice(0, 10).split("-");
+  if (parts.length < 2) return null;
+  const year = parts[0];
+  const monthIndex = Number(parts[1]) - 1;
+  if (!Number.isFinite(monthIndex) || monthIndex < 0 || monthIndex > 11) return year;
+  return `${months[monthIndex]} ${year}`;
+}
+
+function annualTooltipLabel(label, payload, t, recordStart) {
+  const row = payload?.[0]?.payload;
+  if (!row?.partial || !recordStart) return label;
+  return `${label} · ${t("partialDataNote").replace("{start}", recordStart)}`;
+}
+
 // Dashed horizontal line marking the average of the observed/historic series.
 // Plain function (not a component) so Recharts receives a real ReferenceLine child.
 function meanLine(value, t, unit) {
@@ -160,8 +176,10 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
   // Averages of the observed/historic series (full record, unaffected by zoom).
   const histLine = scen.lines.find((ln) => ln.period === "historic") || scen.lines[0];
   const climAvg = mean(histLine.data.map((d) => d.v));
-  const annualAvg = mean(annual.rows.map((r) => r.observed));
+  const annualObserved = annual.rows.filter((r) => r.observed != null && !r.partial).map((r) => r.observed);
+  const annualAvg = mean(annualObserved.length ? annualObserved : annual.rows.map((r) => r.observed));
   const fcAvg = mean(fc.rows.map((r) => r.actual));
+  const recordStart = formatRecordStart(meas?.stats?.start, t("months"));
 
   const climZoom = useChartZoom(climData, "month");
   const annualZoom = useChartZoom(annual.rows, "year");
@@ -232,7 +250,7 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
             label={xLabel(t("year"))}
           />
           <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-          <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
+          <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} labelFormatter={(label, payload) => annualTooltipLabel(label, payload, t, recordStart)} />
           <Legend {...scenarioLegend} />
           {annualZoom.refArea}
           {meanLine(annualAvg, t, unit)}

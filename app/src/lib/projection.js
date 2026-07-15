@@ -33,14 +33,10 @@ function climMap(climatology) {
 
 // Annual aggregate from the monthly series (mean for avg-kind, sum for sum-kind).
 //
-// Only WHOLE years are returned. A year observed from April to December is not
-// comparable with a full one: its rainfall total is short by a quarter, and its
-// mean temperature is biased warm because the missing months are winter ones.
-// Including them made the observed line dive at both ends of the record (the
-// first and last year of a station are always incomplete) and, worse, anchored
-// the projection to that stub — the 2026 rainfall base was ~193 mm, a third of
-// the true annual total, because only January–April had been recorded.
-export function annualSeries(monthly, kind) {
+// By default we keep only whole years for projection math. When includePartial
+// is true, partial years are retained too, but flagged so the caller can show
+// them without using them as the projection base.
+export function annualSeries(monthly, kind, includePartial = false) {
   const byYear = {};
   (monthly || []).forEach((row) => {
     if (row.v == null) return;
@@ -54,10 +50,10 @@ export function annualSeries(monthly, kind) {
       const rows = byYear[y];
       const months = new Set(rows.map((r) => r.m.slice(5, 7)));
       const complete = months.size === 12 && !rows.some((r) => r.partial);
-      if (!complete) return null;
+      if (!complete && !includePartial) return null;
       const vals = rows.map((r) => r.v);
       const v = kind === "sum" ? vals.reduce((a, b) => a + b, 0) : vals.reduce((a, b) => a + b, 0) / vals.length;
-      return { year: y, v };
+      return { year: y, v, partial: !complete };
     })
     .filter(Boolean);
 }
@@ -209,7 +205,8 @@ export function forecast(meas, nMonths = 5, historyMonths = null) {
 // used by the monthly profile. For summed measurements, the monthly trend delta
 // is scaled across the year so annual totals evolve on the correct unit basis.
 export function longTermProjection(meas) {
-  const observedAnnual = annualSeries(meas.monthly, meas.kind).filter((r) => r.year >= 2021 && r.year <= 2026);
+  const observedAnnual = annualSeries(meas.monthly, meas.kind, true).filter((r) => r.year >= 2021 && r.year <= 2026);
+  const completeAnnual = observedAnnual.filter((r) => !r.partial);
   const slope = trendPerYear(meas.monthly, meas.climatology);
   const { baseYear } = periodOfRecord(meas.monthly);
   const scale = meas.kind === "sum" ? 12 : 1;
@@ -221,7 +218,7 @@ export function longTermProjection(meas) {
       ? (annualClim.reduce((a, b) => a + b, 0) / annualClim.length) * 12
       : annualClim.reduce((a, b) => a + b, 0) / annualClim.length
     : null;
-  const latestObserved = observedAnnual[observedAnnual.length - 1];
+  const latestObserved = completeAnnual[completeAnnual.length - 1];
   const baseValue = latestObserved?.v ?? climBase ?? 0;
   const baseAt2026 = +(baseValue + slope * scale * (2026 - (latestObserved?.year ?? baseYear ?? 2026))).toFixed(3);
 
@@ -232,6 +229,7 @@ export function longTermProjection(meas) {
     rows.push({
       year,
       observed,
+      partial: observedAnnual.find((r) => r.year === year)?.partial ?? false,
       rcp45: year >= 2026 ? +(baseAt2026 + slope * scale * SCENARIOS.rcp45.factor * yearsAhead).toFixed(3) : null,
       rcp85: year >= 2026 ? +(baseAt2026 + slope * scale * SCENARIOS.rcp85.factor * yearsAhead).toFixed(3) : null,
     });
