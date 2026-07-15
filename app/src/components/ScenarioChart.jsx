@@ -168,7 +168,7 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
   const fc = useMemo(() => forecast(meas, 5), [meas]);
 
   const climData = scen.lines[0].data.map((_, i) => {
-    const row = { month: t("months")[i] };
+    const row = { month: t("months")[i], est: scen.lines[0].data[i].est };
     scen.lines.forEach((ln) => (row[ln.period] = ln.data[i].v));
     return row;
   });
@@ -209,7 +209,12 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
           <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} allowDataOverflow />
           <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-          <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
+          <Tooltip
+            formatter={(v) => `${fmt(v)} ${unit}`}
+            labelFormatter={(label, payload) =>
+              payload?.[0]?.payload?.est ? `${label} ${t("estMonthNote")}` : label
+            }
+          />
           <Legend {...scenarioLegend} />
           {climZoom.refArea}
           {meanLine(climAvg, t, unit)}
@@ -224,8 +229,18 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
               strokeOpacity={ln.period === "historic" ? 1 : 0.72}
               // no connectNulls: a station with a short record has no data at
               // all for some calendar months — bridging them would fabricate a
-              // curve there. Small dots keep isolated months visible.
-              dot={{ r: ln.period === "historic" ? 2.6 : 1.8, strokeWidth: 0, fill: ln.color }}
+              // curve there. Small dots keep isolated months visible; hollow
+              // dots mark months estimated from a partly observed month.
+              dot={(props) => {
+                const { cx, cy, payload, value, index } = props;
+                if (cx == null || cy == null || value == null) return <g key={`d-${ln.period}-${index}`} />;
+                const r = ln.period === "historic" ? 2.6 : 1.8;
+                return payload.est ? (
+                  <circle key={`d-${ln.period}-${index}`} cx={cx} cy={cy} r={r + 1.4} fill="#fff" stroke={ln.color} strokeWidth={1.6} />
+                ) : (
+                  <circle key={`d-${ln.period}-${index}`} cx={cx} cy={cy} r={r} fill={ln.color} />
+                );
+              }}
               activeDot={{ r: ln.period === "historic" ? 4 : 3 }}
             />
           ))}

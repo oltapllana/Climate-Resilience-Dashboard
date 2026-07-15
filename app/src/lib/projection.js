@@ -31,6 +31,38 @@ function climMap(climatology) {
   return m;
 }
 
+// Effective climatology: the stored climatology plus estimates for calendar
+// months the record only touches partially. A record running 14 Jun 2025 →
+// 22 Apr 2026 has real June and April observations, but they are excluded from
+// the stored climatology (a 17-day June total would read as a drought), which
+// left those months as blank gaps in the charts. Here the partial total is
+// pro-rated to the full month length (3.3 mm over 17 observed days → ≈5.8 mm
+// for a whole June) and flagged `est: true` so the UI can mark it as an
+// estimate. Months with no data at all remain absent.
+export function effectiveClimatology(meas) {
+  const out = (meas.climatology || []).map((c) => ({ ...c }));
+  const have = new Set(out.map((c) => c.month));
+  const stats = meas.stats || {};
+  for (const row of meas.monthly || []) {
+    if (!row.partial || row.v == null) continue;
+    const mo = Number(row.m.slice(5, 7));
+    if (have.has(mo)) continue;
+    let v = row.v;
+    if (meas.kind === "sum") {
+      // pro-rate by the part of the month the record actually covers
+      const y = Number(row.m.slice(0, 4));
+      const dim = new Date(y, mo, 0).getDate();
+      let covered = dim;
+      if (stats.start && stats.start.slice(0, 7) === row.m) covered -= Number(stats.start.slice(8, 10)) - 1;
+      if (stats.end && stats.end.slice(0, 7) === row.m) covered -= dim - Number(stats.end.slice(8, 10));
+      if (covered > 0 && covered < dim) v = (v * dim) / covered;
+    }
+    have.add(mo);
+    out.push({ month: mo, v: Math.round(v * 1000) / 1000, est: true });
+  }
+  return out.sort((a, b) => a.month - b.month);
+}
+
 // Annual aggregate from the monthly series (mean for avg-kind, sum for sum-kind).
 //
 // By default we keep only whole years for projection math. When includePartial
@@ -112,7 +144,11 @@ export function periodOfRecord(monthly) {
 // ---- scenario monthly climatology (1..12 profile) -------------------------
 // Returns { historicLabel, slope, lines: [{period, label, color, data:[{month,v}]}] }
 export function scenarioClimatology(meas, scenario = "all") {
-  const cm = climMap(meas.climatology);
+  const effClim = effectiveClimatology(meas);
+  const cm = climMap(effClim);
+  const estMonths = new Set(effClim.filter((c) => c.est).map((c) => c.month));
+  // the trend regression stays on the stored climatology: partial months are
+  // excluded from it anyway, and anomalies need the unestimated normals
   const slope = trendPerYear(meas.monthly, meas.climatology);
   const { startYear, endYear, baseYear } = periodOfRecord(meas.monthly);
   const factor = (SCENARIOS[scenario] || SCENARIOS.all).factor;
@@ -128,7 +164,7 @@ export function scenarioClimatology(meas, scenario = "all") {
     period: "historic",
     label: `${startYear}–${endYear}`,
     color: "#6b5bb5",
-    data: MONTHS.map((mo) => ({ month: mo, v: cm[mo] ?? null })),
+    data: MONTHS.map((mo) => ({ month: mo, v: cm[mo] ?? null, est: estMonths.has(mo) })),
   };
 
   const projected = PERIODS.map((p) => {
@@ -141,6 +177,7 @@ export function scenarioClimatology(meas, scenario = "all") {
       data: MONTHS.map((mo) => ({
         month: mo,
         v: cm[mo] == null ? null : +(cm[mo] + delta).toFixed(3),
+        est: estMonths.has(mo),
       })),
     };
   });
@@ -154,7 +191,9 @@ export function scenarioClimatology(meas, scenario = "all") {
 // historyMonths = null (default) includes the full period of record;
 // pass a number to show only the last N months of observations.
 export function forecast(meas, nMonths = 5, historyMonths = null) {
-  const cm = climMap(meas.climatology);
+  // effective climatology so forecast months falling on a partially observed
+  // calendar month still get a (pro-rated) base instead of a hole in the line
+  const cm = climMap(effectiveClimatology(meas));
   const slope = trendPerYear(meas.monthly, meas.climatology);
   const { baseYear } = periodOfRecord(meas.monthly);
   const cap = 0.5 * climAmplitude(meas.climatology);

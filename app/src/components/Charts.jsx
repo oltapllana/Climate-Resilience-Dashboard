@@ -13,6 +13,7 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
+import { effectiveClimatology } from "../lib/projection.js";
 
 const GREEN = "#4a9d4a";
 const GREEN_DARK = "#2f7d32";
@@ -87,9 +88,12 @@ function meanLine(value, t, unit) {
 }
 
 export function ClimatologyChart({ series, t, unit, isSum }) {
-  const data = (series.climatology || []).map((c) => ({
+  // effectiveClimatology fills months the record only covers partially with a
+  // pro-rated estimate (flagged est) — drawn as lighter bars
+  const data = effectiveClimatology(series).map((c) => ({
     month: t("months")[c.month - 1],
     v: c.v,
+    est: !!c.est,
   }));
 
   return (
@@ -98,9 +102,18 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
         <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} />
         <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-        <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
+        <Tooltip
+          formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]}
+          labelFormatter={(label, payload) =>
+            payload?.[0]?.payload?.est ? `${label} ${t("estMonthNote")}` : label
+          }
+        />
         {meanLine(mean(data.map((d) => d.v)), t, unit)}
-        <Bar dataKey="v" fill={GREEN} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="v" fill={GREEN} radius={[4, 4, 0, 0]}>
+          {data.map((d, i) => (
+            <Cell key={i} fillOpacity={d.est ? 0.45 : 1} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
