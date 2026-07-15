@@ -201,15 +201,32 @@ export function forecast(meas, nMonths = 5, historyMonths = null) {
 }
 
 // ---- annual long-term projection (2021..2050) -----------------------------
-// Uses the observed deseasonalized monthly trend without the climatology clamp
-// used by the monthly profile. For summed measurements, the monthly trend delta
-// is scaled across the year so annual totals evolve on the correct unit basis.
+// For summed measurements, the monthly trend delta is scaled across the year so
+// annual totals evolve on the correct unit basis.
+//
+// Two guards keep a 24-year extrapolation of a few years of sensor data
+// physically believable:
+//  - reliability damping: a trend fitted on a record shorter than 3 years is
+//    mostly noise (an 18-month air-temp record extrapolated to -45 °C by 2050),
+//    so the slope is shrunk in proportion to the record length;
+//  - a clamp on the total change, ±35% of the 2026 base, mirroring the monthly
+//    profile's amplitude clamp. This also keeps non-negative quantities
+//    (rainfall, intensity) from crossing zero.
 export function longTermProjection(meas) {
   const observedAnnual = annualSeries(meas.monthly, meas.kind, true).filter((r) => r.year >= 2021 && r.year <= 2026);
   const completeAnnual = observedAnnual.filter((r) => !r.partial);
-  const slope = trendPerYear(meas.monthly, meas.climatology);
+  const rawSlope = trendPerYear(meas.monthly, meas.climatology);
   const { baseYear } = periodOfRecord(meas.monthly);
   const scale = meas.kind === "sum" ? 12 : 1;
+
+  // record span in years, from the first to the last monthly row
+  const months = meas.monthly || [];
+  const spanYears = months.length
+    ? Number(months[months.length - 1].m.slice(0, 4)) + Number(months[months.length - 1].m.slice(5, 7)) / 12
+      - (Number(months[0].m.slice(0, 4)) + Number(months[0].m.slice(5, 7)) / 12)
+    : 0;
+  const reliability = clamp(spanYears / 3, 0, 1);
+  const slope = rawSlope * reliability;
   const annualClim = (meas.climatology || []).map((c) => c.v).filter((v) => v != null);
   // the climatological year: 12 average months summed for a total, averaged for
   // a mean. This is the fallback base when no whole year was ever observed.
@@ -222,18 +239,28 @@ export function longTermProjection(meas) {
   const baseValue = latestObserved?.v ?? climBase ?? 0;
   const baseAt2026 = +(baseValue + slope * scale * (2026 - (latestObserved?.year ?? baseYear ?? 2026))).toFixed(3);
 
+  // The total projected change may not exceed ±35% of the 2026 base. The cap is
+  // applied to the strongest scenario at 2050 and both slopes are shrunk by the
+  // same ratio — clamping each line separately would make RCP4.5 and RCP8.5
+  // saturate at the same value and collapse onto one line.
+  const cap = 0.35 * Math.abs(baseAt2026);
+  const full85 = slope * scale * SCENARIOS.rcp85.factor * (2050 - 2026);
+  const shrink = Math.abs(full85) > cap ? cap / Math.abs(full85) : 1;
+  const effSlope = slope * scale * shrink;
+
   const rows = [];
   for (let year = 2021; year <= 2050; year += 1) {
     const observed = observedAnnual.find((r) => r.year === year)?.v ?? null;
     const yearsAhead = year - 2026;
+    const proj = (factor) => +(baseAt2026 + effSlope * factor * yearsAhead).toFixed(3);
     rows.push({
       year,
       observed,
       partial: observedAnnual.find((r) => r.year === year)?.partial ?? false,
-      rcp45: year >= 2026 ? +(baseAt2026 + slope * scale * SCENARIOS.rcp45.factor * yearsAhead).toFixed(3) : null,
-      rcp85: year >= 2026 ? +(baseAt2026 + slope * scale * SCENARIOS.rcp85.factor * yearsAhead).toFixed(3) : null,
+      rcp45: year >= 2026 ? proj(SCENARIOS.rcp45.factor) : null,
+      rcp85: year >= 2026 ? proj(SCENARIOS.rcp85.factor) : null,
     });
   }
 
-  return { rows, slope, baseAt2026 };
+  return { rows, slope, baseAt2026, reliability };
 }

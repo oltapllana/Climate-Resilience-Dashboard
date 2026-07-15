@@ -1,13 +1,20 @@
 import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart } from "./Charts.jsx";
 import ScenarioChart from "./ScenarioChart.jsx";
 
-function StatCards({ stats, unit, isSum, t }) {
-  const cards = [
-    { k: t("records"), v: stats.count.toLocaleString() },
-    { k: isSum ? t("total") : t("mean"), v: stats.overall, u: unit },
-    { k: t("min"), v: stats.min, u: unit },
-    { k: t("max"), v: stats.max, u: unit },
-  ];
+function StatCards({ stats, unit, isSum, circular, t }) {
+  // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
+  // its overall value is a vector mean — label it as the prevailing direction
+  const cards = circular
+    ? [
+        { k: t("records"), v: stats.count.toLocaleString() },
+        { k: t("prevailingDir"), v: stats.overall, u: unit },
+      ]
+    : [
+        { k: t("records"), v: stats.count.toLocaleString() },
+        { k: isSum ? t("total") : t("mean"), v: stats.overall, u: unit },
+        { k: t("min"), v: stats.min, u: unit },
+        { k: t("max"), v: stats.max, u: unit },
+      ];
   return (
     <div className="stat-grid compact">
       {cards.map((c) => (
@@ -89,7 +96,7 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
               <label className="cfg-label">
                 {t("period")}: {m.stats.start} → {m.stats.end}
               </label>
-              <StatCards stats={m.stats} unit={unit} isSum={isSum} t={t} />
+              <StatCards stats={m.stats} unit={unit} isSum={isSum} circular={m.circular} t={t} />
             </div>
           </div>
         </div>

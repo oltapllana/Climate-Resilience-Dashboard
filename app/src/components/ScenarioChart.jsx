@@ -222,9 +222,11 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
               stroke={ln.color}
               strokeWidth={ln.period === "historic" ? 3.2 : 1.8}
               strokeOpacity={ln.period === "historic" ? 1 : 0.72}
-              dot={false}
+              // no connectNulls: a station with a short record has no data at
+              // all for some calendar months — bridging them would fabricate a
+              // curve there. Small dots keep isolated months visible.
+              dot={{ r: ln.period === "historic" ? 2.6 : 1.8, strokeWidth: 0, fill: ln.color }}
               activeDot={{ r: ln.period === "historic" ? 4 : 3 }}
-              connectNulls
             />
           ))}
         </LineChart>
@@ -277,6 +279,8 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
           <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={1.8} strokeOpacity={0.72} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
         </LineChart>
       </ResponsiveContainer>
+
+      <p className="cfg-hint">{t("projectionNote")}</p>
     </div>
   );
 }
