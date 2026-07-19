@@ -225,3 +225,44 @@ export function DailyChart({ series, t, unit, isSum, color = GREEN_DARK }) {
     </ResponsiveContainer>
   );
 }
+
+export function WindRoseChart({ series, t, color = GREEN_DARK }) {
+  // Wind speed distribution by speed categories
+  if (!series.daily || !series.daily.length) return null;
+
+  const speedBins = { calm: 0, s1: 0, s2: 0, s3: 0, s4: 0, s5: 0 };
+  (series.daily || []).forEach((d) => {
+    const speed = Number(d.v) || 0;
+    if (speed < 0.5) speedBins.calm++;
+    else if (speed < 3) speedBins.s1++;
+    else if (speed < 5) speedBins.s2++;
+    else if (speed < 7) speedBins.s3++;
+    else if (speed < 10) speedBins.s4++;
+    else speedBins.s5++;
+  });
+
+  const data = [
+    { name: "Calm", value: speedBins.calm, fill: "#f0f0f0" },
+    { name: "0-3 m/s", value: speedBins.s1, fill: "#d1f5ff" },
+    { name: "3-5 m/s", value: speedBins.s2, fill: "#7ed321" },
+    { name: "5-7 m/s", value: speedBins.s3, fill: "#ffc53d" },
+    { name: "7-10 m/s", value: speedBins.s4, fill: "#ff85c0" },
+    { name: ">10 m/s", value: speedBins.s5, fill: "#f5222d" },
+  ];
+
+  return (
+    <ResponsiveContainer width="100%" height={250}>
+      <BarChart data={data} margin={chartMargin}>
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 12 }} width={58} />
+        <Tooltip formatter={(v) => [`${v} days`, "Count"]} />
+        <Bar dataKey="value" fill={color}>
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.fill} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}

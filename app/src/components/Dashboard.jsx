@@ -1,4 +1,5 @@
-import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart } from "./Charts.jsx";
+import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart, WindRoseChart } from "./Charts.jsx";
+import { WindRose } from "./WindRose.jsx";
 import ScenarioChart from "./ScenarioChart.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
@@ -126,6 +127,19 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           <h2>{t("daily")}</h2>
           <DailyChart series={m} t={t} unit={unit} isSum={isSum} color={accent} />
         </div>
+        {measId && measId.includes("wind_dir") && (() => {
+          const speedId = Object.keys(data.measurements).find(id => id.includes("wind_speed"));
+          return speedId ? (
+            <div className="card chart-card">
+              <h2>{t("windRose")}</h2>
+              <WindRose
+                directionData={m}
+                speedData={data.measurements[speedId]}
+                t={t}
+              />
+            </div>
+          ) : null;
+        })()}
       </div>
     </div>
   );
