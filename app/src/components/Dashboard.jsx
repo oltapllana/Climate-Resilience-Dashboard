@@ -1,5 +1,6 @@
 import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart, WindRoseChart } from "./Charts.jsx";
 import { WindRose } from "./WindRose.jsx";
+import { WindRiskHeatmap } from "./WindRiskHeatmap.jsx";
 import ScenarioChart from "./ScenarioChart.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
@@ -140,6 +141,15 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
             </div>
           ) : null;
         })()}
+        {measId && measId.includes("wind_speed") && (
+          <div className="card chart-card">
+            <h2>{t("windRiskHeatmap") || "Wind Risk Heatmap"}</h2>
+            <WindRiskHeatmap
+              speedData={m}
+              t={t}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

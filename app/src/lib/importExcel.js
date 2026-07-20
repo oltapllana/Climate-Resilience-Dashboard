@@ -154,6 +154,7 @@ function num(v) {
 }
 
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const ymdh = (d) => `${ymd(d)}T${String(d.getHours()).padStart(2, "0")}:00`;
 const ym = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 const round = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
 
@@ -209,15 +210,23 @@ function aggregate(samples, def) {
   if (!clean.length) return null;
   clean.sort((a, b) => a.ts - b.ts);
 
-  const dayG = {}, monG = {}, climG = {};
+  const dayG = {}, hourG = {}, monG = {}, climG = {};
   for (const { ts, val } of clean) {
-    const dk = ymd(ts), mk = ym(ts);
+    const dk = ymd(ts), hk = ymdh(ts), mk = ym(ts);
     (dayG[dk] = dayG[dk] || []).push(val);
+    (hourG[hk] = hourG[hk] || []).push(val);
     (monG[mk] = monG[mk] || []).push(val);
   }
 
   const avg = def.circular ? circMean : mean;
   const partial = partialMonths(clean[0].ts, clean[clean.length - 1].ts, kind);
+
+  const hourly = Object.keys(hourG).sort().map((h) => {
+    const a = hourG[h];
+    if (kind === "sum") return { d: h, v: round(sum(a)) };
+    if (def.circular) return { d: h, v: round(circMean(a)) };
+    return { d: h, v: round(mean(a)), lo: round(Math.min(...a)), hi: round(Math.max(...a)) };
+  });
 
   const daily = Object.keys(dayG).sort().map((d) => {
     const a = dayG[d];
@@ -271,7 +280,7 @@ function aggregate(samples, def) {
     mean: round(def.circular ? circMean(clean.map((s) => s.val)) : total / clean.length),
     overall: round(kind === "sum" ? total : def.circular ? circMean(clean.map((s) => s.val)) : total / clean.length),
   };
-  return { daily, monthly, climatology, stats };
+  return { daily, hourly, monthly, climatology, stats };
 }
 
 // ---- duplicate-measurement cleanup ----------------------------------------

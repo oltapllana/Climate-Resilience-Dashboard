@@ -119,3 +119,57 @@ export function processWindData(directionData, speedData) {
     directionMeanSpeeds,
   };
 }
+
+// Process wind data for hourly risk heatmap (hour of day vs month)
+export function processWindRiskHeatmap(speedData) {
+  if (!speedData?.hourly?.length) return null;
+
+  const monthNames = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gus', 'Sht', 'Tet', 'Nën', 'Dhj'];
+  const HIGH_WIND_THRESHOLD = 10.8; // m/s - Beaufort Scale Bf 6 (Strong wind)
+
+  // Initialize data structure: [month][hour]
+  const heatmapData = {};
+  monthNames.forEach(month => {
+    heatmapData[month] = {};
+    for (let hour = 0; hour < 24; hour++) {
+      heatmapData[month][hour] = { count: 0, highRiskCount: 0 };
+    }
+  });
+
+  // Process each hourly record - format is YYYY-MM-DDTHH:00
+  speedData.hourly.forEach(entry => {
+    const dateStr = entry.d; // format: "2021-04-06T10:00"
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
+    if (!match) return;
+
+    const month = parseInt(match[2]) - 1; // 0-based month
+    const hour = parseInt(match[4]);
+    const speed = entry.v;
+
+    const monthName = monthNames[month];
+    if (heatmapData[monthName] && heatmapData[monthName][hour] !== undefined) {
+      heatmapData[monthName][hour].count++;
+      if (speed >= HIGH_WIND_THRESHOLD) {
+        heatmapData[monthName][hour].highRiskCount++;
+      }
+    }
+  });
+
+  // Convert to percentages
+  const heatmapPercent = {};
+  monthNames.forEach(month => {
+    heatmapPercent[month] = {};
+    for (let hour = 0; hour < 24; hour++) {
+      const data = heatmapData[month][hour];
+      heatmapPercent[month][hour] = data.count > 0
+        ? (data.highRiskCount / data.count * 100).toFixed(2)
+        : 0;
+    }
+  });
+
+  return {
+    heatmapData: heatmapPercent,
+    months: monthNames,
+    highWindThreshold: HIGH_WIND_THRESHOLD,
+  };
+}
