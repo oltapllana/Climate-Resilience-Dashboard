@@ -46,11 +46,13 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
     const lb = lang === "sq" ? data.measurements[b].label_sq : data.measurements[b].label_en;
     return la.localeCompare(lb, lang);
   });
-  const m = data.measurements[measId] || data.measurements[measIds[0]];
+  const activeMeasId = data.measurements[measId] ? measId : measIds[0];
+  const m = data.measurements[activeMeasId];
   const measurementName = lang === "sq" ? m.label_sq : m.label_en;
   const isSum = m.kind === "sum";
   const unit = m.unit;
   const accent = data.type === "hydro" ? "#2b7fc4" : "#2f7d32";
+  const supportsRcp = activeMeasId === "air_temp" || activeMeasId === "rainfall";
 
   return (
     <div>
@@ -82,17 +84,19 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           </div>
 
           <div className="filter-row">
-            <div className="filter-sec">
-              <label className="cfg-label">{t("scenario")}</label>
-              <div className="seg">
-                {["rcp85", "rcp45", "all"].map((s) => (
-                  <button key={s} className={scenario === s ? "active" : ""} onClick={() => setScenario(s)}>
-                    {s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5"}
-                  </button>
-                ))}
+            {supportsRcp && (
+              <div className="filter-sec">
+                <label className="cfg-label">{t("scenario")}</label>
+                <div className="seg">
+                  {["rcp85", "rcp45", "all"].map((s) => (
+                    <button key={s} className={scenario === s ? "active" : ""} onClick={() => setScenario(s)}>
+                      {s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5"}
+                    </button>
+                  ))}
+                </div>
+                {scenario === "rcp85" && <p className="cfg-hint">{t("rcp85Hint")}</p>}
               </div>
-              {scenario === "rcp85" && <p className="cfg-hint">{t("rcp85Hint")}</p>}
-            </div>
+            )}
 
             <div className="filter-sec">
               <label className="cfg-label">
@@ -104,9 +108,9 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         </div>
       </div>
 
-      {/* a compass bearing has no trend to extrapolate: "wind direction in 2050"
-          is not a meaningful projection, so the scenario panel is omitted */}
-      {!m.circular && <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />}
+      {/* RCP scenarios are climate projections for air temperature and rainfall,
+          not for the dashboard's other sensor measurements. */}
+      {supportsRcp && <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />}
 
       <div className="charts">
         <div className="card chart-card">

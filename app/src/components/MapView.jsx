@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, CircleMarker, Tooltip, GeoJSON, Marker, useMap } from "react-leaflet";
 import { divIcon, geoJSON } from "leaflet";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildSettlementBoundaryIndex,
   matchStationsToSettlementBoundaries,
@@ -36,15 +36,48 @@ const STATION_STYLE = {
 
 function FlyToStation({ station }) {
   const map = useMap();
+  const hasSeenInitialSelection = useRef(false);
   const lat = station?.displayLat ?? station?.lat;
   const lon = station?.displayLon ?? station?.lon;
   useEffect(() => {
+    // The dashboard automatically selects its first station while loading.
+    // Keep the complete municipality visible for that initial selection; only
+    // zoom after the user chooses another station.
+    if (!hasSeenInitialSelection.current && Number.isFinite(lat) && Number.isFinite(lon)) {
+      hasSeenInitialSelection.current = true;
+      return;
+    }
+
     // fly only when the selected station has coordinates; while it is still
     // being located stay put instead of snapping back to the default view
     if (Number.isFinite(lat) && Number.isFinite(lon)) {
       map.flyTo([lat, lon], 12, { duration: 0.7 });
     }
   }, [station?.id, lat, lon, map]);
+  return null;
+}
+
+function FitStudyArea({ boundary }) {
+  const map = useMap();
+  const hasFitted = useRef(false);
+
+  useEffect(() => {
+    if (!boundary || hasFitted.current) return;
+
+    try {
+      const bounds = geoJSON(boundary).getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          padding: [24, 24],
+          animate: false,
+        });
+        hasFitted.current = true;
+      }
+    } catch {
+      // Retain the MapContainer fallback view if boundary data is malformed.
+    }
+  }, [boundary, map]);
+
   return null;
 }
 
@@ -353,6 +386,7 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <ResizeHandler />
+        <FitStudyArea boundary={studyAreaBoundary} />
         {studyAreaBoundary && (
           <GeoJSON
             data={studyAreaBoundary}
