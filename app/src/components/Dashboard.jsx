@@ -5,6 +5,7 @@ import ScenarioChart from "./ScenarioChart.jsx";
 import LandslideRainfallIndicator from "./LandslideRainfallIndicator.jsx";
 import PrecipitationExtremesIndicator from "./PrecipitationExtremesIndicator.jsx";
 import HotDaysIndicator from "./HotDaysIndicator.jsx";
+import DrySpellsIndicator from "./DrySpellsIndicator.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -56,6 +57,10 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
   const unit = m.unit;
   const accent = data.type === "hydro" ? "#2b7fc4" : "#2f7d32";
   const supportsRcp = activeMeasId === "air_temp" || activeMeasId === "rainfall";
+  const rainIntensityHourly = data.measurements?.rain_intensity?.hourly;
+  const hasValidRainIntensityHourly = Array.isArray(rainIntensityHourly) && rainIntensityHourly.some(
+    (row) => !Number.isNaN(new Date(row?.d).getTime()) && Number.isFinite(Number(row?.v)) && Number(row.v) >= 0
+  );
 
   return (
     <div>
@@ -119,6 +124,7 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         <>
           <LandslideRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
           <PrecipitationExtremesIndicator measurement={data.measurements.rain_intensity} t={t} />
+          {hasValidRainIntensityHourly && <DrySpellsIndicator measurement={data.measurements.rain_intensity} />}
         </>
       )}
 
