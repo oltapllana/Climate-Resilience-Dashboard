@@ -169,6 +169,42 @@ header.masthead {
 /* hint cursor inside the zoomable plot area */
 .scenario-chart-block .recharts-surface { cursor: crosshair; }
 
+/* Critical-rainfall indicator: independent two-panel card using the dashboard palette. */
+.landslide-indicator { margin-bottom: 18px; }
+.indicator-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  gap: 22px;
+}
+.indicator-panel { min-width: 0; }
+.indicator-heading { min-height: 62px; margin-bottom: 4px; }
+.indicator-heading h2 { margin: 0 0 5px; color: var(--green-dark); font-size: 17px; }
+.indicator-heading p { margin: 0; color: var(--muted); font-size: 12.5px; }
+.indicator-explanation {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.indicator-assumption { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.indicator-tooltip {
+  display: grid;
+  gap: 3px;
+  padding: 9px 11px;
+  border: 1px solid #d9e2ec;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  color: #1f2937;
+  font-size: 12px;
+}
+.critical-text, .error-text { color: #b42318; font-weight: 700; }
+@media (max-width: 900px) {
+  .indicator-grid { grid-template-columns: 1fr; }
+}
+
 /* map — fixed height; Leaflet fills the area below the head */
 .map-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; height: var(--top-h); }
 .map-card .map-head { padding: 14px 16px 10px; }

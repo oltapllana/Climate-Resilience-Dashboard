@@ -25,9 +25,9 @@ const MEAS = {
   // Kosovo's record low is about -32.5 °C and its record high about 42 °C
   air_temp:      { label_en: "Air temperature",     label_sq: "Temperatura e ajrit",    unit: "°C",     cat: "meteo", kind: "avg", qc: [-35, 45] },
   rainfall:      { label_en: "Rainfall",            label_sq: "Reshjet",                unit: "mm",     cat: "meteo", kind: "sum", qc: [0, 500] },
-  // the world-record one-minute rainfall is ~38 mm/min; the Shajkoc file carries
-  // 1440 mm/min spikes (minutes-per-day leaking into the value column)
-  rain_intensity:{ label_en: "Rainfall intensity",  label_sq: "Intensiteti i reshjeve", unit: "mm/min", cat: "meteo", kind: "avg", qc: [0, 60] },
+  // The indicator specification defines CorrValue as instantaneous mm/h.
+  // Values above 60 are treated as invalid sensor/correction artifacts.
+  rain_intensity:{ label_en: "Rainfall intensity",  label_sq: "Intensiteti i reshjeve", unit: "mm/h",   cat: "meteo", kind: "avg", qc: [0, 60] },
   humidity:      { label_en: "Humidity",            label_sq: "Lagështia",              unit: "%",      cat: "meteo", kind: "avg", qc: [0, 100] },
   pressure:      { label_en: "Air pressure",        label_sq: "Shtypja e ajrit",        unit: "hPa",    cat: "meteo", kind: "avg", qc: [800, 1100] },
   solar:         { label_en: "Solar radiation",     label_sq: "Rrezatimi diellor",      unit: "W/m²",   cat: "meteo", kind: "avg", qc: [-50, 1500], clampLo: 0 },
@@ -157,6 +157,121 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0
 const ymdh = (d) => `${ymd(d)}T${String(d.getHours()).padStart(2, "0")}:00`;
 const ym = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 const round = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
+const exactLocalTimestamp = (d) =>
+  `${ymd(d)}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}.${String(d.getMilliseconds()).padStart(3, "0")}`;
+
+function normalizedSourceUnit(unit) {
+  const value = String(unit || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (value === "mm") return "mm";
+  if (value === "mm/min" || value === "mmpermin") return "mm/min";
+  if (value === "mm/h" || value === "mm/hr" || value === "mmperhour") return "mm/h";
+  return null;
+}
+
+function normalizeRainIntensitySamples(samples, sourceUnit) {
+  if (sourceUnit !== "mm/min") return samples;
+  return samples.map((sample) => ({
+    ...sample,
+    val: sample.val * 60,
+  }));
+}
+
+function rawRainfallFields(samples, detectedUnit) {
+  return {
+    rainfallProcessingVersion: 2,
+    rawObservations: samples
+      .filter((sample) => sample?.ts instanceof Date && !Number.isNaN(sample.ts.getTime()))
+      .sort((a, b) => a.ts - b.ts)
+      .map((sample) => ({
+        timestamp: exactLocalTimestamp(sample.ts),
+        value: sample.val,
+      })),
+    sourceMetadata: {
+      detectedSourceUnit: detectedUnit || null,
+      sourceUnit: normalizedSourceUnit(detectedUnit),
+      // Neither the Shajkoc Datee/CorrValue schema nor a unit column proves
+      // whether a value is incremental, cumulative, or an interval total.
+      valueSemantics: "unknown",
+      samplingMode: "unknown",
+      fixedIntervalMinutes: null,
+      missingMeansDry: false,
+      timezone: null,
+      outagePeriods: [],
+    },
+  };
+}
+
+function aggregateRainIntensity(samples, detectedUnit) {
+  const sourceUnit = normalizedSourceUnit(detectedUnit);
+  const normalizedSamples = samples
+    .filter((sample) => sample?.ts instanceof Date && !Number.isNaN(sample.ts.getTime()))
+    .map((sample) => ({
+      ts: sample.ts,
+      val: sourceUnit === "mm/min" ? sample.val * 60 : sample.val,
+    }));
+
+  if (!normalizedSamples.length) return null;
+  normalizedSamples.sort((a, b) => a.ts - b.ts);
+
+  const dayG = {};
+  const hourG = {};
+  const monG = {};
+  const climG = {};
+
+  for (const { ts, val } of normalizedSamples) {
+    const dk = ymd(ts);
+    const hk = ymdh(ts);
+    const mk = ym(ts);
+    (dayG[dk] = dayG[dk] || []).push(val);
+    (hourG[hk] = hourG[hk] || []).push(val);
+    (monG[mk] = monG[mk] || []).push(val);
+    (climG[ts.getMonth() + 1] = climG[ts.getMonth() + 1] || []).push(val);
+  }
+
+  const daily = Object.keys(dayG).sort().map((d) => {
+    const a = dayG[d];
+    return { d, v: round(mean(a)), lo: round(Math.min(...a)), hi: round(Math.max(...a)) };
+  });
+
+  const hourly = Object.keys(hourG).sort().map((h) => {
+    const a = hourG[h];
+    return { d: h, v: round(mean(a)) };
+  });
+
+  const monthly = Object.keys(monG).sort().map((m) => ({
+    m,
+    v: round(mean(monG[m])),
+  }));
+
+  const climatology = Object.keys(climG).map(Number).sort((a, b) => a - b)
+    .map((mo) => ({ month: mo, v: round(mean(climG[mo])) }));
+
+  let mn = Infinity;
+  let mx = -Infinity;
+  let total = 0;
+  for (const { val } of normalizedSamples) {
+    if (val < mn) mn = val;
+    if (val > mx) mx = val;
+    total += val;
+  }
+
+  return {
+    daily,
+    hourly,
+    monthly,
+    climatology,
+    stats: {
+      count: normalizedSamples.length,
+      dropped: 0,
+      start: ymd(normalizedSamples[0].ts),
+      end: ymd(normalizedSamples[normalizedSamples.length - 1].ts),
+      min: round(mn),
+      max: round(mx),
+      mean: round(total / normalizedSamples.length),
+      overall: round(total / normalizedSamples.length),
+    },
+  };
+}
 
 // ---- aggregation (mirrors etl/build_data.py aggregate) --------------------
 const sum = (a) => a.reduce((x, y) => x + y, 0);
@@ -469,7 +584,9 @@ export async function importWorkbook(file, { lat = null, lon = null } = {}) {
   let type = "meteo";
   for (const [measId, { samples, unit }] of Object.entries(byMeas)) {
     const def = MEAS[measId] || MEAS.generic;
-    const agg = aggregate(samples, def);
+    const agg = measId === "rain_intensity"
+      ? aggregateRainIntensity(samples, unit)
+      : aggregate(samples, def);
     if (!agg) continue; // every sample failed the plausibility check
     measurements[measId] = {
       label_en: def.label_en,
@@ -482,6 +599,9 @@ export async function importWorkbook(file, { lat = null, lon = null } = {}) {
       kind: def.kind,
       ...(def.circular ? { circular: true } : {}),
       ...agg,
+      ...(["rainfall", "rain_intensity"].includes(measId)
+        ? rawRainfallFields(samples, unit)
+        : {}),
     };
     if (def.cat === "hydro") type = "hydro";
   }
@@ -502,6 +622,7 @@ export async function importWorkbook(file, { lat = null, lon = null } = {}) {
     : "imported_" + fileName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   return {
     id,
+    rainfallProcessingVersion: 2,
     name_en,
     name_sq,
     // municipality/settlement drive the settlement-boundary overlay on the map

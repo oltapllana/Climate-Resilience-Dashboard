@@ -50,6 +50,21 @@ export default function App() {
         // into their base measurement
         const measurements = dedupeMeasurements(s.measurements);
         if (measurements !== s.measurements) s = { ...s, measurements };
+        // The landslide-indicator specification defines rainfall intensity as
+        // mm/h. Correct legacy saved metadata that used the old mm/min label;
+        // values themselves were never converted during import.
+        if (s.measurements?.rain_intensity && s.measurements.rain_intensity.unit !== "mm/h") {
+          s = {
+            ...s,
+            measurements: {
+              ...s.measurements,
+              rain_intensity: {
+                ...s.measurements.rain_intensity,
+                unit: "mm/h",
+              },
+            },
+          };
+        }
         const k = catalogue.get(s.id);
         if (k)
           return {

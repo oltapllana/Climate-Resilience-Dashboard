@@ -40,7 +40,7 @@ MEAS = {
     # Kosovo's record low is about -32.5 °C and its record high about 42 °C
     "air_temp":      {"label_en": "Air temperature",    "label_sq": "Temperatura e ajrit",  "unit": "°C",     "cat": "meteo",  "kind": "avg", "qc": (-35, 45)},
     "rainfall":      {"label_en": "Rainfall",           "label_sq": "Reshjet",              "unit": "mm",     "cat": "meteo",  "kind": "sum", "qc": (0, 500)},
-    "rain_intensity":{"label_en": "Rainfall intensity", "label_sq": "Intensiteti i reshjeve","unit": "mm/min","cat": "meteo",  "kind": "avg", "qc": (0, 2000)},
+    "rain_intensity":{"label_en": "Rainfall intensity", "label_sq": "Intensiteti i reshjeve","unit": "mm/h",  "cat": "meteo",  "kind": "avg", "qc": (0, 60)},
     "humidity":      {"label_en": "Humidity",           "label_sq": "Lagështia",            "unit": "%",      "cat": "meteo",  "kind": "avg", "qc": (0, 100)},
     "pressure":      {"label_en": "Air pressure",       "label_sq": "Shtypja e ajrit",      "unit": "hPa",    "cat": "meteo",  "kind": "avg", "qc": (800, 1100)},
     "solar":         {"label_en": "Solar radiation",    "label_sq": "Rrezatimi diellor",    "unit": "W/m²",   "cat": "meteo",  "kind": "avg", "qc": (-50, 1500), "clamp_lo": 0},

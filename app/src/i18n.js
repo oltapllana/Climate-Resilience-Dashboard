@@ -78,6 +78,41 @@ export const STRINGS = {
     partialDataNote: "Starts {start}",
     projectionNote:
       "Note: scenarios are a simplified statistical projection of the observed trend in the local data (RCP8.5 = stronger trend), not IPCC climate-model output.",
+    landslideTitle: "Critical rainfall conditions for landslides",
+    landslideSubtitle: "Annual worst-case event per duration vs. the intensity-duration threshold",
+    landslideDaysTitle: "Days meeting the threshold",
+    landslideDaysSubtitle: "Any 1–5 day window ending that day exceeded its threshold",
+    landslideXAxis: "Rainfall duration (days)",
+    landslideYAxis: "Mean rainfall intensity (mm/h, log scale)",
+    landslideBarYAxis: "Critical days per year",
+    landslideDuration: "Duration",
+    landslideMaximum: "Maximum intensity",
+    landslideThreshold: "Critical threshold",
+    landslideExceeded: "exceeded",
+    landslideNotExceeded: "not exceeded",
+    landslideCriticalDays: "Critical days",
+    days: "days",
+    indicatorLoading: "Calculating indicator…",
+    landslideNoData: "This station has no rainfall-intensity data.",
+    landslideNoRainfall: "This station has no rainfall-depth data in millimetres.",
+    landslideLegacyData: "This station contains only aggregated rainfall records. Their original timing and value semantics are unavailable, so this indicator cannot be calculated reliably.",
+    landslideUnknownSemantics: "Rainfall values were preserved, but their incremental/cumulative meaning is not confirmed. The indicator is unavailable until source metadata is configured.",
+    landslideIncompleteWindows: "No complete 1–5 day window is available. Missing or outage intervals are kept unknown and excluded.",
+    landslideNoHourly: "Rainfall-intensity data exists, but hourly values are unavailable. The 1–5 day indicator cannot be calculated safely.",
+    landslideInvalidUnit: "The configured rainfall-intensity source unit is not supported.",
+    landslideCalculationError: "The rainfall indicator could not be calculated.",
+    landslideExplanation:
+      "This indicator identifies days when rainfall intensity over a 1–5 day period exceeded the configured landslide threshold. It indicates critical rainfall conditions, not a confirmed landslide occurrence.",
+    landslideUnitAssumption:
+      "Unit assumption: source rainfall intensity is configured as {unit} and converted explicitly to mm/h.",
+    landslideZeroFillWarning:
+      "Hours without readings are treated as dry (zero); sensor outages may therefore be hidden.",
+    landslideMethodologyNote:
+      "Rainfall intensity is interpreted as mm/h according to the indicator specification. Values are averaged within each clock hour. Hours without logged readings are treated as zero rainfall. These are documented reconstruction assumptions.",
+    landslideDepthSourceNote:
+      "Source: confirmed rainfall-depth observations in mm; values are never derived from hourly rainfall-intensity means.",
+    landslideUnknownHoursWarning:
+      "Missing intervals remain unknown unless sensor metadata explicitly proves that no record means dry.",
     importData: "Import Excel",
     importing: "Reading file…",
     importHint: "Upload an .xlsx / .xls / .txt sensor file (e.g. Prishtina climate). It is parsed in your browser and added as a station.",
@@ -167,6 +202,41 @@ export const STRINGS = {
     partialDataNote: "Fillon {start}",
     projectionNote:
       "Shënim: skenarët janë një projeksion statistikor i thjeshtuar i trendit të vëzhguar në të dhënat lokale (RCP8.5 = trend më i fortë), jo rezultat i modeleve klimatike IPCC.",
+    landslideTitle: "Kushtet kritike të reshjeve për rrëshqitje të dheut",
+    landslideSubtitle: "Ngjarja më e rëndë vjetore sipas kohëzgjatjes kundrejt pragut intensitet–kohëzgjatje",
+    landslideDaysTitle: "Ditët që plotësojnë pragun",
+    landslideDaysSubtitle: "Të paktën një dritare 1–5 ditore që përfundon atë ditë e tejkaloi pragun",
+    landslideXAxis: "Kohëzgjatja e reshjeve (ditë)",
+    landslideYAxis: "Intensiteti mesatar i reshjeve (mm/h, shkallë logaritmike)",
+    landslideBarYAxis: "Ditë kritike në vit",
+    landslideDuration: "Kohëzgjatja",
+    landslideMaximum: "Intensiteti maksimal",
+    landslideThreshold: "Pragu kritik",
+    landslideExceeded: "tejkalim",
+    landslideNotExceeded: "pa tejkalim",
+    landslideCriticalDays: "Ditë kritike",
+    days: "ditë",
+    indicatorLoading: "Duke llogaritur treguesin…",
+    landslideNoData: "Ky stacion nuk ka të dhëna për intensitetin e reshjeve.",
+    landslideNoRainfall: "Ky stacion nuk ka të dhëna për thellësinë e reshjeve në milimetra.",
+    landslideLegacyData: "Ky stacion përmban vetëm të dhëna të agreguara të reshjeve. Koha origjinale dhe kuptimi i vlerave nuk janë të disponueshme, prandaj treguesi nuk mund të llogaritet me besueshmëri.",
+    landslideUnknownSemantics: "Vlerat e reshjeve janë ruajtur, por kuptimi i tyre inkremental/kumulativ nuk është konfirmuar. Treguesi nuk është i disponueshëm derisa të konfigurohen metadatat burimore.",
+    landslideIncompleteWindows: "Nuk ka dritare të plotë 1–5 ditore. Intervalet që mungojnë ose kanë ndërprerje mbeten të panjohura dhe përjashtohen.",
+    landslideNoHourly: "Ka të dhëna për intensitetin e reshjeve, por mungojnë vlerat orare. Treguesi 1–5 ditor nuk mund të llogaritet në mënyrë të sigurt.",
+    landslideInvalidUnit: "Njësia burimore e konfiguruar për intensitetin e reshjeve nuk mbështetet.",
+    landslideCalculationError: "Treguesi i reshjeve nuk mund të llogaritej.",
+    landslideExplanation:
+      "Ky tregues identifikon ditët kur intensiteti i reshjeve gjatë një periudhe 1–5 ditore tejkaloi pragun e konfiguruar për rrëshqitje të dheut. Ai tregon kushte kritike reshjesh, jo një rrëshqitje të konfirmuar.",
+    landslideUnitAssumption:
+      "Supozimi i njësisë: intensiteti burimor i reshjeve është konfiguruar si {unit} dhe konvertohet në mënyrë eksplicite në mm/h.",
+    landslideZeroFillWarning:
+      "Orët pa matje trajtohen si të thata (zero); ndërprerjet e sensorit mund të fshihen.",
+    landslideMethodologyNote:
+      "Intensiteti i reshjeve interpretohet si mm/h sipas specifikimit të treguesit. Vlerat mesatarizohen brenda çdo ore. Orët pa matje të regjistruara trajtohen si zero reshje. Këto janë supozime të dokumentuara të rindërtimit.",
+    landslideDepthSourceNote:
+      "Burimi: vëzhgime të konfirmuara të thellësisë së reshjeve në mm; vlerat nuk nxirren nga mesataret orare të intensitetit.",
+    landslideUnknownHoursWarning:
+      "Intervalet që mungojnë mbeten të panjohura, përveç kur metadatat e sensorit vërtetojnë se mungesa e regjistrimit do të thotë mot i thatë.",
     importData: "Importo Excel",
     importing: "Duke lexuar skedarin…",
     importHint: "Ngarko një skedar sensori .xlsx / .xls / .txt (p.sh. klima e Prishtinës). Lexohet në shfletues dhe shtohet si stacion.",

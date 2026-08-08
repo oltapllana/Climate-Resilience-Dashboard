@@ -2,6 +2,9 @@ import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart, WindRoseC
 import { WindRose } from "./WindRose.jsx";
 import { WindRiskHeatmap } from "./WindRiskHeatmap.jsx";
 import ScenarioChart from "./ScenarioChart.jsx";
+import LandslideRainfallIndicator from "./LandslideRainfallIndicator.jsx";
+import PrecipitationExtremesIndicator from "./PrecipitationExtremesIndicator.jsx";
+import HotDaysIndicator from "./HotDaysIndicator.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -111,6 +114,17 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
       {/* RCP scenarios are climate projections for air temperature and rainfall,
           not for the dashboard's other sensor measurements. */}
       {supportsRcp && <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />}
+
+      {activeMeasId === "rain_intensity" && (
+        <>
+          <LandslideRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
+          <PrecipitationExtremesIndicator measurement={data.measurements.rain_intensity} t={t} />
+        </>
+      )}
+
+      {(activeMeasId === "air_temp" || unit === "°C") && (
+        <HotDaysIndicator measurement={m} t={t} />
+      )}
 
       <div className="charts">
         <div className="card chart-card">

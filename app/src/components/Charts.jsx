@@ -29,7 +29,7 @@ function fmt(v, digits = 2) {
 function measurementAxis(unit) {
   if (unit === "°C") return "Temperature (°C)";
   if (unit === "%") return "Humidity (%)";
-  if (unit === "mm/min") return "Rainfall Intensity (mm/min)";
+  if (unit === "mm/h") return "Rainfall Intensity (mm/h)";
   if (unit === "mm") return "Rainfall (mm)";
   if (unit === "m") return "Water Level (m)";
   if (unit === "hPa") return "Pressure (hPa)";
