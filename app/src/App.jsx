@@ -223,7 +223,10 @@ export default function App() {
     // persist each changed station to Supabase once (no-op if unconfigured)
     for (const id of touched) {
       const st = list.find((s) => s.id === id);
-      if (st) saveStation(st);
+      if (st) {
+        const saveError = await saveStation(st);
+        if (saveError) errors.push(`${st.name_en}: ${saveError.message}`);
+      }
     }
     if (errors.length) setImportError(`${t("importError")}: ${errors.join(" · ")}`);
     setImporting(false);

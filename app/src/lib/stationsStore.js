@@ -23,7 +23,7 @@ export async function loadSavedStations() {
 
 // Insert or update a station (keyed by its id).
 export async function saveStation(station) {
-  if (!supabaseEnabled) return;
+  if (!supabaseEnabled) return null;
   const { error } = await supabase.from(TABLE).upsert(
     {
       id: station.id,
@@ -37,6 +37,7 @@ export async function saveStation(station) {
     { onConflict: "id" }
   );
   if (error) console.error("saveStation failed:", error.message);
+  return error;
 }
 
 export async function deleteStation(id) {

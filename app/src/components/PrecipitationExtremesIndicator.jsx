@@ -27,6 +27,11 @@ function thresholdLabel(value) {
   return `99.9th percentile: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })} mm/day`;
 }
 
+function axisTick(value) {
+  if (!Number.isFinite(Number(value))) return "";
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 function DailyTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
@@ -129,14 +134,16 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                 <p>This indicator identifies exceptionally wet days relative to the 99.9th percentile of the available daily precipitation record.</p>
               </div>
               <ResponsiveContainer width="100%" height={360}>
-                <LineChart data={dailyData} margin={{ top: 14, right: 22, left: 24, bottom: 28 }}>
+                <LineChart data={dailyData} margin={{ top: 14, right: 22, left: 54, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" />
                   <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} />
                   <YAxis
                     domain={dailyDomain}
                     allowDataOverflow
+                    width={72}
                     tick={{ fontSize: 12 }}
-                    label={{ value: "Daily precipitation (mm)", angle: -90, position: "insideLeft", offset: -8 }}
+                    tickFormatter={axisTick}
+                    label={{ value: "Daily precipitation (mm)", angle: -90, position: "insideLeft", offset: -22 }}
                   />
                   <Tooltip content={<DailyTooltip />} />
                   <ReferenceLine
@@ -161,13 +168,15 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                 <p>Annual maximum daily totals compared with the same record-wide threshold.</p>
               </div>
               <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={yearlyData.map((row) => ({ ...row, threshold }))} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
+                <BarChart data={yearlyData.map((row) => ({ ...row, threshold }))} margin={{ top: 30, right: 18, left: 54, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" vertical={false} />
                   <XAxis dataKey="year" />
                   <YAxis
                     allowDecimals={false}
                     domain={yearlyDomain}
-                    label={{ value: "Annual daily maximum (mm)", angle: -90, position: "insideLeft" }}
+                    width={72}
+                    tickFormatter={axisTick}
+                    label={{ value: "Annual daily maximum (mm)", angle: -90, position: "insideLeft", offset: -22 }}
                   />
                   <Tooltip content={<YearTooltip />} />
                   <ReferenceLine
