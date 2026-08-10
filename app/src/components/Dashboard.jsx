@@ -10,6 +10,7 @@ import HotDaysInDrySpellsIndicator from "./HotDaysInDrySpellsIndicator.jsx";
 import FreezeThawCyclesIndicator from "./FreezeThawCyclesIndicator.jsx";
 import HeavySnowfallIndicator from "./HeavySnowfallIndicator.jsx";
 import SnowfallIndicator from "./SnowfallIndicator.jsx";
+import TropicalNightsIndicator from "./TropicalNightsIndicator.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -140,7 +141,10 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         <>
           <HotDaysIndicator measurement={m} t={t} />
           {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
-            <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
+            <>
+              <TropicalNightsIndicator measurement={data.measurements.air_temp} />
+              <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
+            </>
           )}
         </>
       )}
