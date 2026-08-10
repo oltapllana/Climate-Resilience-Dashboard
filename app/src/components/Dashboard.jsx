@@ -141,12 +141,13 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         <>
           <HotDaysIndicator measurement={m} t={t} />
           {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
-            <>
-              <TropicalNightsIndicator measurement={data.measurements.air_temp} />
-              <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
-            </>
+            <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
           )}
         </>
+      )}
+
+      {hasValidTemperatureHourly && (
+        <TropicalNightsIndicator measurement={data.measurements.air_temp} />
       )}
 
       {(activeMeasId === "rain_intensity" || activeMeasId === "air_temp") && hasValidRainIntensityHourly && hasValidTemperatureHourly && (
