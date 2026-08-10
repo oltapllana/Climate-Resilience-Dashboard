@@ -7,6 +7,9 @@ import PrecipitationExtremesIndicator from "./PrecipitationExtremesIndicator.jsx
 import HotDaysIndicator from "./HotDaysIndicator.jsx";
 import DrySpellsIndicator from "./DrySpellsIndicator.jsx";
 import HotDaysInDrySpellsIndicator from "./HotDaysInDrySpellsIndicator.jsx";
+import FreezeThawCyclesIndicator from "./FreezeThawCyclesIndicator.jsx";
+import HeavySnowfallIndicator from "./HeavySnowfallIndicator.jsx";
+import SnowfallIndicator from "./SnowfallIndicator.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -134,14 +137,31 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
       )}
 
       {(activeMeasId === "air_temp" || unit === "°C") && (
-        <HotDaysIndicator measurement={m} t={t} />
+        <>
+          <HotDaysIndicator measurement={m} t={t} />
+          {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
+            <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
+          )}
+        </>
       )}
 
       {(activeMeasId === "rain_intensity" || activeMeasId === "air_temp") && hasValidRainIntensityHourly && hasValidTemperatureHourly && (
-        <HotDaysInDrySpellsIndicator
-          rainfallMeasurement={data.measurements.rain_intensity}
-          temperatureMeasurement={data.measurements.air_temp}
-        />
+        <>
+          <HotDaysInDrySpellsIndicator
+            rainfallMeasurement={data.measurements.rain_intensity}
+            temperatureMeasurement={data.measurements.air_temp}
+          />
+          <SnowfallIndicator
+            stationId={data.id}
+            rainfallMeasurement={data.measurements.rain_intensity}
+            temperatureMeasurement={data.measurements.air_temp}
+          />
+          <HeavySnowfallIndicator
+            stationId={data.id}
+            rainfallMeasurement={data.measurements.rain_intensity}
+            temperatureMeasurement={data.measurements.air_temp}
+          />
+        </>
       )}
 
       <div className="charts">
