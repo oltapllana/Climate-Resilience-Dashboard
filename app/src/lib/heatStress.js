@@ -23,13 +23,6 @@ export const HEAT_WAVE_MIN_DAYS = 3;
 export const COLD_PERIOD_THRESHOLD_C = -3;
 export const COLD_PERIOD_MIN_DAYS = 5;
 
-// A frost day has a minimum below zero; an ice day never rises above it. Both
-// are shown because "days below 0 °C" is ambiguous between the two.
-export const COLD_BANDS = [
-  { id: "frostDays", label: "Tmin < 0 °C", color: "#7fb3d5" },
-  { id: "iceDays", label: "Tmax < 0 °C", color: "#2b5f8a" },
-];
-
 export function bandOf(dailyMax) {
   return HEAT_STRESS_BANDS.find((band) => dailyMax >= band.min && dailyMax < band.max) ?? null;
 }
@@ -109,9 +102,14 @@ export function calculateHeatStress(hourlyRecords) {
     if (!rows.length) continue;
     const availableStart = firstDate > `${year}-01-01` ? firstDate : `${year}-01-01`;
     const availableEnd = lastDate < `${year}-12-31` ? lastDate : `${year}-12-31`;
+    const classCounts = Object.fromEntries(
+      HEAT_STRESS_BANDS.map((band) => [band.id, rows.filter((row) => row.band === band.id).length]),
+    );
     yearly.push({
       year,
-      ...Object.fromEntries(HEAT_STRESS_BANDS.map((band) => [band.id, rows.filter((row) => row.band === band.id).length])),
+      ...classCounts,
+      // classes are exclusive, so the stack total is the year's heat-stress days
+      heatStressTotal: Object.values(classCounts).reduce((sum, count) => sum + count, 0),
       frostDays: rows.filter((row) => row.isFrostDay).length,
       iceDays: rows.filter((row) => row.isIceDay).length,
       heatWaveCount: heatWaves.filter((wave) => Number(wave.startDate.slice(0, 4)) === year).length,

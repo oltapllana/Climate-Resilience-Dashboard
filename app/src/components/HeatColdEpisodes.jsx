@@ -16,21 +16,27 @@ const COLD = "#1f77b4";
 const formatTemp = (value) => `${value > 0 ? "+" : ""}${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
 const asDayMonthYear = (date) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)}`;
 
+export const MAX_EPISODES_PER_TYPE = 6;
+
 export default function HeatColdEpisodes({ measurement, t }) {
   const result = useMemo(() => calculateHeatStress(measurement?.hourly), [measurement]);
 
-  const data = useMemo(
-    () => result.episodes.map((episode, index) => ({
+  // A five-year record throws off far more qualifying episodes than fit on one
+  // readable chart, so only the longest few of each type are drawn. The count
+  // left out is stated below the chart rather than silently dropped.
+  const data = useMemo(() => {
+    const take = (type) => result.episodes.filter((episode) => episode.type === type).slice(0, MAX_EPISODES_PER_TYPE);
+    return [...take("heat"), ...take("cold")].map((episode, index) => ({
       ...episode,
       // the y axis is categorical, so identical date ranges still need unique keys
       key: `${episode.type}-${episode.startDate}-${index}`,
       title: episode.type === "heat" ? t("heatWaveLabel") : t("coldPeriodLabel"),
       range: `${asDayMonthYear(episode.startDate)} – ${asDayMonthYear(episode.endDate)}`,
-    })),
-    [result.episodes, t],
-  );
+    }));
+  }, [result.episodes, t]);
 
   if (!data.length) return null;
+  const hiddenCount = result.episodes.length - data.length;
 
   function EpisodeTick({ x, y, payload }) {
     const row = data.find((item) => item.key === payload.value);
@@ -111,6 +117,7 @@ export default function HeatColdEpisodes({ measurement, t }) {
         {t("episodesAssumption")
           .replace("{heat}", result.heatWaves.length)
           .replace("{cold}", result.coldPeriods.length)}
+        {hiddenCount > 0 && ` ${t("episodesTruncated").replace("{shown}", MAX_EPISODES_PER_TYPE).replace("{hidden}", hiddenCount)}`}
       </p>
     </section>
   );

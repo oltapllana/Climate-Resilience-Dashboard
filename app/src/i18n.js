@@ -215,6 +215,20 @@ export const STRINGS = {
     daysAxis: "Number of days",
     annualMean: "Annual mean",
 
+    pressureExtremesTitle: "Maximum and minimum air pressure",
+    pressureExtremesDesc: "Monthly pressure range — a wider band means more unsettled weather.",
+    monthlyRangeLegend: "Monthly range (min–max)",
+    maxValueLegend: "Maximum value",
+    minValueLegend: "Minimum value",
+    absoluteMaximum: "Absolute maximum",
+    absoluteMinimum: "Absolute minimum",
+    widestMonth: "Widest month",
+    periodAxis: "Period",
+    pressureExtremesExplanation:
+      "The shaded band is the gap between the highest and lowest pressure recorded in each month. A wide band means pressure swung a great deal that month — the signature of passing weather systems — while a narrow band means settled conditions.",
+    pressureExtremesAssumption:
+      "Extremes are the true daily minimum and maximum of the raw samples, not the daily mean, so the values are pressures the sensor actually recorded. Values are station-level pressure, not reduced to sea level.",
+
     pressureDiurnalTitle: "Daily cycle of air pressure by season",
     pressureDiurnalDesc: "Mean hourly departure from each day's own mean pressure, one curve per season.",
     pressureDeviationAxis: "Departure from the daily mean (hPa)",
@@ -272,11 +286,19 @@ export const STRINGS = {
     heatStressAssumption:
       "Thresholds are the review's (26–32 moderate, 32–38 strong, 38–46 very strong, above 46 extreme). Daily extremes use available hourly observations without interpolation. Years marked with an asterisk do not cover a full calendar year.",
 
-    coldDaysTitle: "Days below 0 °C",
-    coldDaysDesc: "Frost days and ice days per year, shown separately from the heat classes.",
-    frostDays: "Frost days (Tmin < 0 °C)",
-    iceDays: "Ice days (Tmax < 0 °C)",
     coldestDay: "Coldest day",
+
+    extremeDaysTitle: "The {n} coldest and {n} hottest days on record",
+    extremeDaysDesc: "Cold days are ranked by their daily minimum, hot days by their daily maximum.",
+    airTemperatureAxis: "Air temperature (°C)",
+    coldestDaysLegend: "Coldest days",
+    hottestDaysLegend: "Hottest days",
+    dailyMinimumShort: "Daily minimum",
+    dailyMaximumShort: "Daily maximum",
+    extremeDaysExplanation:
+      "Bars run down from the zero line for the cold extremes and up from it for the hot ones, ordered from the coldest day on the left to the hottest on the right.",
+    extremeDaysAssumption:
+      "Ranked across {days} observed days between {start} and {end}. Daily extremes use available hourly observations without interpolation, so a day with sensor gaps may record a less extreme value than it actually reached.",
 
     episodesTitle: "Heat waves and cold periods",
     episodesDesc: "Every qualifying episode in the record, longest first.",
@@ -291,6 +313,7 @@ export const STRINGS = {
       "Each bar is one continuous episode, so its length is the number of days in a row the condition held. The peak is the most extreme temperature reached inside that episode — it is what separates two episodes of equal length.",
     episodesAssumption:
       "{heat} heat waves and {cold} cold periods in the record. Daily extremes use available hourly observations without interpolation, so a gap in the record can end an episode that in reality continued.",
+    episodesTruncated: "The chart shows the longest {shown} of each type; {hidden} shorter episodes are not drawn.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -506,6 +529,20 @@ export const STRINGS = {
     daysAxis: "Numri i ditëve",
     annualMean: "Mesatarja vjetore",
 
+    pressureExtremesTitle: "Vlerat maksimale dhe minimale të shtypjes atmosferike",
+    pressureExtremesDesc: "Diapazoni mujor i shtypjes — hapësira më e madhe tregon paqëndrueshmëri.",
+    monthlyRangeLegend: "Diapazoni mujor (min–max)",
+    maxValueLegend: "Vlera maksimale",
+    minValueLegend: "Vlera minimale",
+    absoluteMaximum: "Maksimumi absolut",
+    absoluteMinimum: "Minimumi absolut",
+    widestMonth: "Muaji me diapazonin më të gjerë",
+    periodAxis: "Periudha",
+    pressureExtremesExplanation:
+      "Zona e hijezuar është hapësira mes shtypjes më të lartë dhe më të ulët të regjistruar në çdo muaj. Një zonë e gjerë tregon se shtypja ka luhatur shumë atë muaj — shenja e sistemeve të motit që kalojnë — ndërsa një zonë e ngushtë tregon kushte të qëndrueshme.",
+    pressureExtremesAssumption:
+      "Ekstremet janë minimumi dhe maksimumi real ditor i matjeve burimore, jo mesatarja ditore, prandaj vlerat janë shtypje që sensori i ka regjistruar vërtet. Vlerat janë shtypje në nivel stacioni, jo të reduktuara në nivel deti.",
+
     pressureDiurnalTitle: "Cikli ditor i shtypjes atmosferike sipas stinës",
     pressureDiurnalDesc: "Devijimi mesatar orar nga mesatarja ditore e shtypjes, një lakore për çdo stinë.",
     pressureDeviationAxis: "Devijimi nga mesatarja ditore (hPa)",
@@ -563,11 +600,19 @@ export const STRINGS = {
     heatStressAssumption:
       "Pragjet janë ato të kërkuara (26–32 stres mesatar, 32–38 i fortë, 38–46 shumë i fortë, mbi 46 ekstrem). Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim. Vitet e shënuara me yll nuk mbulojnë një vit të plotë kalendarik.",
 
-    coldDaysTitle: "Numri i ditëve me temperaturë nën 0 °C",
-    coldDaysDesc: "Ditët me ngricë dhe ditët e akullta për çdo vit, të paraqitura ndaras nga nivelet e të nxehtit.",
-    frostDays: "Ditë me ngricë (Tmin < 0 °C)",
-    iceDays: "Ditë të akullta (Tmaks < 0 °C)",
     coldestDay: "Dita më e ftohtë",
+
+    extremeDaysTitle: "{n} ditët më të ftohta dhe {n} ditët më të nxehta të regjistruara",
+    extremeDaysDesc: "Ditët e ftohta renditen sipas minimumit ditor, ditët e nxehta sipas maksimumit ditor.",
+    airTemperatureAxis: "Temperatura e ajrit (°C)",
+    coldestDaysLegend: "Ditët më të ftohta",
+    hottestDaysLegend: "Ditët më të nxehta",
+    dailyMinimumShort: "Minimumi ditor",
+    dailyMaximumShort: "Maksimumi ditor",
+    extremeDaysExplanation:
+      "Shtyllat zbresin nën vijën e zeros për ekstremet e ftohta dhe ngjiten mbi të për ato të nxehta, të renditura nga dita më e ftohtë majtas te më e nxehta djathtas.",
+    extremeDaysAssumption:
+      "Renditur nga {days} ditë të vëzhguara mes {start} dhe {end}. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ditë me ndërprerje të sensorit mund të regjistrojë vlerë më pak ekstreme sesa ka arritur në realitet.",
 
     episodesTitle: "Valët e të nxehtit dhe periudhat e ftohta",
     episodesDesc: "Çdo episod kualifikues në periudhë, i renditur nga më i gjati.",
@@ -582,6 +627,7 @@ export const STRINGS = {
       "Çdo shtyllë është një episod i vazhdueshëm, prandaj gjatësia e saj tregon numrin e ditëve radhazi që kushti u plotësua. Kulmi është temperatura më ekstreme e arritur brenda atij episodi — ai është dallimi mes dy episodeve me gjatësi të njëjtë.",
     episodesAssumption:
       "{heat} valë të të nxehtit dhe {cold} periudha të ftohta në periudhë. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ndërprerje në regjistrim mund ta mbyllë një episod që në realitet ka vazhduar.",
+    episodesTruncated: "Grafiku paraqet {shown} më të gjatat për secilin lloj; {hidden} episode më të shkurtra nuk janë vizatuar.",
   },
 };
 

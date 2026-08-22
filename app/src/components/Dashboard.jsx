@@ -18,11 +18,13 @@ import RainyDaysIndicator from "./RainyDaysIndicator.jsx";
 import DailyTrendIndicator from "./DailyTrendIndicator.jsx";
 import SolarDiurnalProfile from "./SolarDiurnalProfile.jsx";
 import DiurnalPressureCycle from "./DiurnalPressureCycle.jsx";
+import MonthlyExtremesRange from "./MonthlyExtremesRange.jsx";
 import MonthlyTemperatureTrend from "./MonthlyTemperatureTrend.jsx";
 import MonthlyTemperatureExtremes from "./MonthlyTemperatureExtremes.jsx";
 import DiurnalTemperatureBySeason from "./DiurnalTemperatureBySeason.jsx";
 import HeatStressIndicator from "./HeatStressIndicator.jsx";
 import HeatColdEpisodes from "./HeatColdEpisodes.jsx";
+import ExtremeDaysIndicator from "./ExtremeDaysIndicator.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -205,6 +207,17 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
             digits={1}
             t={t}
           />
+          <MonthlyExtremesRange
+            measurement={m}
+            unit={unit}
+            title={t("pressureExtremesTitle")}
+            description={t("pressureExtremesDesc")}
+            axisLabel={t("pressureTrendAxis")}
+            explanation={t("pressureExtremesExplanation")}
+            assumption={t("pressureExtremesAssumption")}
+            digits={1}
+            t={t}
+          />
           <DiurnalPressureCycle measurement={m} unit={unit} t={t} />
         </>
       )}
@@ -219,6 +232,7 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
               <MonthlyTemperatureExtremes measurement={data.measurements.air_temp} t={t} />
               <DiurnalTemperatureBySeason measurement={data.measurements.air_temp} t={t} />
               <HeatStressIndicator measurement={data.measurements.air_temp} t={t} />
+              <ExtremeDaysIndicator measurement={data.measurements.air_temp} t={t} />
               <HeatColdEpisodes measurement={data.measurements.air_temp} t={t} />
             </>
           )}
