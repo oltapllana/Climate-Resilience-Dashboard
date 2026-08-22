@@ -189,6 +189,18 @@ header.masthead {
   line-height: 1.5;
 }
 .indicator-assumption { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+/* highlights the one number a chart exists to surface, out of the plot area so
+   it cannot overlap the title or axes (a recurring review comment) */
+.indicator-callout {
+  margin: 10px 0 2px;
+  padding: 7px 11px;
+  border-left: 3px solid var(--green-dark);
+  border-radius: 4px;
+  background: #f2f7f3;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
 .indicator-tooltip {
   display: grid;
   gap: 3px;

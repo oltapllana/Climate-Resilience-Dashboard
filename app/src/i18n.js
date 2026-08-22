@@ -125,6 +125,89 @@ export const STRINGS = {
     passwordPlaceholder: "Password",
     signedInAs: "Signed in as",
     authError: "Could not sign in",
+
+    spring: "Spring",
+    summer: "Summer",
+    autumn: "Autumn",
+    winter: "Winter",
+    peak: "Peak",
+    coverage: "Coverage",
+    partialYear: "partial year",
+    observedDays: "Observed days",
+    standardDeviation: "standard deviation",
+    completeYearsCounted: "Complete years used",
+    longTermMean: "Long-term mean",
+    rollingMean30: "30-day rolling mean",
+
+    windDiurnalTitle: "Wind speed through the day",
+    windDiurnalDesc: "Mean wind speed by hour of day (m/s), averaged over the whole record.",
+    windDiurnalExplanation:
+      "Wind speed follows a daily cycle: calm overnight, strengthening after sunrise as the surface heats, peaking in the early afternoon, then easing again after sunset.",
+    windDiurnalAssumption:
+      "Each hour averages every observation logged at that clock hour across the record; seasons are not separated here.",
+    meanSpeedAxis: "Mean wind speed (m/s)",
+
+    windByDirectionTitle: "Wind speed by direction",
+    windByDirectionDesc: "Mean wind speed for each of the 16 compass sectors.",
+    windByDirectionExplanation:
+      "This shows how strong the wind is when it blows from each direction, separate from how often it blows from there (that is the wind rose).",
+    windByDirectionAssumption:
+      "Direction and speed are paired on the shared timestamp, so a reading counts only when both sensors reported.",
+    windDirectionAxis: "Wind direction",
+    strongestWindsFrom: "Strongest winds come from",
+
+    monthlyRainfallTitle: "Mean monthly rainfall",
+    monthlyRainfallDesc: "Average rainfall per calendar month with the between-year standard deviation.",
+    monthlyRainfallAxis: "Mean monthly rainfall (mm)",
+    monthlyRainfallExplanation:
+      "Bars are coloured by season. The whiskers show the standard deviation between years — a long whisker means that month varies a great deal from one year to the next.",
+    monthlyRainfallAssumption:
+      "Depths are reconstructed from hourly rainfall intensity (one clock-hour of mm/h equals mm of depth); intensity readings are never summed directly. Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
+    highestRainfallMonth: "Month with the highest rainfall",
+
+    rainyDaysTitle: "Rain days per year",
+    rainyDaysDesc: "Days with at least 1 mm, split by how much rain fell.",
+    rainyDaysMonthlyTitle: "Rain days by month (all years combined)",
+    rainyDaysMonthlyDesc: "Every January, every February… of the record pooled together, so a bar can exceed 31 days. The line is the share of observed days.",
+    rainyDaysAxis: "Rain days",
+    rainyDaysAxisAllYears: "Rain days (all years)",
+    rainDays: "Rain days",
+    rainDaysAllYears: "Rain days, all years",
+    rainDaysPerYear: "Average per year",
+    yearSingular: "year",
+    yearPlural: "years",
+    shareOfDays: "Share of observed days",
+    rainyDaysExplanation:
+      "A rain day is a calendar day with at least 1 mm of rainfall — the same convention the dry-spells indicator uses, so the two are directly comparable. The colour bands separate ordinary rain days from the heavy ones.",
+    rainyDaysAssumption:
+      "Daily depths come from the hourly rainfall-intensity reconstruction. Years that do not cover a full calendar year are marked with an asterisk and are not comparable with complete years.",
+
+    solarTrendTitle: "Solar radiation 2021–2026",
+    solarTrendDesc: "Daily mean solar radiation with a 30-day rolling mean.",
+    solarTrendAxis: "Daily mean solar radiation (W/m²)",
+    solarTrendExplanation:
+      "The faint line is the daily mean; the bold line is the 30-day rolling mean, which makes the seasonal cycle and any drift between years readable.",
+    solarTrendAssumption:
+      "The rolling mean starts only once 30 observed days are available, so the first weeks of the record carry no trend line.",
+
+    solarProfileTitle: "Hourly solar profile by season",
+    solarProfileDesc: "Mean solar radiation by hour of day, expressed in solar hours.",
+    solarHoursAxis: "Solar radiation (hours, h)",
+    solarHourConversion:
+      "Values are converted from W/m² to hours (h) by accumulating the mean hourly radiation over each one-hour interval: 1 h = {ref} W/m².",
+    solarOptimalWindow: "Optimal window for solar energy (09:00–15:00)",
+    solarProfileExplanation:
+      "Splitting the daily cycle by season shows what a single annual average hides: the summer curve is both taller and wider than the winter one, which matters for sizing solar capacity.",
+    solarProfileAssumption:
+      "Each point averages every observation at that clock hour within the season across all years of record. Peak hours:",
+
+    pressureTrendTitle: "Annual course of air pressure",
+    pressureTrendDesc: "Daily mean air pressure with a 30-day rolling mean.",
+    pressureTrendAxis: "Air pressure (hPa)",
+    pressureTrendExplanation:
+      "Air pressure at this station sits well below sea level values because of the station altitude; what matters here is the variation, not the absolute level.",
+    pressureTrendAssumption:
+      "The rolling mean starts only once 30 observed days are available. Values are station-level pressure, not reduced to sea level.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -250,6 +333,89 @@ export const STRINGS = {
     passwordPlaceholder: "Fjalëkalimi",
     signedInAs: "I kyçur si",
     authError: "Kyçja dështoi",
+
+    spring: "Pranverë",
+    summer: "Verë",
+    autumn: "Vjeshtë",
+    winter: "Dimër",
+    peak: "Kulmi",
+    coverage: "Mbulueshmëria",
+    partialYear: "vit i pjesshëm",
+    observedDays: "Ditë të vëzhguara",
+    standardDeviation: "devijimi standard",
+    completeYearsCounted: "Vite të plota të përdorura",
+    longTermMean: "Mesatarja afatgjate",
+    rollingMean30: "Mesatarja lëvizëse 30-ditore",
+
+    windDiurnalTitle: "Rastisja e shpejtësisë së erës gjatë ditës (m/s)",
+    windDiurnalDesc: "Shpejtësia mesatare e erës sipas orës së ditës (m/s), mesatarizuar për tërë periudhën.",
+    windDiurnalExplanation:
+      "Shpejtësia e erës ndjek një cikël ditor: e qetë gjatë natës, forcohet pas lindjes së diellit ndërsa sipërfaqja nxehet, arrin kulmin herët pasdite dhe dobësohet përsëri pas perëndimit.",
+    windDiurnalAssumption:
+      "Çdo orë mesatarizon të gjitha vëzhgimet e regjistruara në atë orë gjatë tërë periudhës; stinët nuk ndahen këtu.",
+    meanSpeedAxis: "Shpejtësia mesatare (m/s)",
+
+    windByDirectionTitle: "Rastisja e shpejtësisë së erës sipas drejtimeve",
+    windByDirectionDesc: "Shpejtësia mesatare e erës për secilin nga 16 sektorët e busullës.",
+    windByDirectionExplanation:
+      "Ky grafik tregon sa e fortë është era kur fryn nga secili drejtim, ndryshe nga sa shpesh fryn nga aty (atë e tregon rroza e erës).",
+    windByDirectionAssumption:
+      "Drejtimi dhe shpejtësia çiftohen sipas kohës së njëjtë, prandaj një matje numërohet vetëm kur të dy sensorët kanë regjistruar.",
+    windDirectionAxis: "Drejtimi i erës",
+    strongestWindsFrom: "Erërat më të forta vijnë më shpesh nga",
+
+    monthlyRainfallTitle: "Reshjet mesatare mujore",
+    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik me devijimin standard mes viteve.",
+    monthlyRainfallAxis: "Reshjet mesatare mujore (mm)",
+    monthlyRainfallExplanation:
+      "Shtyllat janë me ngjyra sipas stinës. Vijat vertikale tregojnë devijimin standard mes viteve — një vijë e gjatë do të thotë se ai muaj ndryshon shumë nga viti në vit.",
+    monthlyRainfallAssumption:
+      "Lartësitë e reshjeve rindërtohen nga intensiteti orar i reshjeve (një orë e plotë mm/h barazohet me mm lartësi); vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt. Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
+    highestRainfallMonth: "Muaji me sasinë më të lartë të reshjeve",
+
+    rainyDaysTitle: "Numri i ditëve me reshje për secilin vit",
+    rainyDaysDesc: "Ditët me së paku 1 mm, të ndara sipas sasisë së reshjeve.",
+    rainyDaysMonthlyTitle: "Ditët me reshje sipas muajit (të gjitha vitet së bashku)",
+    rainyDaysMonthlyDesc: "Çdo janar, çdo shkurt… i periudhës i mbledhur së bashku, prandaj një shtyllë mund të kalojë 31 ditë. Vija tregon përqindjen e ditëve të vëzhguara.",
+    rainyDaysAxis: "Ditë me reshje",
+    rainyDaysAxisAllYears: "Ditë me reshje (të gjitha vitet)",
+    rainDays: "Ditë me reshje",
+    rainDaysAllYears: "Ditë me reshje, të gjitha vitet",
+    rainDaysPerYear: "Mesatarja për vit",
+    yearSingular: "vit",
+    yearPlural: "vite",
+    shareOfDays: "Përqindja e ditëve të vëzhguara",
+    rainyDaysExplanation:
+      "Ditë me reshje është një ditë kalendarike me së paku 1 mm reshje — konventa e njëjtë që përdor treguesi i periudhave të thata, prandaj të dy janë drejtpërdrejt të krahasueshëm. Brezat me ngjyra ndajnë ditët e zakonshme nga ato me reshje të mëdha.",
+    rainyDaysAssumption:
+      "Lartësitë ditore vijnë nga rindërtimi orar i intensitetit të reshjeve. Vitet që nuk mbulojnë një vit të plotë kalendarik shënohen me yll dhe nuk janë të krahasueshme me vitet e plota.",
+
+    solarTrendTitle: "Rrezatimi diellor 2021–2026, St. Meteorologjik në Shajkoc (Podujevë)",
+    solarTrendDesc: "Rrezatimi mesatar ditor diellor me mesataren lëvizëse 30-ditore.",
+    solarTrendAxis: "Rrezatimi diellor mesatar ditor (W/m²)",
+    solarTrendExplanation:
+      "Vija e zbehtë është mesatarja ditore; vija e trashë është mesatarja lëvizëse 30-ditore, e cila e bën të lexueshëm ciklin sezonal dhe çdo zhvendosje mes viteve.",
+    solarTrendAssumption:
+      "Mesatarja lëvizëse fillon vetëm kur janë të disponueshme 30 ditë të vëzhguara, prandaj javët e para të regjistrimit nuk kanë vijë trendi.",
+
+    solarProfileTitle: "Profili orar i rrezatimit diellor sipas stinës",
+    solarProfileDesc: "Rrezatimi mesatar diellor sipas orës së ditës, i shprehur në orë.",
+    solarHoursAxis: "Rrezatimi diellor (orë, h)",
+    solarHourConversion:
+      "Vlerat konvertohen nga W/m² në orë (h) duke akumuluar rrezatimin mesatar orar gjatë intervaleve 1-orëshe: 1 h = {ref} W/m².",
+    solarOptimalWindow: "Dritarja optimale për energji diellore (09:00–15:00)",
+    solarProfileExplanation:
+      "Ndarja e ciklit ditor sipas stinës tregon atë që një mesatare e vetme vjetore e fsheh: lakorja e verës është më e lartë dhe më e gjerë se ajo e dimrit, gjë që ka rëndësi për dimensionimin e kapacitetit diellor.",
+    solarProfileAssumption:
+      "Çdo pikë mesatarizon të gjitha vëzhgimet në atë orë brenda stinës për të gjitha vitet e regjistrimit. Orët e kulmit:",
+
+    pressureTrendTitle: "Ecuria vjetore e shtypjes së ajrit",
+    pressureTrendDesc: "Shtypja mesatare ditore e ajrit me mesataren lëvizëse 30-ditore.",
+    pressureTrendAxis: "Shtypja atmosferike (hPa)",
+    pressureTrendExplanation:
+      "Shtypja e ajrit në këtë stacion qëndron dukshëm nën vlerat e nivelit të detit për shkak të lartësisë së stacionit; këtu ka rëndësi luhatja, jo niveli absolut.",
+    pressureTrendAssumption:
+      "Mesatarja lëvizëse fillon vetëm kur janë të disponueshme 30 ditë të vëzhguara. Vlerat janë shtypje në nivel stacioni, jo të reduktuara në nivel deti.",
   },
 };
 

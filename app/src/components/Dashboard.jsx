@@ -11,6 +11,12 @@ import FreezeThawCyclesIndicator from "./FreezeThawCyclesIndicator.jsx";
 import HeavySnowfallIndicator from "./HeavySnowfallIndicator.jsx";
 import SnowfallIndicator from "./SnowfallIndicator.jsx";
 import TropicalNightsIndicator from "./TropicalNightsIndicator.jsx";
+import WindDiurnalCycle from "./WindDiurnalCycle.jsx";
+import WindByDirection from "./WindByDirection.jsx";
+import MonthlyRainfallIndicator from "./MonthlyRainfallIndicator.jsx";
+import RainyDaysIndicator from "./RainyDaysIndicator.jsx";
+import DailyTrendIndicator from "./DailyTrendIndicator.jsx";
+import SolarDiurnalProfile from "./SolarDiurnalProfile.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -70,6 +76,9 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
   const hasValidTemperatureHourly = Array.isArray(temperatureHourly) && temperatureHourly.some(
     (row) => !Number.isNaN(new Date(row?.d).getTime()) && Number.isFinite(Number(row?.v))
   );
+  const windSpeedId = Object.keys(data.measurements).find((id) => id.includes("wind_speed"));
+  const windDirId = Object.keys(data.measurements).find((id) => id.includes("wind_dir"));
+  const isWindMeas = activeMeasId === windSpeedId || activeMeasId === windDirId;
 
   return (
     <div>
@@ -133,8 +142,62 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         <>
           <LandslideRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
           <PrecipitationExtremesIndicator measurement={data.measurements.rain_intensity} t={t} />
-          {hasValidRainIntensityHourly && <DrySpellsIndicator measurement={data.measurements.rain_intensity} />}
+          {hasValidRainIntensityHourly && (
+            <>
+              <DrySpellsIndicator measurement={data.measurements.rain_intensity} />
+              <MonthlyRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
+              <RainyDaysIndicator measurement={data.measurements.rain_intensity} t={t} />
+            </>
+          )}
         </>
+      )}
+
+      {isWindMeas && windSpeedId && (
+        <>
+          <WindDiurnalCycle speedMeasurement={data.measurements[windSpeedId]} t={t} />
+          {windDirId && (
+            <WindByDirection
+              directionMeasurement={data.measurements[windDirId]}
+              speedMeasurement={data.measurements[windSpeedId]}
+              t={t}
+            />
+          )}
+        </>
+      )}
+
+      {activeMeasId === "solar" && (
+        <>
+          <DailyTrendIndicator
+            measurement={m}
+            unit={unit}
+            title={t("solarTrendTitle")}
+            description={t("solarTrendDesc")}
+            axisLabel={t("solarTrendAxis")}
+            explanation={t("solarTrendExplanation")}
+            assumption={t("solarTrendAssumption")}
+            dailyColor="#e8b04b"
+            trendColor="#d6453d"
+            digits={0}
+            t={t}
+          />
+          <SolarDiurnalProfile measurement={m} t={t} />
+        </>
+      )}
+
+      {activeMeasId === "pressure" && (
+        <DailyTrendIndicator
+          measurement={m}
+          unit={unit}
+          title={t("pressureTrendTitle")}
+          description={t("pressureTrendDesc")}
+          axisLabel={t("pressureTrendAxis")}
+          explanation={t("pressureTrendExplanation")}
+          assumption={t("pressureTrendAssumption")}
+          dailyColor="#8fb4d9"
+          trendColor="#c63a2b"
+          digits={1}
+          t={t}
+        />
       )}
 
       {(activeMeasId === "air_temp" || unit === "°C") && (
