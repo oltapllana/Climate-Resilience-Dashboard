@@ -15,10 +15,14 @@ import WindDiurnalCycle from "./WindDiurnalCycle.jsx";
 import WindByDirection from "./WindByDirection.jsx";
 import MonthlyRainfallIndicator from "./MonthlyRainfallIndicator.jsx";
 import RainyDaysIndicator from "./RainyDaysIndicator.jsx";
+import TopRainfallDays from "./TopRainfallDays.jsx";
 import DailyTrendIndicator from "./DailyTrendIndicator.jsx";
 import SolarDiurnalProfile from "./SolarDiurnalProfile.jsx";
 import DiurnalPressureCycle from "./DiurnalPressureCycle.jsx";
 import MonthlyExtremesRange from "./MonthlyExtremesRange.jsx";
+import MonthlyMeanProfile from "./MonthlyMeanProfile.jsx";
+import ExtremeValueDaysPanels from "./ExtremeValueDaysPanels.jsx";
+import MonthYearHeatmap from "./MonthYearHeatmap.jsx";
 import MonthlyTemperatureTrend from "./MonthlyTemperatureTrend.jsx";
 import MonthlyTemperatureExtremes from "./MonthlyTemperatureExtremes.jsx";
 import DiurnalTemperatureBySeason from "./DiurnalTemperatureBySeason.jsx";
@@ -84,6 +88,8 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
   const hasValidTemperatureHourly = Array.isArray(temperatureHourly) && temperatureHourly.some(
     (row) => !Number.isNaN(new Date(row?.d).getTime()) && Number.isFinite(Number(row?.v))
   );
+  // both rainfall chips lead to the same set of rainfall charts
+  const isRainMeas = activeMeasId === "rain_intensity" || activeMeasId === "rainfall";
   const windSpeedId = Object.keys(data.measurements).find((id) => id.includes("wind_speed"));
   const windDirId = Object.keys(data.measurements).find((id) => id.includes("wind_dir"));
   const isWindMeas = activeMeasId === windSpeedId || activeMeasId === windDirId;
@@ -146,23 +152,34 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           not for the dashboard's other sensor measurements. */}
       {supportsRcp && <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />}
 
-      {activeMeasId === "rain_intensity" && (
+      {/* ---- Reshje — rainfall -----------------------------------------
+          Shown under either rainfall chip. Every chart here is computed from
+          the hourly rain_intensity series, but someone looking for rainfall
+          charts clicks "Reshjet" first, and hiding them there reads as though
+          they were never built. */}
+      {isRainMeas && data.measurements.rain_intensity && (
         <>
           <LandslideRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
           <PrecipitationExtremesIndicator measurement={data.measurements.rain_intensity} t={t} />
           {hasValidRainIntensityHourly && (
             <>
               <DrySpellsIndicator measurement={data.measurements.rain_intensity} />
+              {/* Reshje 1 */}
               <MonthlyRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
+              {/* Reshje 3 + 5 */}
               <RainyDaysIndicator measurement={data.measurements.rain_intensity} t={t} />
+              <TopRainfallDays measurement={data.measurements.rain_intensity} t={t} />
             </>
           )}
         </>
       )}
 
+      {/* ---- Era — wind ----------------------------------------------- */}
       {isWindMeas && windSpeedId && (
         <>
+          {/* Era 1 */}
           <WindDiurnalCycle speedMeasurement={data.measurements[windSpeedId]} t={t} />
+          {/* Era 4 */}
           {windDirId && (
             <WindByDirection
               directionMeasurement={data.measurements[windDirId]}
@@ -173,8 +190,10 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         </>
       )}
 
+      {/* ---- Rrezatimi — solar radiation ------------------------------ */}
       {activeMeasId === "solar" && (
         <>
+          {/* Rrezatimi 1 */}
           <DailyTrendIndicator
             measurement={m}
             unit={unit}
@@ -188,12 +207,53 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
             digits={0}
             t={t}
           />
+          {/* Rrezatimi 2 */}
+          <MonthlyMeanProfile
+            measurement={m}
+            unit={unit}
+            title={t("solarMonthlyTitle")}
+            description={t("solarMonthlyDesc")}
+            axisLabel={t("solarMonthlyAxis")}
+            explanation={t("solarMonthlyExplanation")}
+            assumption={t("solarMonthlyAssumption")}
+            digits={0}
+            t={t}
+          />
+          {/* Rrezatimi 3 */}
+          <ExtremeValueDaysPanels
+            measurement={m}
+            unit={unit}
+            title={t("solarExtremeDaysTitle")}
+            description={t("solarExtremeDaysDesc")}
+            axisLabel={t("solarPeakAxis")}
+            highTitle={t("solarHighestDays").replace("{n}", 15)}
+            lowTitle={t("solarLowestDays").replace("{n}", 15)}
+            explanation={t("solarExtremeDaysExplanation")}
+            assumption={t("solarExtremeDaysAssumption")}
+            digits={0}
+            t={t}
+          />
+          {/* Rrezatimi 4 */}
+          <MonthYearHeatmap
+            measurement={m}
+            unit={unit}
+            title={t("solarHeatmapTitle")}
+            description={t("solarHeatmapDesc")}
+            scaleLabel={t("solarHeatmapScale")}
+            explanation={t("solarHeatmapExplanation")}
+            assumption={t("solarHeatmapAssumption")}
+            digits={0}
+            t={t}
+          />
+          {/* Rrezatimi 5 */}
           <SolarDiurnalProfile measurement={m} t={t} />
         </>
       )}
 
+      {/* ---- Shtypja — air pressure ----------------------------------- */}
       {activeMeasId === "pressure" && (
         <>
+          {/* Shtypja 1 */}
           <DailyTrendIndicator
             measurement={m}
             unit={unit}
@@ -207,6 +267,7 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
             digits={1}
             t={t}
           />
+          {/* Shtypja 2 */}
           <MonthlyExtremesRange
             measurement={m}
             unit={unit}
@@ -218,32 +279,44 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
             digits={1}
             t={t}
           />
+          {/* Shtypja 3 */}
           <DiurnalPressureCycle measurement={m} unit={unit} t={t} />
         </>
       )}
 
+      {/* ---- Temperatura — air temperature ---------------------------- */}
       {(activeMeasId === "air_temp" || unit === "°C") && (
         <>
+          {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
+            <>
+              {/* Temperatura 1 */}
+              <MonthlyTemperatureTrend measurement={data.measurements.air_temp} t={t} />
+              {/* Temperatura 2 + 3 */}
+              <MonthlyTemperatureExtremes measurement={data.measurements.air_temp} t={t} />
+              <DiurnalTemperatureBySeason measurement={data.measurements.air_temp} t={t} />
+              {/* Temperatura 4 */}
+              <HeatStressIndicator measurement={data.measurements.air_temp} t={t} />
+              <HeatColdEpisodes measurement={data.measurements.air_temp} t={t} />
+              {/* Temperatura 5 */}
+              <ExtremeDaysIndicator measurement={data.measurements.air_temp} t={t} />
+            </>
+          )}
+          {/* Kryesor 3 */}
           <HotDaysIndicator measurement={m} t={t} />
           {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
             <>
+              {/* Kryesor 6 */}
               <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
-              <MonthlyTemperatureTrend measurement={data.measurements.air_temp} t={t} />
-              <MonthlyTemperatureExtremes measurement={data.measurements.air_temp} t={t} />
-              <DiurnalTemperatureBySeason measurement={data.measurements.air_temp} t={t} />
-              <HeatStressIndicator measurement={data.measurements.air_temp} t={t} />
-              <ExtremeDaysIndicator measurement={data.measurements.air_temp} t={t} />
-              <HeatColdEpisodes measurement={data.measurements.air_temp} t={t} />
+              {/* Kryesor 9 — scoped to air temperature; it used to render under
+                  every measurement that happened to have hourly temperature */}
+              <TropicalNightsIndicator measurement={data.measurements.air_temp} />
             </>
           )}
         </>
       )}
 
-      {hasValidTemperatureHourly && (
-        <TropicalNightsIndicator measurement={data.measurements.air_temp} />
-      )}
-
-      {(activeMeasId === "rain_intensity" || activeMeasId === "air_temp") && hasValidRainIntensityHourly && hasValidTemperatureHourly && (
+      {/* ---- Kryesor 5, 7, 8 — need rainfall and temperature together -- */}
+      {(isRainMeas || activeMeasId === "air_temp") && hasValidRainIntensityHourly && hasValidTemperatureHourly && (
         <>
           <HotDaysInDrySpellsIndicator
             rainfallMeasurement={data.measurements.rain_intensity}

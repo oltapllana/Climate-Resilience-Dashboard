@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { INTENSITY_BANDS, calculateRainyDays } from "../lib/rainyDays.js";
+import { CLASSIFIED_BANDS, calculateRainyDays } from "../lib/rainyDays.js";
 
 const LINE = "#c63a2b";
 
@@ -12,10 +12,12 @@ function YearTooltip({ active, payload, t }) {
   return (
     <div className="indicator-tooltip">
       <strong>{row.year}{row.isPartial ? ` (${t("partialYear")})` : ""}</strong>
-      <span>{t("rainDays")}: {row.rainDays}</span>
-      {INTENSITY_BANDS.map((band) => (
+      {CLASSIFIED_BANDS.map((band) => (
         <span key={band.id}>{band.label}: {row[band.id]}</span>
       ))}
+      <span>{t("classifiedDays")}: {row.classifiedDays}</span>
+      <span>{t("lightRainDays")}: {row.light}</span>
+      <span>{t("rainDays")}: {row.rainDays}</span>
       <span>{t("observedDays")}: {row.observedDays}</span>
       <span>{t("coverage")}: {row.availableStart} – {row.availableEnd}</span>
     </div>
@@ -77,11 +79,11 @@ export default function RainyDaysIndicator({ measurement, t }) {
               <Legend
                 verticalAlign="top"
                 height={26}
-                payload={INTENSITY_BANDS.map((band) => ({ value: band.label, type: "square", color: band.color }))}
+                payload={CLASSIFIED_BANDS.map((band) => ({ value: band.label, type: "square", color: band.color }))}
               />
-              {INTENSITY_BANDS.map((band, index) => (
-                <Bar key={band.id} dataKey={band.id} stackId="bands" fill={band.color} radius={index === INTENSITY_BANDS.length - 1 ? [4, 4, 0, 0] : undefined}>
-                  {index === INTENSITY_BANDS.length - 1 && <LabelList dataKey="rainDays" content={<TotalLabel />} />}
+              {CLASSIFIED_BANDS.map((band, index) => (
+                <Bar key={band.id} dataKey={band.id} stackId="bands" fill={band.color} radius={index === CLASSIFIED_BANDS.length - 1 ? [4, 4, 0, 0] : undefined}>
+                  {index === CLASSIFIED_BANDS.length - 1 && <LabelList dataKey="classifiedDays" content={<TotalLabel />} />}
                 </Bar>
               ))}
             </BarChart>

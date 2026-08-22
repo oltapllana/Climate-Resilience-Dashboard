@@ -62,6 +62,7 @@ export const STRINGS = {
     dataNote:
       "Data: hydro-meteo sensor network, Llap basin (Podujevë). Aggregated from raw measurements.",
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    monthsFull: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     anomalyAbove: "Above average",
     anomalyBelow: "Below average",
     rangeBand: "Min–max range",
@@ -165,8 +166,19 @@ export const STRINGS = {
       "Depths are reconstructed from hourly rainfall intensity (one clock-hour of mm/h equals mm of depth); intensity readings are never summed directly. Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
     highestRainfallMonth: "Month with the highest rainfall",
 
+    topRainDaysTitle: "The {n} days with the highest rainfall",
+    topRainDaysDesc: "Record rainfall days — the highest flood risk.",
+    dailyRainfallAxis: "Total daily rainfall (mm)",
+    highRainfallMarker: "flood risk (80 mm)",
+    topRainDaysExplanation:
+      "Bars use the same colour bands as the yearly chart, so red means the same thing in both. The dashed line marks the 80 mm boundary of the top band.",
+    topRainDaysAssumption:
+      "Daily totals are rebuilt from hourly rainfall intensity — one clock-hour of mm/h equals one mm of depth. Intensity readings are never summed directly, which is what produces impossible totals in the thousands of millimetres.",
+
     rainyDaysTitle: "Rain days per year",
-    rainyDaysDesc: "Days with at least 1 mm, split by how much rain fell.",
+    rainyDaysDesc: "Days classified by how much rain fell: 30–50, 50–80 and over 80 mm.",
+    classifiedDays: "Days of 30 mm or more",
+    lightRainDays: "Days 1–30 mm",
     rainyDaysMonthlyTitle: "Rain days by month (all years combined)",
     rainyDaysMonthlyDesc: "Every January, every February… of the record pooled together, so a bar can exceed 31 days. The line is the share of observed days.",
     rainyDaysAxis: "Rain days",
@@ -178,7 +190,7 @@ export const STRINGS = {
     yearPlural: "years",
     shareOfDays: "Share of observed days",
     rainyDaysExplanation:
-      "A rain day is a calendar day with at least 1 mm of rainfall — the same convention the dry-spells indicator uses, so the two are directly comparable. The colour bands separate ordinary rain days from the heavy ones.",
+      "Bars count only days reaching 30 mm, in the three classified bands. Ordinary 1–30 mm days outnumber these roughly ten to one, so including them would flatten the three bands into invisible slivers; their count is in the tooltip instead, along with the total of all days above 1 mm.",
     rainyDaysAssumption:
       "Daily depths come from the hourly rainfall-intensity reconstruction. Years that do not cover a full calendar year are marked with an asterisk and are not comparable with complete years.",
 
@@ -189,6 +201,35 @@ export const STRINGS = {
       "The faint line is the daily mean; the bold line is the 30-day rolling mean, which makes the seasonal cycle and any drift between years readable.",
     solarTrendAssumption:
       "The rolling mean starts only once 30 observed days are available, so the first weeks of the record carry no trend line.",
+
+    solarMonthlyTitle: "Monthly mean solar radiation",
+    solarMonthlyDesc: "Mean values and standard deviation",
+    solarMonthlyAxis: "Mean radiation (W/m²)",
+    solarMonthlyExplanation:
+      "Each bar is the average of that calendar month across every year of record; the whiskers are the standard deviation between those years, so a long whisker marks a month that differs a lot from year to year.",
+    solarMonthlyAssumption:
+      "Each month-year is averaged first and those means are then averaged across years, so a year with more observed days does not pull the average toward itself. Month-years with fewer than 15 observed days are excluded — they sample whichever days the sensor was running rather than the month.",
+    monthlyProfileSkipped: "{n} month-years were excluded for having fewer than 15 observed days.",
+
+    solarExtremeDaysTitle: "Days with the highest and lowest radiation",
+    solarExtremeDaysDesc: "Low-radiation days are overcast days — the hardest case for solar energy.",
+    solarHighestDays: "The {n} days with the highest radiation",
+    solarLowestDays: "The {n} days with the lowest radiation",
+    solarPeakAxis: "Peak radiation (W/m²)",
+    solarExtremeDaysExplanation:
+      "Days are ranked by the maximum radiation they reached, so each bar is that day's best moment. The gap between the two panels shows how much a cloudy day costs: the dullest days peak at a small fraction of the brightest.",
+    solarExtremeDaysAssumption:
+      "The daily maximum is the highest single reading of the day, not the daily average. A day with sensor gaps around midday may rank lower than it truly was.",
+
+    solarHeatmapTitle: "Solar radiation map by month and year",
+    solarHeatmapDesc: "Comparison of mean radiation — a warmer colour means higher radiation.",
+    solarHeatmapScale: "Mean radiation (W/m²)",
+    solarHeatmapExplanation:
+      "Reading across a row compares the same month between years; reading down a column follows one year through its seasons. Blank cells are months the record does not cover — they are left empty rather than drawn as zero.",
+    solarHeatmapAssumption:
+      "Each cell is the mean of the daily values observed in that month and year.",
+    heatmapCellNote: "{filled} month-year cells contain data.",
+    heatmapSkipped: "{n} were excluded for having fewer than 10 observed days.",
 
     solarProfileTitle: "Hourly solar profile by season",
     solarProfileDesc: "Mean solar radiation by hour of day, expressed in solar hours.",
@@ -375,6 +416,7 @@ export const STRINGS = {
     dataNote:
       "Të dhënat: rrjeti i sensorëve hidro-meteo, pellgu i Llapit (Podujevë). Të agreguara nga matjet e papërpunuara.",
     months: ["Jan", "Shk", "Mar", "Pri", "Maj", "Qer", "Korr", "Gush", "Sht", "Tet", "Nën", "Dhj"],
+    monthsFull: ["Janar", "Shkurt", "Mars", "Prill", "Maj", "Qershor", "Korrik", "Gusht", "Shtator", "Tetor", "Nëntor", "Dhjetor"],
     anomalyAbove: "Mbi mesatare",
     anomalyBelow: "Nën mesatare",
     rangeBand: "Intervali min–max",
@@ -479,8 +521,19 @@ export const STRINGS = {
       "Lartësitë e reshjeve rindërtohen nga intensiteti orar i reshjeve (një orë e plotë mm/h barazohet me mm lartësi); vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt. Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
     highestRainfallMonth: "Muaji me sasinë më të lartë të reshjeve",
 
-    rainyDaysTitle: "Numri i ditëve me reshje për secilin vit",
-    rainyDaysDesc: "Ditët me së paku 1 mm, të ndara sipas sasisë së reshjeve.",
+    topRainDaysTitle: "{n} ditët me reshjet më të larta",
+    topRainDaysDesc: "Ditët me reshje rekord — rreziku më i lartë nga vërshimet.",
+    dailyRainfallAxis: "Reshjet totale ditore (mm)",
+    highRainfallMarker: "rrezik nga vërshimet (80 mm)",
+    topRainDaysExplanation:
+      "Shtyllat përdorin të njëjtat breza ngjyrash si grafiku vjetor, prandaj e kuqja ka të njëjtin kuptim në të dy. Vija me ndërprerje shënon kufirin 80 mm të brezit më të lartë.",
+    topRainDaysAssumption:
+      "Totalet ditore rindërtohen nga intensiteti orar i reshjeve — një orë e plotë mm/h barazohet me një mm lartësi. Vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt, gjë që është shkaku i totaleve të pamundura prej mijëra milimetrash.",
+
+    rainyDaysTitle: "Numri i ditëve me reshje sipas viteve",
+    rainyDaysDesc: "Ditët e klasifikuara sipas sasisë së reshjeve: 30–50, 50–80 dhe mbi 80 mm.",
+    classifiedDays: "Ditë me 30 mm e më shumë",
+    lightRainDays: "Ditë 1–30 mm",
     rainyDaysMonthlyTitle: "Ditët me reshje sipas muajit (të gjitha vitet së bashku)",
     rainyDaysMonthlyDesc: "Çdo janar, çdo shkurt… i periudhës i mbledhur së bashku, prandaj një shtyllë mund të kalojë 31 ditë. Vija tregon përqindjen e ditëve të vëzhguara.",
     rainyDaysAxis: "Ditë me reshje",
@@ -492,7 +545,7 @@ export const STRINGS = {
     yearPlural: "vite",
     shareOfDays: "Përqindja e ditëve të vëzhguara",
     rainyDaysExplanation:
-      "Ditë me reshje është një ditë kalendarike me së paku 1 mm reshje — konventa e njëjtë që përdor treguesi i periudhave të thata, prandaj të dy janë drejtpërdrejt të krahasueshëm. Brezat me ngjyra ndajnë ditët e zakonshme nga ato me reshje të mëdha.",
+      "Shtyllat numërojnë vetëm ditët që arrijnë 30 mm, në tre brezat e klasifikuar. Ditët e zakonshme 1–30 mm janë rreth dhjetë herë më të shumta, prandaj përfshirja e tyre do t'i rrafshonte tre brezat në shirita të padukshëm; numri i tyre gjendet te tooltip-i, bashkë me totalin e të gjitha ditëve mbi 1 mm.",
     rainyDaysAssumption:
       "Lartësitë ditore vijnë nga rindërtimi orar i intensitetit të reshjeve. Vitet që nuk mbulojnë një vit të plotë kalendarik shënohen me yll dhe nuk janë të krahasueshme me vitet e plota.",
 
@@ -503,6 +556,35 @@ export const STRINGS = {
       "Vija e zbehtë është mesatarja ditore; vija e trashë është mesatarja lëvizëse 30-ditore, e cila e bën të lexueshëm ciklin sezonal dhe çdo zhvendosje mes viteve.",
     solarTrendAssumption:
       "Mesatarja lëvizëse fillon vetëm kur janë të disponueshme 30 ditë të vëzhguara, prandaj javët e para të regjistrimit nuk kanë vijë trendi.",
+
+    solarMonthlyTitle: "Mesatarja mujore e rrezatimit diellor",
+    solarMonthlyDesc: "Vlerat mesatare dhe devijimi standard",
+    solarMonthlyAxis: "Rrezatimi mesatar (W/m²)",
+    solarMonthlyExplanation:
+      "Çdo shtyllë është mesatarja e atij muaji kalendarik për të gjitha vitet e regjistrimit; vijat vertikale janë devijimi standard mes atyre viteve, prandaj një vijë e gjatë shënon një muaj që ndryshon shumë nga viti në vit.",
+    solarMonthlyAssumption:
+      "Fillimisht mesatarizohet çdo muaj i çdo viti dhe pastaj ato mesatare mesatarizohen mes viteve, kështu që një vit me më shumë ditë të vëzhguara nuk e tërheq mesataren nga vetja. Muajt me më pak se 15 ditë të vëzhguara përjashtohen — ata paraqesin ditët kur sensori ishte në punë dhe jo muajin.",
+    monthlyProfileSkipped: "{n} muaj-vite u përjashtuan sepse kishin më pak se 15 ditë të vëzhguara.",
+
+    solarExtremeDaysTitle: "Ditët me rrezatimin më të lartë dhe më të ulët",
+    solarExtremeDaysDesc: "Ditët me rrezatim të ulët tregojnë ditë me vranësira — sfidë për energjinë diellore.",
+    solarHighestDays: "{n} ditët me rrezatimin më të lartë",
+    solarLowestDays: "{n} ditët me rrezatimin më të ulët",
+    solarPeakAxis: "Rrezatimi maksimal (W/m²)",
+    solarExtremeDaysExplanation:
+      "Ditët renditen sipas rrezatimit maksimal që kanë arritur, prandaj çdo shtyllë tregon momentin më të mirë të asaj dite. Dallimi mes dy paneleve tregon sa kushton një ditë me vranësira: ditët më të errëta arrijnë vetëm një pjesë të vogël të atyre më të ndritshme.",
+    solarExtremeDaysAssumption:
+      "Maksimumi ditor është matja më e lartë e vetme e asaj dite, jo mesatarja ditore. Një ditë me ndërprerje të sensorit rreth mesditës mund të renditet më poshtë sesa ka qenë në realitet.",
+
+    solarHeatmapTitle: "Harta e rrezatimit diellor sipas muajit dhe vitit",
+    solarHeatmapDesc: "Krahasimi i rrezatimit mesatar — ngjyra më e ngrohtë = rrezatim më i lartë.",
+    solarHeatmapScale: "Rrezatimi mesatar (W/m²)",
+    solarHeatmapExplanation:
+      "Leximi përgjatë një rreshti krahason të njëjtin muaj mes viteve; leximi poshtë një kolone ndjek një vit përgjatë stinëve. Qelizat bosh janë muaj që regjistrimi nuk i mbulon — ato lihen bosh dhe nuk vizatohen si zero.",
+    solarHeatmapAssumption:
+      "Çdo qelizë është mesatarja e vlerave ditore të vëzhguara në atë muaj dhe vit.",
+    heatmapCellNote: "{filled} qeliza muaj-vit përmbajnë të dhëna.",
+    heatmapSkipped: "{n} u përjashtuan sepse kishin më pak se 10 ditë të vëzhguara.",
 
     solarProfileTitle: "Profili orar i rrezatimit diellor sipas stinës",
     solarProfileDesc: "Rrezatimi mesatar diellor sipas orës së ditës, i shprehur në orë.",

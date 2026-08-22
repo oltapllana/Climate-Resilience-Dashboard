@@ -13,6 +13,11 @@ export const INTENSITY_BANDS = [
   { id: "extreme", label: "> 80 mm", min: 80, max: Infinity, color: "#c63a2b" },
 ];
 
+// The three classified bands. Ordinary 1–30 mm days outnumber them roughly ten
+// to one, so stacking all four leaves these three as invisible slivers; they are
+// charted on their own and the light-day count is reported alongside.
+export const CLASSIFIED_BANDS = INTENSITY_BANDS.filter((band) => band.id !== "light");
+
 export function bandOf(totalMm) {
   return INTENSITY_BANDS.find((band) => totalMm >= band.min && totalMm < band.max) ?? null;
 }
@@ -58,6 +63,8 @@ export function calculateRainyDays(hourlyRecords) {
     yearly.push({
       year,
       ...counts,
+      // days falling in one of the three classified bands (>= 30 mm)
+      classifiedDays: CLASSIFIED_BANDS.reduce((sum, band) => sum + counts[band.id], 0),
       rainDays: rainDays.length,
       observedDays: rows.length,
       // a raw count punishes a short year, so also expose the rate
