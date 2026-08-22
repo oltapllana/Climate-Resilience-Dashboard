@@ -208,6 +208,89 @@ export const STRINGS = {
       "Air pressure at this station sits well below sea level values because of the station altitude; what matters here is the variation, not the absolute level.",
     pressureTrendAssumption:
       "The rolling mean starts only once 30 observed days are available. Values are station-level pressure, not reduced to sea level.",
+
+    partialMonth: "partly observed month",
+    days: "days",
+    temperatureAxis: "Temperature (°C)",
+    daysAxis: "Number of days",
+    annualMean: "Annual mean",
+
+    pressureDiurnalTitle: "Daily cycle of air pressure by season",
+    pressureDiurnalDesc: "Mean hourly departure from each day's own mean pressure, one curve per season.",
+    pressureDeviationAxis: "Departure from the daily mean (hPa)",
+    dailyMeanLine: "Daily mean",
+    pressureMorningRise: "Pressure rises through the morning",
+    pressureAfternoonFall: "and falls through the afternoon",
+    dailyAmplitude: "Daily amplitude",
+    pressureDiurnalExplanation:
+      "This is the atmospheric tide — a real twice-daily oscillation driven by solar heating of the atmosphere. It is about ±1 hPa, while ordinary weather moves pressure by ±20 hPa, so the curves plot each hour's departure from that day's own mean. Averaging absolute pressure by hour would bury the signal entirely.",
+    pressureDiurnalAssumption:
+      "Built from {days} days with at least 20 hourly readings across {years}; days with fewer hours are skipped because their mean is not comparable with a full day's. Seasons are meteorological (spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb). Amplitude per season:",
+
+    monthlyTempTrendTitle: "Mean monthly temperature in Podujevë",
+    monthlyTempTrendDesc: "Monthly mean temperature over the record, with a fitted linear trend and the freezing point marked.",
+    monthlyMeanTemp: "Monthly mean temperature",
+    monthlyRangeBand: "Monthly min–max range",
+    linearTrend: "Linear trend",
+    trendUnavailable: "Too few complete months to fit a trend.",
+    basedOnCompleteMonths: "fitted on {n} fully observed months",
+    warmest: "Warmest",
+    coldest: "Coldest",
+    monthlyTempTrendExplanation:
+      "The dashed red line is an ordinary least-squares fit through the monthly means: it answers whether temperature over this period is rising, falling or flat. The 0 °C line makes months below freezing readable at a glance.",
+    monthlyTempTrendAssumption:
+      "The trend is fitted only on calendar months observed end to end, so a half-recorded month cannot tilt it. Over a record this short a slope is a screen, not a confirmed climate trend — the sign matters more than the value.",
+
+    monthlyExtremesTitle: "Maximum and minimum temperatures by month",
+    monthlyExtremesDesc: "Mean daily maximum and minimum for each calendar month, with the spread between years.",
+    meanMaxTemp: "Mean maximum",
+    meanMinTemp: "Mean minimum",
+    betweenYearRange: "Range between years",
+    absoluteRange: "Absolute range",
+    warmestMonthMean: "Warmest month",
+    coldestMonthMean: "Coldest month",
+    monthlyExtremesExplanation:
+      "Red is the maximum and blue the minimum, so the two curves read correctly without consulting the legend. Each shaded band is the spread of that month between years — where the band is wide, the monthly average is not a reliable expectation for any single year.",
+    monthlyExtremesAssumption:
+      "Only fully observed calendar months contribute, so month counts differ where the record is incomplete; the tooltip lists the years behind each point. Values are the mean of the daily extremes, not the single hottest or coldest reading — those are given as the absolute range.",
+
+    diurnalTempTitle: "Daily temperature cycle by season",
+    diurnalTempDesc: "Mean temperature by hour of day, one curve per season, shaded by ±1 standard deviation.",
+    diurnalAmplitude: "Day–night amplitude",
+    diurnalTempExplanation:
+      "A single annual curve hides the point: the summer day–night swing is far wider than the winter one, so the same average conceals two very different daily regimes. The shaded band shows how much individual days scatter around each curve.",
+    diurnalTempAssumption:
+      "Each point averages every observation at that clock hour within the season across {years} ({n} hourly readings). The band is ±1 standard deviation of those readings, so it describes day-to-day variability, not measurement uncertainty.",
+
+    heatStressTitle: "Days by heat-stress class",
+    heatStressDesc: "Days per year counted by daily maximum temperature, using the review's thermal-stress classes.",
+    heatWaves: "Heat waves",
+    warmestDay: "Warmest day",
+    heatWaveSummary: "{n} heat waves in the record ({days}+ consecutive days at or above {threshold} °C). Longest:",
+    heatStressExplanation:
+      "Classes are exclusive and read off the daily maximum, so each day falls into at most one and the stacked bars total the days of heat stress in that year.",
+    heatStressAssumption:
+      "Thresholds are the review's (26–32 moderate, 32–38 strong, 38–46 very strong, above 46 extreme). Daily extremes use available hourly observations without interpolation. Years marked with an asterisk do not cover a full calendar year.",
+
+    coldDaysTitle: "Days below 0 °C",
+    coldDaysDesc: "Frost days and ice days per year, shown separately from the heat classes.",
+    frostDays: "Frost days (Tmin < 0 °C)",
+    iceDays: "Ice days (Tmax < 0 °C)",
+    coldestDay: "Coldest day",
+
+    episodesTitle: "Heat waves and cold periods",
+    episodesDesc: "Every qualifying episode in the record, longest first.",
+    episodesDefinition:
+      "A heat wave is at least {heatDays} consecutive days with a maximum temperature of {heatThreshold} °C or above. A cold period is at least {coldDays} consecutive days with a minimum temperature of {coldThreshold} °C or below.",
+    heatWaveLabel: "Heat wave",
+    coldPeriodLabel: "Cold period",
+    duration: "Duration",
+    durationAxis: "Duration (consecutive days)",
+    peakShort: "peak",
+    episodesExplanation:
+      "Each bar is one continuous episode, so its length is the number of days in a row the condition held. The peak is the most extreme temperature reached inside that episode — it is what separates two episodes of equal length.",
+    episodesAssumption:
+      "{heat} heat waves and {cold} cold periods in the record. Daily extremes use available hourly observations without interpolation, so a gap in the record can end an episode that in reality continued.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -416,6 +499,89 @@ export const STRINGS = {
       "Shtypja e ajrit në këtë stacion qëndron dukshëm nën vlerat e nivelit të detit për shkak të lartësisë së stacionit; këtu ka rëndësi luhatja, jo niveli absolut.",
     pressureTrendAssumption:
       "Mesatarja lëvizëse fillon vetëm kur janë të disponueshme 30 ditë të vëzhguara. Vlerat janë shtypje në nivel stacioni, jo të reduktuara në nivel deti.",
+
+    partialMonth: "muaj i vëzhguar pjesërisht",
+    days: "ditë",
+    temperatureAxis: "Temperatura (°C)",
+    daysAxis: "Numri i ditëve",
+    annualMean: "Mesatarja vjetore",
+
+    pressureDiurnalTitle: "Cikli ditor i shtypjes atmosferike sipas stinës",
+    pressureDiurnalDesc: "Devijimi mesatar orar nga mesatarja ditore e shtypjes, një lakore për çdo stinë.",
+    pressureDeviationAxis: "Devijimi nga mesatarja ditore (hPa)",
+    dailyMeanLine: "Mesatarja ditore",
+    pressureMorningRise: "Shtypja rritet gjatë mëngjesit (ftohja)",
+    pressureAfternoonFall: "Shtypja bie gjatë pasdites (ngrohja)",
+    dailyAmplitude: "Amplituda ditore",
+    pressureDiurnalExplanation:
+      "Ky është baticë-zbatica atmosferike — një lëkundje reale dyfishe brenda ditës, e shkaktuar nga ngrohja diellore e atmosferës. Ajo është rreth ±1 hPa, ndërsa moti i zakonshëm e lëviz shtypjen për ±20 hPa, prandaj lakoret paraqesin devijimin e çdo ore nga mesatarja e asaj dite. Mesatarizimi i shtypjes absolute sipas orës do ta fshihte plotësisht sinjalin.",
+    pressureDiurnalAssumption:
+      "Ndërtuar nga {days} ditë me së paku 20 matje orare gjatë viteve {years}; ditët me më pak orë anashkalohen sepse mesatarja e tyre nuk është e krahasueshme me atë të një dite të plotë. Stinët janë meteorologjike (pranvera Mar–Maj, vera Qer–Gush, vjeshta Sht–Nën, dimri Dhj–Shk). Amplituda sipas stinës:",
+
+    monthlyTempTrendTitle: "Temperaturat mesatare mujore në Podujevë",
+    monthlyTempTrendDesc: "Temperatura mesatare mujore gjatë periudhës, me vijë trendi lineare dhe pikën e ngrirjes të shënuar.",
+    monthlyMeanTemp: "Temperatura mesatare mujore",
+    monthlyRangeBand: "Shtrirja mujore min–maks",
+    linearTrend: "Trendi linear",
+    trendUnavailable: "Ka shumë pak muaj të plotë për të llogaritur trendin.",
+    basedOnCompleteMonths: "llogaritur mbi {n} muaj të vëzhguar plotësisht",
+    warmest: "Më i ngrohti",
+    coldest: "Më i ftohti",
+    monthlyTempTrendExplanation:
+      "Vija e kuqe me ndërprerje është një regresion linear përmes mesatareve mujore: ajo tregon nëse temperatura gjatë kësaj periudhe është duke u rritur, duke u ulur apo ka mbetur stabile. Vija te 0 °C mundëson leximin e shpejtë të muajve nën zero.",
+    monthlyTempTrendAssumption:
+      "Trendi llogaritet vetëm mbi muajt kalendarikë të vëzhguar nga fillimi në fund, prandaj një muaj i regjistruar përgjysmë nuk mund ta anojë atë. Për një periudhë kaq të shkurtër, pjerrësia është tregues paraprak dhe jo trend klimatik i konfirmuar — shenja ka më shumë rëndësi se vlera.",
+
+    monthlyExtremesTitle: "Temperaturat maksimale dhe minimale sipas muajve",
+    monthlyExtremesDesc: "Maksimumi dhe minimumi mesatar ditor për çdo muaj kalendarik, me shtrirjen mes viteve.",
+    meanMaxTemp: "Temperatura maksimale (mesatare)",
+    meanMinTemp: "Temperatura minimale (mesatare)",
+    betweenYearRange: "Shtrirja mes viteve",
+    absoluteRange: "Shtrirja absolute",
+    warmestMonthMean: "Muaji më i ngrohtë",
+    coldestMonthMean: "Muaji më i ftohtë",
+    monthlyExtremesExplanation:
+      "E kuqja është maksimumi dhe e kaltra minimumi, kështu që të dy lakoret lexohen saktë pa iu referuar legjendës. Çdo zonë e hijezuar tregon shtrirjen e atij muaji mes viteve — aty ku zona është e gjerë, mesatarja mujore nuk është pritshmëri e besueshme për asnjë vit të vetëm.",
+    monthlyExtremesAssumption:
+      "Kontribuojnë vetëm muajt kalendarikë të vëzhguar plotësisht, prandaj numri i viteve ndryshon aty ku regjistrimi është i paplotë; tooltip-i i liston vitet pas çdo pike. Vlerat janë mesatarja e ekstremeve ditore, jo matja e vetme më e nxehtë ose më e ftohtë — ato jepen si shtrirja absolute.",
+
+    diurnalTempTitle: "Ndryshimi ditor i temperaturës sipas stinës",
+    diurnalTempDesc: "Temperatura mesatare sipas orës së ditës, një lakore për çdo stinë, e hijezuar me ±1 devijim standard.",
+    diurnalAmplitude: "Amplituda ditë–natë",
+    diurnalTempExplanation:
+      "Një lakore e vetme vjetore e fsheh thelbin: luhatja ditë–natë në verë është shumë më e madhe se ajo e dimrit, prandaj e njëjta mesatare mbulon dy regjime krejt të ndryshme ditore. Zona e hijezuar tregon sa shpërndahen ditët individuale rreth çdo lakoreje.",
+    diurnalTempAssumption:
+      "Çdo pikë mesatarizon të gjitha vëzhgimet në atë orë brenda stinës gjatë viteve {years} ({n} matje orare). Zona është ±1 devijim standard i atyre matjeve, prandaj përshkruan ndryshueshmërinë ditë-për-ditë dhe jo pasigurinë e matjes.",
+
+    heatStressTitle: "Ditët sipas nivelit të stresit termik",
+    heatStressDesc: "Numri i ditëve në vit sipas temperaturës maksimale ditore, me nivelet e stresit termik të kërkuara.",
+    heatWaves: "Valë të të nxehtit",
+    warmestDay: "Dita më e nxehtë",
+    heatWaveSummary: "{n} valë të të nxehtit në periudhë ({days}+ ditë radhazi me së paku {threshold} °C). Më të gjatat:",
+    heatStressExplanation:
+      "Nivelet janë përjashtuese dhe lexohen nga temperatura maksimale ditore, prandaj çdo ditë bie në më së shumti një nivel dhe shtyllat e stivosura japin totalin e ditëve me stres termik për atë vit.",
+    heatStressAssumption:
+      "Pragjet janë ato të kërkuara (26–32 stres mesatar, 32–38 i fortë, 38–46 shumë i fortë, mbi 46 ekstrem). Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim. Vitet e shënuara me yll nuk mbulojnë një vit të plotë kalendarik.",
+
+    coldDaysTitle: "Numri i ditëve me temperaturë nën 0 °C",
+    coldDaysDesc: "Ditët me ngricë dhe ditët e akullta për çdo vit, të paraqitura ndaras nga nivelet e të nxehtit.",
+    frostDays: "Ditë me ngricë (Tmin < 0 °C)",
+    iceDays: "Ditë të akullta (Tmaks < 0 °C)",
+    coldestDay: "Dita më e ftohtë",
+
+    episodesTitle: "Valët e të nxehtit dhe periudhat e ftohta",
+    episodesDesc: "Çdo episod kualifikues në periudhë, i renditur nga më i gjati.",
+    episodesDefinition:
+      "Valë e të nxehtit = të paktën {heatDays} ditë me temperaturë maksimale ≥ {heatThreshold} °C. Periudhë e ftohtë = të paktën {coldDays} ditë me temperaturë minimale ≤ {coldThreshold} °C.",
+    heatWaveLabel: "Valë e të nxehtit",
+    coldPeriodLabel: "Periudhë e ftohtë",
+    duration: "Kohëzgjatja",
+    durationAxis: "Kohëzgjatja (ditë radhazi)",
+    peakShort: "kulmi",
+    episodesExplanation:
+      "Çdo shtyllë është një episod i vazhdueshëm, prandaj gjatësia e saj tregon numrin e ditëve radhazi që kushti u plotësua. Kulmi është temperatura më ekstreme e arritur brenda atij episodi — ai është dallimi mes dy episodeve me gjatësi të njëjtë.",
+    episodesAssumption:
+      "{heat} valë të të nxehtit dhe {cold} periudha të ftohta në periudhë. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ndërprerje në regjistrim mund ta mbyllë një episod që në realitet ka vazhduar.",
   },
 };
 

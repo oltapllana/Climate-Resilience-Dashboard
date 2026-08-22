@@ -5,16 +5,14 @@
 // Depths here come from the same hourly reconstruction the landslide indicator
 // uses: one clock-hour of mm/h equals mm of depth.
 import { reconstructHourlyRainfall } from "./landslideRainfall.js";
+import { SEASON_DEFINITIONS, seasonOf as seasonDefinitionOf } from "./seasons.js";
 
-export const SEASONS = {
-  winter: { months: [12, 1, 2], color: "#2b7fc4" },
-  spring: { months: [3, 4, 5], color: "#4a9d4a" },
-  summer: { months: [6, 7, 8], color: "#d6453d" },
-  autumn: { months: [9, 10, 11], color: "#e0a52b" },
-};
+export const SEASONS = Object.fromEntries(
+  SEASON_DEFINITIONS.map(({ id, months, color }) => [id, { months, color }]),
+);
 
 export function seasonOf(month) {
-  return Object.keys(SEASONS).find((season) => SEASONS[season].months.includes(month)) ?? null;
+  return seasonDefinitionOf(month)?.id ?? null;
 }
 
 function standardDeviation(values) {

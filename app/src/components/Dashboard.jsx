@@ -17,6 +17,12 @@ import MonthlyRainfallIndicator from "./MonthlyRainfallIndicator.jsx";
 import RainyDaysIndicator from "./RainyDaysIndicator.jsx";
 import DailyTrendIndicator from "./DailyTrendIndicator.jsx";
 import SolarDiurnalProfile from "./SolarDiurnalProfile.jsx";
+import DiurnalPressureCycle from "./DiurnalPressureCycle.jsx";
+import MonthlyTemperatureTrend from "./MonthlyTemperatureTrend.jsx";
+import MonthlyTemperatureExtremes from "./MonthlyTemperatureExtremes.jsx";
+import DiurnalTemperatureBySeason from "./DiurnalTemperatureBySeason.jsx";
+import HeatStressIndicator from "./HeatStressIndicator.jsx";
+import HeatColdEpisodes from "./HeatColdEpisodes.jsx";
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -185,26 +191,36 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
       )}
 
       {activeMeasId === "pressure" && (
-        <DailyTrendIndicator
-          measurement={m}
-          unit={unit}
-          title={t("pressureTrendTitle")}
-          description={t("pressureTrendDesc")}
-          axisLabel={t("pressureTrendAxis")}
-          explanation={t("pressureTrendExplanation")}
-          assumption={t("pressureTrendAssumption")}
-          dailyColor="#8fb4d9"
-          trendColor="#c63a2b"
-          digits={1}
-          t={t}
-        />
+        <>
+          <DailyTrendIndicator
+            measurement={m}
+            unit={unit}
+            title={t("pressureTrendTitle")}
+            description={t("pressureTrendDesc")}
+            axisLabel={t("pressureTrendAxis")}
+            explanation={t("pressureTrendExplanation")}
+            assumption={t("pressureTrendAssumption")}
+            dailyColor="#8fb4d9"
+            trendColor="#c63a2b"
+            digits={1}
+            t={t}
+          />
+          <DiurnalPressureCycle measurement={m} unit={unit} t={t} />
+        </>
       )}
 
       {(activeMeasId === "air_temp" || unit === "°C") && (
         <>
           <HotDaysIndicator measurement={m} t={t} />
           {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
-            <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
+            <>
+              <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
+              <MonthlyTemperatureTrend measurement={data.measurements.air_temp} t={t} />
+              <MonthlyTemperatureExtremes measurement={data.measurements.air_temp} t={t} />
+              <DiurnalTemperatureBySeason measurement={data.measurements.air_temp} t={t} />
+              <HeatStressIndicator measurement={data.measurements.air_temp} t={t} />
+              <HeatColdEpisodes measurement={data.measurements.air_temp} t={t} />
+            </>
           )}
         </>
       )}

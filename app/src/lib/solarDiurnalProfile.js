@@ -3,14 +3,11 @@
 // The reviewer asked for the values to be expressed in hours (h) rather than
 // W/m². One hour at the WMO reference irradiance of 3600 W/m² accumulates
 // 1 solar-hour, so hours = mean W/m² / 3600 for a one-hour interval.
+import { SEASON_DEFINITIONS } from "./seasons.js";
+
 export const SOLAR_HOUR_REFERENCE_W_M2 = 3600;
 
-export const SEASON_DEFINITIONS = [
-  { id: "spring", months: [3, 4, 5], color: "#4a9d4a" },
-  { id: "summer", months: [6, 7, 8], color: "#c63a2b" },
-  { id: "autumn", months: [9, 10, 11], color: "#e0a52b" },
-  { id: "winter", months: [12, 1, 2], color: "#2b7fc4" },
-];
+export { SEASON_DEFINITIONS };
 
 // The reviewer's proposal marks 09:00–15:00 as the usable window for solar energy.
 export const OPTIMAL_WINDOW = { start: 9, end: 15 };
