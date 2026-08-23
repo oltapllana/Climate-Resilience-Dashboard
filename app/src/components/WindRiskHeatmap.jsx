@@ -39,9 +39,16 @@ export function WindRiskHeatmap({ speedData, t }) {
 
       <div style={{ overflowX: "auto", position: "relative" }}>
         <svg
-          width={labelWidth + 24 * cellSize + 60}
-          height={hourLabelHeight + months.length * cellSize + 80}
-          style={{ display: "block" }}
+          viewBox={`0 0 ${labelWidth + 24 * cellSize + 60} ${hourLabelHeight + months.length * cellSize + 80}`}
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            display: "block",
+            width: "100%",
+            height: "600px",
+            // below this the 24 hourly columns stop being readable, so the
+            // wrapper scrolls rather than shrinking them further
+            minWidth: `${labelWidth + 24 * cellSize + 60}px`,
+          }}
         >
           {/* Y-axis label */}
           <text

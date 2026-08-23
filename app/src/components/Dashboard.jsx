@@ -203,11 +203,38 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         </>
       )}
 
-      {/* ---- Era — wind ----------------------------------------------- */}
+      {/* ---- Era — wind -----------------------------------------------
+          All four in the review's numbering. Era 2 and 3 used to sit in the
+          generic chart grid at the foot of the page, one under each wind chip,
+          which left the series unreadable as a series: you could never see more
+          than two of the four at once, and never in order. Like the rainfall
+          charts, both wind chips now lead to the same set. */}
       {isWindMeas && windSpeedId && (
         <>
           {/* Era 1 */}
           <WindDiurnalCycle speedMeasurement={data.measurements[windSpeedId]} t={t} />
+          {/* Era 2 — the rose draws no title of its own, so the heading here is
+              the one the reviewer asked for */}
+          {windDirId && (
+            <section className="card landslide-indicator">
+              <div className="indicator-heading">
+                <h2>{t("windRose")}</h2>
+                <p>{t("windRoseDesc")}</p>
+              </div>
+              <WindRose
+                directionData={data.measurements[windDirId]}
+                speedData={data.measurements[windSpeedId]}
+                t={t}
+              />
+            </section>
+          )}
+          {/* Era 3 — prints its own description line, so the heading is title only */}
+          <section className="card landslide-indicator">
+            <div className="indicator-heading">
+              <h2>{t("windRiskHeatmap")}</h2>
+            </div>
+            <WindRiskHeatmap speedData={data.measurements[windSpeedId]} t={t} />
+          </section>
           {/* Era 4 */}
           {windDirId && (
             <WindByDirection
@@ -540,28 +567,6 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           <h2>{t("daily")}</h2>
           <DailyChart series={m} t={t} unit={unit} isSum={isSum} color={accent} />
         </div>
-        {measId && measId.includes("wind_dir") && (() => {
-          const speedId = Object.keys(data.measurements).find(id => id.includes("wind_speed"));
-          return speedId ? (
-            <div className="card chart-card">
-              <h2>{t("windRose")}</h2>
-              <WindRose
-                directionData={m}
-                speedData={data.measurements[speedId]}
-                t={t}
-              />
-            </div>
-          ) : null;
-        })()}
-        {measId && measId.includes("wind_speed") && (
-          <div className="card chart-card">
-            <h2>{t("windRiskHeatmap") || "Wind Risk Heatmap"}</h2>
-            <WindRiskHeatmap
-              speedData={m}
-              t={t}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

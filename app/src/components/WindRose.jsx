@@ -64,9 +64,9 @@ export function WindRose({ directionData, speedData, t }) {
       </div>
 
       {/* Main content */}
-      <div style={{ display: "flex", gap: "48px", justifyContent: "center", marginBottom: "32px" }}>
+      <div style={{ display: "flex", gap: "48px", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px" }}>
         {/* Wind rose plot */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
           <div className="relative" style={{ position: "relative", display: "flex", justifyContent: "center" }}>
             {/* Tooltip div */}
             {hoveredBar && (() => {
@@ -120,7 +120,7 @@ export function WindRose({ directionData, speedData, t }) {
             );
           })()}
 
-            <svg width="420" height="420">
+            <svg viewBox="0 0 420 420" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "auto", maxHeight: "360px" }}>
             <defs>
               <style>
                 {`
