@@ -212,7 +212,9 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
       {isWindMeas && windSpeedId && (
         <>
           {/* Era 1 */}
-          <WindDiurnalCycle speedMeasurement={data.measurements[windSpeedId]} t={t} />
+          {activeMeasId === windSpeedId && (
+            <WindDiurnalCycle speedMeasurement={data.measurements[windSpeedId]} t={t} />
+          )}
           {/* Era 2 — the rose draws no title of its own, so the heading here is
               the one the reviewer asked for */}
           {windDirId && (

@@ -21,6 +21,16 @@ const rainfall = (start, totals) => dates(start, totals.length).map((date, index
 const temperatures = (start, maxima) => dates(start, maxima.length).map((date, index) => ({ d: `${date}T15:00`, v: maxima[index] }));
 const row = (result, year = 2024) => result.yearly.find((item) => item.year === year);
 
+test("annual chart separates bar counts from the explicitly described hot-day share", async () => {
+  const source = await fs.readFile(new URL("../components/HotDaysInDrySpellsIndicator.jsx", import.meta.url), "utf8");
+
+  assert.match(source, /LabelList dataKey="compound5Count" content=\{<CountLabel \/>\}/);
+  assert.match(source, /LabelList dataKey="compound7Count" content=\{<CountLabel \/>\}/);
+  assert.match(source, /Share of hot days in ≥5-day dry spells:/);
+  assert.doesNotMatch(source, /compound5Label/);
+  assert.match(source, /\* Partial record/);
+});
+
 async function workbook(fileName) {
   const buffer = await fs.readFile(path.join(DATA_DIR, fileName));
   return { name: fileName, arrayBuffer: async () => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) };

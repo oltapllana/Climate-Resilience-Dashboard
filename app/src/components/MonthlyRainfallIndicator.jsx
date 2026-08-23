@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SEASONS, calculateMonthlyRainfall } from "../lib/monthlyRainfall.js";
 
 const formatMm = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -63,6 +63,21 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
             {data.map((row) => (
               <Cell key={row.month} fill={SEASONS[row.season].color} />
             ))}
+            <LabelList
+              dataKey="mean"
+              content={({ x, y, width, index }) => data[index]?.month === wettest?.month ? (
+                <text
+                  x={x + width / 2}
+                  y={y + 18}
+                  textAnchor="middle"
+                  fill="#fff"
+                  fontSize="11"
+                  fontWeight="700"
+                >
+                  Peak: {formatMm(data[index].mean)} mm
+                </text>
+              ) : null}
+            />
             <ErrorBar dataKey="stdDev" width={5} strokeWidth={1.4} stroke="#4b5563" direction="y" />
           </Bar>
         </BarChart>

@@ -49,10 +49,6 @@ function CompoundTimeline({ yearly }) {
   );
 }
 
-function FiveLabel({ x, y, width, value }) {
-  const [count, share] = String(value).split("|");
-  return <text x={x + width / 2} y={y - 8} textAnchor="middle" fill="#17242b" fontSize="10" fontWeight="700"><tspan x={x + width / 2}>{count}</tspan><tspan x={x + width / 2} dy="11">{share}</tspan></text>;
-}
 function CountLabel({ x, y, width, value }) {
   return <text x={x + width / 2} y={y - 8} textAnchor="middle" fill="#17242b" fontSize="10" fontWeight="700">{value}</text>;
 }
@@ -61,22 +57,29 @@ function CompoundTooltip({ active, payload }) {
   const item = payload[0];
   const row = item.payload;
   const share = row.totalHotDays ? item.value / row.totalHotDays * 100 : 0;
-  return <div className="indicator-tooltip"><strong>{row.year}{row.isPartial ? " (partial)" : ""}</strong><span>{item.dataKey === "compound5Count" ? "Hot days in ≥5-day spells" : "Hot days in ≥7-day spells"}: {item.value}</span><span>Total hot days: {row.totalHotDays}</span><span>Share: {Math.round(share)}%</span><span>Common coverage: {row.availableCommonStart} – {row.availableCommonEnd}</span><span>{row.isPartial ? "Partial record" : "Full record"}</span></div>;
+  return <div className="indicator-tooltip"><strong>{row.year}{row.isPartial ? " (partial)" : ""}</strong><span>{item.dataKey === "compound5Count" ? "Hot days in ≥5-day spells" : "Hot days in ≥7-day spells"}: {item.value}</span><span>Total hot days: {row.totalHotDays}</span><span>Share of all hot days represented by this bar: {Math.round(share)}%</span><span>Common coverage: {row.availableCommonStart} – {row.availableCommonEnd}</span><span>{row.isPartial ? "Partial record" : "Full record"}</span></div>;
 }
 
 export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, temperatureMeasurement }) {
   const result = useMemo(() => calculateHotDaysInDrySpells(rainfallMeasurement?.hourly, temperatureMeasurement?.hourly), [rainfallMeasurement, temperatureMeasurement]);
-  const chartData = useMemo(() => result.yearly.map((row) => ({
-    ...row,
-    compound5Label: `${row.compound5Count}|${Math.round(row.compound5Share)}%`,
-  })), [result]);
   if (!result.yearly.length) return null;
   return <section className="card landslide-indicator">
     <div className="indicator-grid">
       <div className="indicator-panel"><div className="indicator-heading"><h2>Hot days in dry spells</h2><p>Hot days overlaid on qualifying dry runs during April–September.</p></div><CompoundTimeline yearly={result.yearly} /></div>
       <div className="indicator-panel"><div className="indicator-heading"><h2>Annual compound heat–drought days</h2><p>Compound ≥7-day counts are included in compound ≥5-day counts.</p></div>
-        <ResponsiveContainer width="100%" height={360}><BarChart data={chartData} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} /><YAxis allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft" }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ transform: "translateY(-16px)" }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Label" content={<FiveLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} radius={[3, 3, 0, 0]}><LabelList content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
-        <p className="indicator-assumption">* Partial record</p>
+        <ResponsiveContainer width="100%" height={360}><BarChart data={result.yearly} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} /><YAxis allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft" }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ transform: "translateY(-16px)" }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
+        <div className="compound-share-panel">
+          <strong>Share of hot days in ≥5-day dry spells:</strong>
+          <div className="compound-share-grid">
+            {result.yearly.map((row) => (
+              <span key={row.year} className="compound-share-item">
+                <span>{row.year}{row.isPartial ? "*" : ""}</span>
+                <strong>{Math.round(row.compound5Share)}%</strong>
+              </span>
+            ))}
+          </div>
+        </div>
+        <p className="indicator-assumption">Percentages show the share of all hot days (daily maximum ≥30°C) that occurred within a ≥5-day dry spell; they do not compare the orange and red bars. * Partial record means the common April–September rainfall and temperature record does not cover the full season.</p>
       </div>
     </div>
     <p className="indicator-explanation">This indicator counts days when daily maximum temperature reached at least 30°C while the same date belonged to a qualifying dry spell during April–September.</p>

@@ -52,8 +52,10 @@ export function WindRose({ directionData, speedData, t }) {
 
   return (
     <div style={{ width: "100%", backgroundColor: "#ffffff", borderRadius: "8px", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "32px", borderBottom: "1px solid #e5e7eb", paddingBottom: "24px" }}>
+      {/* Main content */}
+      <div className="wind-rose-layout">
+        {/* Summary */}
+        <div className="wind-rose-stats">
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{stats.dateRange}</p>
           <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>Mean wind speed: {stats.meanSpeed} m/s</p>
@@ -63,10 +65,8 @@ export function WindRose({ directionData, speedData, t }) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div style={{ display: "flex", gap: "48px", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px" }}>
         {/* Wind rose plot */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div className="wind-rose-plot" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
           <div className="relative" style={{ position: "relative", display: "flex", justifyContent: "center" }}>
             {/* Tooltip div */}
             {hoveredBar && (() => {
@@ -215,7 +215,7 @@ export function WindRose({ directionData, speedData, t }) {
         </div>
 
         {/* Legend */}
-        <div style={{ flexShrink: 0, paddingTop: "8px" }}>
+        <div className="wind-rose-legend" style={{ flexShrink: 0, paddingTop: "8px" }}>
           <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", margin: 0 }}>{t?.("windSpeed") || "Wind speed"}</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {SPEED_RANGES.map((range, idx) => (
