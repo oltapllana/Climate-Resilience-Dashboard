@@ -29,6 +29,35 @@ import DiurnalTemperatureBySeason from "./DiurnalTemperatureBySeason.jsx";
 import HeatStressIndicator from "./HeatStressIndicator.jsx";
 import HeatColdEpisodes from "./HeatColdEpisodes.jsx";
 import ExtremeDaysIndicator from "./ExtremeDaysIndicator.jsx";
+import ThresholdHydrograph from "./ThresholdHydrograph.jsx";
+import DurationCurve from "./DurationCurve.jsx";
+import FloodFrequencyChart from "./FloodFrequencyChart.jsx";
+import DilutionEventChart from "./DilutionEventChart.jsx";
+import AnnualTrendChart from "./AnnualTrendChart.jsx";
+import SeasonalBandChart from "./SeasonalBandChart.jsx";
+import ExceedanceDaysChart from "./ExceedanceDaysChart.jsx";
+
+// Water-chart constants live at module scope so they keep their identity
+// between renders — the charts memoise on them, and a fresh array literal on
+// every render would recompute a six-year series each time.
+const LEVEL_BAND_STOPS = [99, 99.9];          // percentile ranks of the record
+const THERMAL_BAND_STOPS = [4, 20, 25];       // °C, general aquatic-life guidance
+const LEVEL_DURATION_MARKERS = [10, 95];      // L10 high water, L95 low water
+const QUALITY_DURATION_MARKERS = [10, 90];
+
+// the water-quality datasets (salinity, TDS, conductivity) share one pipeline:
+// all three are derived from the same conductivity signal at this station
+const WATER_QUALITY_MEAS = ["salinity", "tds", "conductivity"];
+
+// Charts A–E carry the measurement's own name in their titles, and Albanian
+// needs it in the genitive, so each series gets its own written-out string
+// rather than one title with the name substituted in.
+const WATER_TITLE_SERIES = { water_temp: "WaterTemp", salinity: "Salinity", tds: "Tds", conductivity: "Conductivity" };
+
+// duration-curve markers are named after their series in the review's own
+// notation — S10/S90 for salinity, TDS10/TDS90, C10/C90 — so a reader can carry
+// a number from one chart to the next without translating it
+const DURATION_CODE = { salinity: "S", tds: "TDS", conductivity: "C" };
 
 function StatCards({ stats, unit, isSum, circular, t }) {
   // a compass bearing has no meaningful min/max (0° and 359° are 1° apart), and
@@ -312,6 +341,162 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
               <TropicalNightsIndicator measurement={data.measurements.air_temp} />
             </>
           )}
+        </>
+      )}
+
+      {/* ---- Water-level 1, 3, 5 -------------------------------------- */}
+      {activeMeasId === "water_level" && (
+        <>
+          <ThresholdHydrograph
+            measurement={m}
+            unit={unit}
+            title={t("waterLevelHydrographTitle")}
+            description={t("waterLevelHydrographDesc")}
+            axisLabel={`${measurementName} (${unit})`}
+            mode="percentile"
+            stops={LEVEL_BAND_STOPS}
+            bands={[
+              { label: t("bandNormal"), color: "#2f7d32" },
+              { label: t("bandAlert"), color: "#e0a52b" },
+              { label: t("bandWarning"), color: "#e07b2b" },
+              { label: t("bandDanger"), color: "#c1452c" },
+            ]}
+            explanation={t("waterLevelHydrographExplanation")}
+            assumption={t("waterLevelHydrographAssumption")}
+            digits={2}
+            t={t}
+          />
+          <DurationCurve
+            measurement={m}
+            unit={unit}
+            title={t("levelDurationTitle")}
+            description={t("levelDurationDesc")}
+            axisLabel={`${measurementName} (${unit})`}
+            markers={LEVEL_DURATION_MARKERS}
+            markerLabels={{ high: t("levelHighWater"), low: t("levelLowWater") }}
+            logScale
+            shadeLowWater
+            explanation={t("levelDurationExplanation")}
+            assumption={t("levelDurationAssumption")}
+            digits={2}
+            t={t}
+          />
+          <FloodFrequencyChart
+            measurement={m}
+            unit={unit}
+            title={t("floodFrequencyTitle")}
+            description={t("floodFrequencyDesc")}
+            axisLabel={`${t("annualMaximum")} (${unit})`}
+            explanation={t("floodFrequencyExplanation")}
+            assumption={t("floodFrequencyAssumption")}
+            digits={2}
+            t={t}
+          />
+        </>
+      )}
+
+      {/* ---- Water temperature Chart A -------------------------------- */}
+      {activeMeasId === "water_temp" && (
+        <ThresholdHydrograph
+          measurement={m}
+          unit={unit}
+          title={t("thermalHydrographTitle")}
+          description={t("thermalHydrographDesc")}
+          axisLabel={`${measurementName} (${unit})`}
+          mode="fixed"
+          stops={THERMAL_BAND_STOPS}
+          bands={[
+            { label: t("bandCold"), color: "#2b7fc4" },
+            { label: t("bandOptimal"), color: "#2f7d32" },
+            { label: t("bandWarmStress"), color: "#e0a52b" },
+            { label: t("bandCritical"), color: "#c1452c" },
+          ]}
+          explanation={t("thermalHydrographExplanation")}
+          assumption={t("thermalHydrographAssumption")}
+          digits={1}
+          t={t}
+        />
+      )}
+
+      {/* ---- Salinity / TDS / conductivity Chart A --------------------- */}
+      {WATER_QUALITY_MEAS.includes(activeMeasId) && data.measurements.water_level && (
+        <DilutionEventChart
+          measurement={m}
+          levelMeasurement={data.measurements.water_level}
+          unit={unit}
+          levelUnit={data.measurements.water_level.unit}
+          title={t(`dilutionTitle${WATER_TITLE_SERIES[activeMeasId]}`)}
+          description={t("dilutionDesc")}
+          axisLabel={`${measurementName} (${unit})`}
+          levelAxisLabel={`${lang === "sq" ? data.measurements.water_level.label_sq : data.measurements.water_level.label_en} (${data.measurements.water_level.unit})`}
+          seriesLabel={measurementName}
+          levelLabel={lang === "sq" ? data.measurements.water_level.label_sq : data.measurements.water_level.label_en}
+          explanation={t("dilutionExplanation")}
+          assumption={t("dilutionAssumption")}
+          digits={2}
+          t={t}
+        />
+      )}
+
+      {/* ---- Charts B–E, shared by water temperature and the three
+          water-quality series: same processing, same reading, different
+          units and thresholds. ---------------------------------------- */}
+      {(activeMeasId === "water_temp" || WATER_QUALITY_MEAS.includes(activeMeasId)) && (
+        <>
+          <AnnualTrendChart
+            measurement={m}
+            unit={unit}
+            title={t(`annualTrendTitle${WATER_TITLE_SERIES[activeMeasId]}`)}
+            description={t("annualTrendDesc")}
+            axisLabel={`${measurementName} (${unit})`}
+            bars={activeMeasId === "water_temp" ? "range" : "max"}
+            explanation={t("annualTrendExplanation")}
+            assumption={t("annualTrendAssumption")}
+            digits={activeMeasId === "water_temp" ? 1 : 2}
+            t={t}
+          />
+          <SeasonalBandChart
+            measurement={m}
+            unit={unit}
+            title={t(`seasonalClimatologyTitle${WATER_TITLE_SERIES[activeMeasId]}`)}
+            description={t("seasonalClimatologyDesc")}
+            axisLabel={`${measurementName} (${unit})`}
+            explanation={t("seasonalClimatologyExplanation")}
+            assumption={t("seasonalClimatologyAssumption")}
+            digits={activeMeasId === "water_temp" ? 1 : 2}
+            t={t}
+          />
+          <DurationCurve
+            measurement={m}
+            unit={unit}
+            title={t(`durationCurveTitle${WATER_TITLE_SERIES[activeMeasId]}`)}
+            description={t("durationCurveDesc")}
+            axisLabel={`${measurementName} (${unit})`}
+            markers={QUALITY_DURATION_MARKERS}
+            markerLabels={
+              activeMeasId === "water_temp"
+                ? { high: t("durationWarmEnd"), low: t("durationColdEnd") }
+                : {
+                    high: t("durationElevated").replace("{code}", DURATION_CODE[activeMeasId]),
+                    low: t("durationDilute").replace("{code}", DURATION_CODE[activeMeasId]),
+                  }
+            }
+            explanation={t("durationCurveExplanation")}
+            assumption={`${t("durationCurveAssumption")} ${t("durationMarkerNote")}`}
+            digits={activeMeasId === "water_temp" ? 1 : 2}
+            t={t}
+          />
+          <ExceedanceDaysChart
+            measurement={m}
+            unit={unit}
+            title={t(`exceedanceDaysTitle${WATER_TITLE_SERIES[activeMeasId]}`)}
+            description={t("exceedanceDaysDesc")}
+            axisLabel={t("exceedanceShareAxis")}
+            explanation={t("exceedanceDaysExplanation")}
+            assumption={t("exceedanceDaysAssumption")}
+            digits={activeMeasId === "water_temp" ? 1 : 2}
+            t={t}
+          />
         </>
       )}
 

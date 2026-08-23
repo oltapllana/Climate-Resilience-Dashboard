@@ -355,6 +355,136 @@ export const STRINGS = {
     episodesAssumption:
       "{heat} heat waves and {cold} cold periods in the record. Daily extremes use available hourly observations without interpolation, so a gap in the record can end an episode that in reality continued.",
     episodesTruncated: "The chart shows the longest {shown} of each type; {hidden} shorter episodes are not drawn.",
+
+    /* ---- water datasets: level, water temperature, salinity, TDS, conductivity ---- */
+    partialYear: "partly observed year",
+    partialYearsNote:
+      "Years the record does not cover end to end are drawn in grey and left out of any fitted trend — their averages are not comparable with a full year's.",
+    yearsShort: "yr",
+    completeYearsCount: "{n} fully observed years",
+    eventWindowNote: "The window is ±{days} days around the peak of the record.",
+    floodPeak: "Flood peak",
+    dilutionMinimum: "Lowest reading",
+    annualRangeLegend: "Annual min–max range",
+    annualMaximumLegend: "Annual maximum",
+    trendCompleteYears: "Trend on complete years",
+    annualMaximum: "Annual maximum",
+    dayOfYear: "Day of year",
+    historicalMedian: "Historical median",
+    referencePeriod: "Reference period",
+    currentYearOverlay: "Year drawn over it",
+    seasonalBandBasis:
+      "Bands are the 10th/25th/50th/75th/90th percentile of each day of the year across the {n} reference years ({years}); the most recent year is drawn over them rather than counted in them.",
+    ofTimeExceeded: "of the time equalled or exceeded",
+    medianValue: "Median",
+    exceedanceAxis: "Percentage of time the value is equalled or exceeded (%)",
+    logScale: "log scale",
+    logScaleUnavailable: "The axis is linear because the series contains values at or below zero, which a log scale cannot show.",
+    durationElevated: "{code}10 — elevated",
+    durationDilute: "{code}90 — low/dilute",
+    durationWarmEnd: "T10 — warm",
+    durationColdEnd: "T90 — cold",
+    durationMarkerNote: "The markers are percentiles of this record, not water-use standards — substitute the local limits before reading them as thresholds.",
+    exceedingDays: "Days above the threshold",
+    shareOfMonitoredDays: "Share of monitored days",
+    thresholdUsed: "Threshold",
+    recordPercentilePlaceholder: "{p}th percentile of the record — a placeholder",
+    exceedanceShareAxis: "Days above the threshold (% of monitored days)",
+
+    waterLevelHydrographTitle: "River water level with flood-alert thresholds — largest recorded event",
+    waterLevelHydrographDesc: "The largest event in the record, replayed hour by hour over the alert bands.",
+    bandNormal: "Normal",
+    bandAlert: "Alert",
+    bandWarning: "Warning",
+    bandDanger: "Danger",
+    waterLevelHydrographExplanation:
+      "A level in metres means nothing on its own; the bands are what make it readable. The shape matters too — this event rose from base flow to its peak in a few hours, which is the lead time an alert would actually have.",
+    waterLevelHydrographAssumption:
+      "The band edges are percentiles of this record (99th, 99.9th, and the recorded maximum), not the operator's official alert levels. They must be replaced with the real thresholds before this is used operationally; as drawn, the chart is retrospective and carries no forecast.",
+
+    levelDurationTitle: "Level duration curve — how often the river runs high, normal or low",
+    levelDurationDesc: "The share of days on which each level is equalled or exceeded, early years against recent ones.",
+    levelHighWater: "L10 — high water",
+    levelLowWater: "L95 — low water",
+    levelDurationExplanation:
+      "Read across, not along: the height of the curve at 95 % is the level the river stays above almost all year, and the gap between the two periods says whether the whole regime has shifted rather than whether one flood was larger.",
+    levelDurationAssumption:
+      "Built from water level, not discharge — no rating curve was available to convert one to the other, so these values are specific to this channel and gauge datum and are not comparable with regional Q10/Q95 benchmarks.",
+
+    floodFrequencyTitle: "Flood frequency: how rare is a water level of this size?",
+    floodFrequencyDesc: "Annual maxima against return period, with a fitted Gumbel distribution.",
+    floodFrequencyExplanation:
+      "Each point is one year's highest water level, placed at the return period its rank implies. The fitted line extends that ranking into an estimate of how often a given level recurs — and the width of the band around it is the honest measure of how much a record this short can say.",
+    floodFrequencyAssumption:
+      "Illustrative only. Standard practice wants 20–30 years of annual maxima; this record has far fewer, so the curve is capped at three times the number of years rather than extrapolated to a 100-year level. Plotting positions are Gringorten, the fit is least squares on the Gumbel reduced variate, and partially observed years are marked but kept in the fit.",
+    recordLength: "{n} annual maxima",
+    extrapolationCap: "extrapolation capped at {n} years",
+    returnPeriod: "Return period",
+    returnPeriodAxis: "Return period (years, log scale)",
+    confidenceBand: "95 % confidence interval",
+    gumbelFit: "Fitted Gumbel distribution",
+    completeYearMax: "Complete-year maximum",
+    partialYearMax: "Partial-year maximum",
+
+    thermalHydrographTitle: "Water temperature with thermal-stress thresholds — warmest recorded event",
+    thermalHydrographDesc: "The warmest event in the record, replayed over general aquatic-life stress bands.",
+    bandCold: "Cold",
+    bandOptimal: "Optimal",
+    bandWarmStress: "Warm stress",
+    bandCritical: "Critical",
+    thermalHydrographExplanation:
+      "The daily saw-tooth is the normal day–night cycle; what matters is how far into the warm-stress band the daily peaks reach and for how many days in a row, since thermal stress on aquatic life accumulates rather than resetting each night.",
+    thermalHydrographAssumption:
+      "The bands are general aquatic-life guidance (cold below 4 °C, optimal 4–20 °C, warm stress 20–25 °C, critical above 25 °C), not a species-specific or regionally adopted standard. Replace them with real ecological limits before reading this as a compliance chart.",
+
+    dilutionTitleSalinity: "Salinity response to a flood event — dilution during high flow",
+    dilutionTitleTds: "TDS response to a flood event — dilution during high flow",
+    dilutionTitleConductivity: "Conductivity response to a flood event — dilution during high flow",
+    dilutionDesc: "The same flood as the water-level chart, with the dissolved-load reading over it on a second axis.",
+    dilutionExplanation:
+      "Two independent sensors, one mechanism: the flood wave arrives and dilutes the dissolved load, so the value falls exactly as the level rises. That is also why these readings climb during drought — the same load in less water.",
+    dilutionAssumption:
+      "The event is chosen from the water-level series, so this chart and the hydrograph always point at the same storm. Both series are drawn at their own recorded times; where one sensor has a gap, its line simply bridges it.",
+
+    annualTrendTitleWaterTemp: "Long-term water-temperature trend — is the river warming?",
+    annualTrendTitleSalinity: "Long-term salinity trend — is the river salinising?",
+    annualTrendTitleTds: "Long-term TDS trend — is the dissolved load changing?",
+    annualTrendTitleConductivity: "Long-term conductivity trend — is mineral loading changing?",
+    annualTrendDesc: "Annual mean with the observed minimum–maximum range behind it, and a trend fitted on complete years.",
+    annualTrendExplanation:
+      "The bar is the full span the sensor recorded that year and the marker its annual mean; the dashed line is an ordinary least-squares fit through the means of the fully observed years only.",
+    annualTrendAssumption:
+      "With only a handful of complete years this is a screen, not a confirmed trend — the sign of the slope is worth more than its value, and one unusual year can reverse it.",
+
+    seasonalClimatologyTitleWaterTemp: "Seasonal water-temperature climatology: is this normal for the time of year?",
+    seasonalClimatologyTitleSalinity: "Seasonal salinity climatology: is this normal for the time of year?",
+    seasonalClimatologyTitleTds: "Seasonal TDS climatology: is this normal for the time of year?",
+    seasonalClimatologyTitleConductivity: "Seasonal conductivity climatology: is this normal for the time of year?",
+    seasonalClimatologyDesc: "Percentile bands by day of year from the earlier years, with the most recent year drawn over them.",
+    seasonalClimatologyExplanation:
+      "The same number means different things in April and in August. Comparing the recent year against the band for that day of the year removes the seasonal cycle, so what is left is the part that is actually unusual.",
+    seasonalClimatologyAssumption:
+      "With only a few reference years each percentile rests on a handful of values, so the bands are jagged and the 10th and 90th are close to the observed minimum and maximum. They describe this short record, not a climatological normal.",
+
+    durationCurveTitleWaterTemp: "Thermal duration curve — how often is the river warm, mild or cold?",
+    durationCurveTitleSalinity: "Salinity duration curve — how often is the river above a use threshold?",
+    durationCurveTitleTds: "TDS duration curve — how often is the river above a use threshold?",
+    durationCurveTitleConductivity: "Conductivity duration curve — how often is the river above a use threshold?",
+    durationCurveDesc: "Early years against recent ones across the whole range, not just the extremes.",
+    durationCurveExplanation:
+      "A recent curve sitting above the earlier one across most of its length means the whole regime has shifted, which is a broader and more reliable signal than any single record-breaking day.",
+    durationCurveAssumption:
+      "Both curves are built from daily means and plotted at Weibull exceedance positions. The record is split into an earlier and a more recent half of its years; with a record this short the two windows are only a few years each.",
+
+    exceedanceDaysTitleWaterTemp: "Frequency of heat-stress days per year",
+    exceedanceDaysTitleSalinity: "Frequency of elevated-salinity days per year",
+    exceedanceDaysTitleTds: "Frequency of elevated-TDS days per year",
+    exceedanceDaysTitleConductivity: "Frequency of elevated-conductivity days per year",
+    exceedanceDaysDesc: "The share of monitored days each year that sat above the threshold.",
+    exceedanceDaysExplanation:
+      "This is the most direct year-over-year reading in the set: a rising share is a concrete, countable signal, and expressing it as a percentage of monitored days keeps a year with a sensor outage from looking calm.",
+    exceedanceDaysAssumption:
+      "The threshold is the 90th percentile of this record — a placeholder that puts roughly a tenth of all days above it by construction. An operational indicator needs the regulator's or the ecologist's own limit here, at which point the year-to-year pattern, not the level, is what carries over.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -710,6 +840,136 @@ export const STRINGS = {
     episodesAssumption:
       "{heat} valë të të nxehtit dhe {cold} periudha të ftohta në periudhë. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ndërprerje në regjistrim mund ta mbyllë një episod që në realitet ka vazhduar.",
     episodesTruncated: "Grafiku paraqet {shown} më të gjatat për secilin lloj; {hidden} episode më të shkurtra nuk janë vizatuar.",
+
+    /* ---- të dhënat ujore: niveli, temperatura e ujit, kripshmëria, TDS, përçueshmëria ---- */
+    partialYear: "vit i vëzhguar pjesërisht",
+    partialYearsNote:
+      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri dhe janë lënë jashtë trendit — mesataret e tyre nuk janë të krahasueshme me ato të një viti të plotë.",
+    yearsShort: "vit",
+    completeYearsCount: "{n} vite të vëzhguara plotësisht",
+    eventWindowNote: "Dritarja është ±{days} ditë rreth kulmit të regjistrimit.",
+    floodPeak: "Kulmi i përmbytjes",
+    dilutionMinimum: "Vlera më e ulët",
+    annualRangeLegend: "Diapazoni vjetor min–maks",
+    annualMaximumLegend: "Maksimumi vjetor",
+    trendCompleteYears: "Trendi mbi vitet e plota",
+    annualMaximum: "Maksimumi vjetor",
+    dayOfYear: "Dita e vitit",
+    historicalMedian: "Mediana historike",
+    referencePeriod: "Periudha e referencës",
+    currentYearOverlay: "Viti i mbivendosur",
+    seasonalBandBasis:
+      "Brezat janë percentilet 10/25/50/75/90 për çdo ditë të vitit gjatë {n} viteve të referencës ({years}); viti i fundit është vizatuar mbi to, jo i përfshirë në to.",
+    ofTimeExceeded: "e kohës me vlerë të barabartë ose më të lartë",
+    medianValue: "Mediana",
+    exceedanceAxis: "Përqindja e kohës kur vlera barazohet ose tejkalohet (%)",
+    logScale: "shkallë logaritmike",
+    logScaleUnavailable: "Boshti është linear sepse seria përmban vlera zero ose negative, të cilat shkalla logaritmike nuk i paraqet dot.",
+    durationElevated: "{code}10 — e lartë",
+    durationDilute: "{code}90 — e ulët/e holluar",
+    durationWarmEnd: "T10 — i ngrohtë",
+    durationColdEnd: "T90 — i ftohtë",
+    durationMarkerNote: "Shenjat janë percentile të këtij regjistrimi, jo standarde për përdorimin e ujit — zëvendësojini me kufijtë vendorë para se të lexohen si pragje.",
+    exceedingDays: "Ditë mbi pragun",
+    shareOfMonitoredDays: "Pjesa e ditëve të monitoruara",
+    thresholdUsed: "Pragu",
+    recordPercentilePlaceholder: "percentili i {p}-të i regjistrimit — vlerë e përkohshme",
+    exceedanceShareAxis: "Ditë mbi pragun (% e ditëve të monitoruara)",
+
+    waterLevelHydrographTitle: "Niveli i ujit të lumit me pragjet e alarmit për përmbytje — ngjarja më e madhe e regjistruar",
+    waterLevelHydrographDesc: "Ngjarja më e madhe e regjistrimit, e riparaqitur orë pas ore mbi brezat e alarmit.",
+    bandNormal: "Normal",
+    bandAlert: "Vëmendje",
+    bandWarning: "Paralajmërim",
+    bandDanger: "Rrezik",
+    waterLevelHydrographExplanation:
+      "Një nivel në metra nuk thotë asgjë i vetëm; brezat janë ata që e bëjnë të lexueshëm. Edhe forma ka rëndësi — kjo ngjarje u ngrit nga rrjedha bazë në kulm brenda pak orësh, dhe kaq është koha reale që do të kishte një alarm.",
+    waterLevelHydrographAssumption:
+      "Kufijtë e brezave janë percentile të këtij regjistrimi (i 99-ti, i 99.9-ti dhe maksimumi i regjistruar), jo nivelet zyrtare të alarmit të operatorit. Ata duhet të zëvendësohen me pragjet reale para përdorimit operativ; siç është, grafiku është retrospektiv dhe nuk përmban parashikim.",
+
+    levelDurationTitle: "Kurba e kohëzgjatjes së nivelit — sa shpesh lumi rrjedh lart, normal ose ulët",
+    levelDurationDesc: "Pjesa e ditëve në të cilat çdo nivel barazohet ose tejkalohet, vitet e para kundrejt atyre të fundit.",
+    levelHighWater: "L10 — ujë i lartë",
+    levelLowWater: "L95 — ujë i ulët",
+    levelDurationExplanation:
+      "Lexohet tërthorazi, jo për së gjati: lartësia e kurbës në 95 % është niveli mbi të cilin lumi qëndron pothuajse gjithë vitin, ndërsa hapësira mes dy periudhave tregon nëse i gjithë regjimi ka ndryshuar, jo nëse një përmbytje e vetme ishte më e madhe.",
+    levelDurationAssumption:
+      "Ndërtuar nga niveli i ujit, jo nga prurja — nuk kishte kurbë kalibrimi për ta kthyer njërën në tjetrën, prandaj këto vlera i përkasin vetëm këtij shtrati dhe kësaj kuote matëse dhe nuk krahasohen me standardet rajonale Q10/Q95.",
+
+    floodFrequencyTitle: "Frekuenca e përmbytjeve: sa i rrallë është një nivel i tillë uji?",
+    floodFrequencyDesc: "Maksimumet vjetore kundrejt periudhës së kthimit, me shpërndarjen Gumbel të përshtatur.",
+    floodFrequencyExplanation:
+      "Çdo pikë është niveli më i lartë i një viti, i vendosur në periudhën e kthimit që i takon nga renditja. Vija e përshtatur e shtrin këtë renditje në një vlerësim se sa shpesh përsëritet një nivel i dhënë — dhe gjerësia e brezit rreth saj është masa e ndershme e asaj që një regjistrim kaq i shkurtër mund të thotë.",
+    floodFrequencyAssumption:
+      "Vetëm ilustrues. Praktika standarde kërkon 20–30 vite maksimumesh vjetore; ky regjistrim ka shumë më pak, prandaj kurba ndalet në tre herë numrin e viteve dhe nuk shtrihet deri te niveli 100-vjeçar. Pozicionet e vizatimit janë Gringorten, përshtatja është me katrorët më të vegjël mbi variablin e reduktuar Gumbel, dhe vitet e vëzhguara pjesërisht janë shënuar por janë mbajtur në përshtatje.",
+    recordLength: "{n} maksimume vjetore",
+    extrapolationCap: "shtrirja e kufizuar në {n} vite",
+    returnPeriod: "Periudha e kthimit",
+    returnPeriodAxis: "Periudha e kthimit (vite, shkallë logaritmike)",
+    confidenceBand: "Intervali i besueshmërisë 95 %",
+    gumbelFit: "Shpërndarja Gumbel e përshtatur",
+    completeYearMax: "Maksimumi i një viti të plotë",
+    partialYearMax: "Maksimumi i një viti të pjesshëm",
+
+    thermalHydrographTitle: "Temperatura e ujit me pragjet e stresit termik — ngjarja më e ngrohtë e regjistruar",
+    thermalHydrographDesc: "Ngjarja më e ngrohtë e regjistrimit, e riparaqitur mbi brezat e përgjithshëm të stresit për jetën ujore.",
+    bandCold: "I ftohtë",
+    bandOptimal: "Optimal",
+    bandWarmStress: "Stres nga ngrohtësia",
+    bandCritical: "Kritik",
+    thermalHydrographExplanation:
+      "Dhëmbëzimi ditor është cikli normal ditë–natë; ajo që ka rëndësi është sa thellë në brezin e stresit hyjnë kulmet ditore dhe për sa ditë radhazi, sepse stresi termik mbi jetën ujore grumbullohet dhe nuk rikthehet në zero çdo natë.",
+    thermalHydrographAssumption:
+      "Brezat janë udhëzim i përgjithshëm për jetën ujore (nën 4 °C i ftohtë, 4–20 °C optimal, 20–25 °C stres nga ngrohtësia, mbi 25 °C kritik), jo standard i posaçëm për një specie apo i miratuar rajonalisht. Zëvendësojini me kufij realë ekologjikë para se ky grafik të lexohet si grafik përputhshmërie.",
+
+    dilutionTitleSalinity: "Reagimi i kripshmërisë ndaj një përmbytjeje — hollimi gjatë rrjedhës së lartë",
+    dilutionTitleTds: "Reagimi i TDS-së ndaj një përmbytjeje — hollimi gjatë rrjedhës së lartë",
+    dilutionTitleConductivity: "Reagimi i përçueshmërisë ndaj një përmbytjeje — hollimi gjatë rrjedhës së lartë",
+    dilutionDesc: "E njëjta përmbytje si te grafiku i nivelit, me vlerën e ngarkesës së tretur mbi të, në boshtin e dytë.",
+    dilutionExplanation:
+      "Dy sensorë të pavarur, një mekanizëm i vetëm: vala e përmbytjes vjen dhe hollon ngarkesën e tretur, prandaj vlera bie pikërisht kur niveli ngrihet. Për të njëjtën arsye këto vlera rriten gjatë thatësirës — e njëjta ngarkesë në më pak ujë.",
+    dilutionAssumption:
+      "Ngjarja zgjidhet nga seria e nivelit të ujit, prandaj ky grafik dhe hidrogrami tregojnë gjithmonë të njëjtën stuhi. Të dyja seritë vizatohen në kohët e tyre të regjistruara; aty ku njëri sensor ka mungesë, vija thjesht e kapërcen atë.",
+
+    annualTrendTitleWaterTemp: "Trendi afatgjatë i temperaturës së ujit — a po ngrohet lumi?",
+    annualTrendTitleSalinity: "Trendi afatgjatë i kripshmërisë — a po kriposet lumi?",
+    annualTrendTitleTds: "Trendi afatgjatë i TDS-së — a po ndryshon ngarkesa e tretur?",
+    annualTrendTitleConductivity: "Trendi afatgjatë i përçueshmërisë — a po ndryshon ngarkesa minerale?",
+    annualTrendDesc: "Mesatarja vjetore me diapazonin e vëzhguar minimum–maksimum pas saj, dhe trendi i përshtatur mbi vitet e plota.",
+    annualTrendExplanation:
+      "Shtylla është i gjithë diapazoni që sensori regjistroi atë vit dhe shenja është mesatarja vjetore; vija e ndërprerë është përshtatja me katrorët më të vegjël vetëm mbi mesataret e viteve të vëzhguara plotësisht.",
+    annualTrendAssumption:
+      "Me vetëm pak vite të plota kjo është një kontroll paraprak, jo trend i konfirmuar — shenja e pjerrësisë vlen më shumë se vlera e saj, dhe një vit i pazakontë mund ta përmbysë.",
+
+    seasonalClimatologyTitleWaterTemp: "Klimatologjia sezonale e temperaturës së ujit: a është kjo normale për këtë periudhë të vitit?",
+    seasonalClimatologyTitleSalinity: "Klimatologjia sezonale e kripshmërisë: a është kjo normale për këtë periudhë të vitit?",
+    seasonalClimatologyTitleTds: "Klimatologjia sezonale e TDS-së: a është kjo normale për këtë periudhë të vitit?",
+    seasonalClimatologyTitleConductivity: "Klimatologjia sezonale e përçueshmërisë: a është kjo normale për këtë periudhë të vitit?",
+    seasonalClimatologyDesc: "Brezat e percentileve sipas ditës së vitit nga vitet e mëparshme, me vitin e fundit të mbivendosur.",
+    seasonalClimatologyExplanation:
+      "I njëjti numër do të thotë gjëra të ndryshme në prill dhe në gusht. Krahasimi i vitit të fundit me brezin e asaj dite të vitit e heq ciklin sezonal, dhe ajo që mbetet është pjesa vërtet e pazakontë.",
+    seasonalClimatologyAssumption:
+      "Me vetëm pak vite referencë, çdo percentil mbështetet në një grusht vlerash, prandaj brezat janë të dhëmbëzuar dhe i 10-ti e i 90-ti janë afër minimumit e maksimumit të vëzhguar. Ata përshkruajnë këtë regjistrim të shkurtër, jo një normë klimatike.",
+
+    durationCurveTitleWaterTemp: "Kurba termike e kohëzgjatjes — sa shpesh lumi është i ngrohtë, i butë apo i ftohtë?",
+    durationCurveTitleSalinity: "Kurba e kohëzgjatjes së kripshmërisë — sa shpesh lumi është mbi një prag përdorimi?",
+    durationCurveTitleTds: "Kurba e kohëzgjatjes së TDS-së — sa shpesh lumi është mbi një prag përdorimi?",
+    durationCurveTitleConductivity: "Kurba e kohëzgjatjes së përçueshmërisë — sa shpesh lumi është mbi një prag përdorimi?",
+    durationCurveDesc: "Vitet e para kundrejt atyre të fundit përgjatë gjithë diapazonit, jo vetëm te ekstremet.",
+    durationCurveExplanation:
+      "Nëse kurba e viteve të fundit qëndron mbi atë të mëparshmen përgjatë pjesës më të madhe të gjatësisë, atëherë i gjithë regjimi ka ndryshuar — sinjal më i gjerë dhe më i besueshëm se çdo ditë e vetme rekord.",
+    durationCurveAssumption:
+      "Të dyja kurbat ndërtohen nga mesataret ditore dhe vizatohen në pozicionet Weibull të tejkalimit. Regjistrimi ndahet në gjysmën e parë dhe të dytë të viteve të tij; me një regjistrim kaq të shkurtër, secila dritare ka vetëm pak vite.",
+
+    exceedanceDaysTitleWaterTemp: "Frekuenca e ditëve me stres termik sipas viteve",
+    exceedanceDaysTitleSalinity: "Frekuenca e ditëve me kripshmëri të lartë sipas viteve",
+    exceedanceDaysTitleTds: "Frekuenca e ditëve me TDS të lartë sipas viteve",
+    exceedanceDaysTitleConductivity: "Frekuenca e ditëve me përçueshmëri të lartë sipas viteve",
+    exceedanceDaysDesc: "Pjesa e ditëve të monitoruara në çdo vit që qëndruan mbi pragun.",
+    exceedanceDaysExplanation:
+      "Ky është leximi më i drejtpërdrejtë vit pas viti i gjithë grupit: një pjesë në rritje është sinjal konkret dhe i numërueshëm, ndërsa paraqitja si përqindje e ditëve të monitoruara nuk lejon që një vit me ndërprerje të sensorit të duket i qetë.",
+    exceedanceDaysAssumption:
+      "Pragu është percentili i 90-të i këtij regjistrimi — një vlerë e përkohshme që, nga vetë ndërtimi, lë rreth një të dhjetën e ditëve mbi të. Një tregues operativ kërkon kufirin e vetë rregullatorit ose të ekologut; atëherë ajo që mbetet e vlefshme është modeli vit-pas-viti, jo niveli.",
   },
 };
 
