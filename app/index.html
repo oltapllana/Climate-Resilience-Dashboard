@@ -11,9 +11,87 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
+    <style>
+      .app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #f4f7f4;
+        color: #1f2937;
+        font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      }
+      .app-loader__content {
+        display: flex;
+        max-width: 320px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .app-loader__mark {
+        position: relative;
+        width: 68px;
+        height: 68px;
+        margin-bottom: 20px;
+      }
+      .app-loader__ring {
+        position: absolute;
+        inset: 0;
+        border: 3px solid #d6ead7;
+        border-top-color: #2f7d32;
+        border-radius: 50%;
+        animation: app-loader-spin .9s linear infinite;
+      }
+      .app-loader__leaf {
+        position: absolute;
+        inset: 20px 18px 18px 22px;
+        border-radius: 80% 0 80% 0;
+        background: linear-gradient(135deg, #65ad61, #2f7d32);
+        transform: rotate(-35deg);
+      }
+      .app-loader__leaf::after {
+        content: "";
+        position: absolute;
+        left: 3px;
+        bottom: 2px;
+        width: 25px;
+        height: 1px;
+        background: rgba(255, 255, 255, .75);
+        transform: rotate(-39deg);
+        transform-origin: left;
+      }
+      .app-loader h1 {
+        margin: 0;
+        color: #2f7d32;
+        font-size: 19px;
+        line-height: 1.25;
+      }
+      .app-loader p {
+        margin: 7px 0 0;
+        color: #6b7280;
+        font-size: 13px;
+      }
+      @keyframes app-loader-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .app-loader__ring { animation: none; border-color: #4a9d4a; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-loader" role="status" aria-live="polite" aria-label="Loading climate dashboard">
+        <div class="app-loader__content">
+          <div class="app-loader__mark" aria-hidden="true">
+            <span class="app-loader__ring"></span>
+            <span class="app-loader__leaf"></span>
+          </div>
+          <h1>Climate Resilience Dashboard</h1>
+          <p>Preparing climate data&hellip;</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
