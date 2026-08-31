@@ -2,7 +2,7 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-    - cron: '0 6 * * 1'  # every Monday at 06:00 UTC — weekly, under the 7-day auto-pause window
+    - cron: '0 6 */4 * *'  # every 4 days at 06:00 UTC — leaves buffer against the 7-day pause window and GitHub's schedule delays
   workflow_dispatch: {}     # allows manual runs from the Actions tab
 
 jobs:
@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: Ping Supabase REST API
         run: |
-          status=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/saved_stations?select=station_id&limit=1" \
+          status=$(curl -s -m 15 -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/saved_stations?select=id&limit=1" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
           echo "Supabase responded with status $status"
@@ -22,4 +22,4 @@ jobs:
           fi
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
