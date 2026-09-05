@@ -12,14 +12,17 @@ import {
   ReferenceLine,
 } from "recharts";
 import { scenarioClimatology, forecast, longTermProjection } from "../lib/projection.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { EdgeLabel } from "./chartLabels.jsx";
 
 const AXIS = "#475569";
 const GRID = "#edf2f7";
 const scenarioChartMargin = { top: 6, right: 18, left: 18, bottom: 48 };
 const scenarioLegend = {
-  height: 48,
+  verticalAlign: "top",
+  height: 30,
   iconType: "line",
-  wrapperStyle: { fontSize: 12, fontWeight: 600, paddingTop: 18 },
+  wrapperStyle: { fontSize: 12, fontWeight: 600, paddingBottom: 6 },
 };
 
 const scenarioName = (s, t) => (s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5");
@@ -84,7 +87,9 @@ function annualTooltipLabel(label, payload, t, recordStart) {
 
 // Dashed horizontal line marking the average of the observed/historic series.
 // Plain function (not a component) so Recharts receives a real ReferenceLine child.
-function meanLine(value, t, unit) {
+// `what` names the series being averaged: "Mean: 11.59 °C" on a chart carrying
+// four periods left the reader guessing which of them it belonged to.
+function meanLine(value, t, unit, what, decimals = 2) {
   if (value == null) return null;
   return (
     <ReferenceLine
@@ -92,13 +97,7 @@ function meanLine(value, t, unit) {
       stroke="#64748b"
       strokeDasharray="6 4"
       strokeWidth={1.2}
-      label={{
-        value: `${t("mean")}: ${fmt(value)} ${unit}`,
-        position: "insideTopRight",
-        fill: AXIS,
-        fontSize: 11,
-        fontWeight: 600,
-      }}
+      label={<EdgeLabel text={`${what} ${t("mean").toLowerCase()}: ${formatForAxis(value, decimals)} ${unit}`} topLimit={scenarioChartMargin.top + 11} />}
     />
   );
 }
@@ -194,6 +193,34 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
     visibleYearTicks = [...new Set([yearDomain[0], ...visibleYearTicks, yearDomain[1]])].sort((a, b) => a - b);
   }
 
+  // Every one of these three plots framed itself from zero, which left the
+  // scenarios stacked in the top fifth of the chart and the differences between
+  // them — the whole point of drawing both — too small to see.
+  const climScale = axisScale(
+    climData.flatMap((row) => scen.lines.map((ln) => row[ln.period])).concat(climAvg ?? []),
+    { unit }
+  );
+  const annualScale = axisScale(
+    annual.rows.flatMap((row) => [row.observed, row.observedPartial, row.rcp45, row.rcp85]).concat(annualAvg ?? []),
+    { unit }
+  );
+  const fcScale = axisScale(
+    fc.rows.flatMap((row) => [row.actual, row.rcp45, row.rcp85]).concat(fcAvg ?? []),
+    { unit }
+  );
+
+  // The forecast rows carry a few months of projection at the end of a record
+  // that runs for years; unmarked, the dashed lines read as missing rather than
+  // as future. Shading the window says which part of the chart is a projection.
+  const lastObservedMonth = fc.rows.filter((row) => row.actual != null).at(-1)?.m ?? null;
+  const lastForecastMonth = fc.rows.at(-1)?.m ?? null;
+
+  // "2021-06", "2021-10", ... at every gridline is unreadable; a year label at
+  // each January and nothing in between carries the same information.
+  const monthTick = (value) => (String(value).endsWith("-01") ? String(value).slice(0, 4) : "");
+
+  const digits = unit === "mm" ? 0 : 1;
+
   return (
     <div className="card">
       <div className="section-title">
@@ -208,7 +235,15 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
         <LineChart data={climZoom.displayData} margin={scenarioChartMargin} {...climZoom.handlers}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
           <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} allowDataOverflow />
-          <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            width={58}
+            domain={climScale.domain}
+            ticks={climScale.ticks}
+            tickFormatter={(v) => formatForAxis(v, climScale.decimals)}
+            allowDataOverflow
+            label={yLabel(unit)}
+          />
           <Tooltip
             formatter={(v) => `${fmt(v)} ${unit}`}
             labelFormatter={(label, payload) =>
@@ -217,7 +252,6 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
           />
           <Legend {...scenarioLegend} />
           {climZoom.refArea}
-          {meanLine(climAvg, t, unit)}
           {scen.lines.map((ln) => (
             <Line
               key={ln.period}
@@ -244,6 +278,10 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
               activeDot={{ r: ln.period === "historic" ? 4 : 3 }}
             />
           ))}
+          {/* last child on purpose: Recharts paints in JSX order, so
+              the mean line and its label sit on top of the series
+              rather than behind it */}
+          {meanLine(climAvg, t, unit, t("historic"), digits)}
         </LineChart>
         </ResponsiveContainer>
       </div>
@@ -266,16 +304,41 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
             tick={{ fontSize: 11 }}
             label={xLabel(t("year"))}
           />
-          <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            width={58}
+            domain={annualScale.domain}
+            ticks={annualScale.ticks}
+            tickFormatter={(v) => formatForAxis(v, annualScale.decimals)}
+            allowDataOverflow
+            label={yLabel(unit)}
+          />
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} labelFormatter={(label, payload) => annualTooltipLabel(label, payload, t, recordStart)} />
           <Legend {...scenarioLegend} />
           {annualZoom.refArea}
-          {meanLine(annualAvg, t, unit)}
           <Line type="monotone" dataKey="observed" name={t("observed")} stroke="#6b5bb5" strokeWidth={3.2} dot={false} activeDot={{ r: 4 }} connectNulls />
-          <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={1.9} strokeOpacity={0.78} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
-          <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={1.9} strokeOpacity={0.78} strokeDasharray="2 4" dot={false} activeDot={{ r: 3 }} connectNulls />
+          {/* A partly observed year is a hollow marker on its own, never a point
+              on the observed line: four months of a Kosovo winter averaged as an
+              annual mean is the "sharp fall in 2026" the review flagged. */}
+          <Line
+            type="monotone"
+            dataKey="observedPartial"
+            name={t("partialYear")}
+            stroke="none"
+            legendType="circle"
+            dot={{ r: 4, fill: "#ffffff", stroke: "#6b5bb5", strokeWidth: 1.8 }}
+            activeDot={{ r: 5 }}
+            isAnimationActive={false}
+          />
+          <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={2.6} strokeDasharray="7 4" dot={false} activeDot={{ r: 3 }} connectNulls />
+          <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={2.6} strokeDasharray="2 4" dot={false} activeDot={{ r: 3 }} connectNulls />
+          {/* last child on purpose: Recharts paints in JSX order, so
+              the mean line and its label sit on top of the series
+              rather than behind it */}
+          {meanLine(annualAvg, t, unit, t("observed"), digits)}
         </LineChart>
         </ResponsiveContainer>
+        <p className="chart-axis-note">{t("projectionGapNote")}</p>
       </div>
 
       <div className="section-title">
@@ -284,14 +347,40 @@ export default function ScenarioChart({ meas, scenario = "rcp85", t, unit }) {
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={fc.rows} margin={scenarioChartMargin}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-          <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={24} label={xLabel(t("month"))} />
-          <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
+          {/* one label per January rather than one per gridline */}
+          <XAxis dataKey="m" tick={{ fontSize: 11 }} interval={0} tickFormatter={monthTick} label={xLabel(t("year"))} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            width={58}
+            domain={fcScale.domain}
+            ticks={fcScale.ticks}
+            tickFormatter={(v) => formatForAxis(v, fcScale.decimals)}
+            allowDataOverflow
+            label={yLabel(unit)}
+          />
           <Tooltip formatter={(v) => `${fmt(v)} ${unit}`} />
           <Legend {...scenarioLegend} />
-          {meanLine(fcAvg, t, unit)}
+          {/* the projected months are a sliver at the right-hand end of a
+              multi-year record; shading them says so rather than leaving the
+              two dashed lines looking like they failed to draw */}
+          {lastObservedMonth && lastForecastMonth && (
+            <ReferenceArea
+              x1={lastObservedMonth}
+              x2={lastForecastMonth}
+              fill="#6b5bb5"
+              fillOpacity={0.08}
+              stroke="none"
+              label={{ value: t("scenarioProjectedLabel"), position: "insideTop", fill: "#5b6b78", fontSize: 11, fontWeight: 600 }}
+            />
+          )}
+          {lastObservedMonth && <ReferenceLine x={lastObservedMonth} stroke="#94a3b8" strokeDasharray="3 3" />}
           <Line type="monotone" dataKey="actual" name={t("observed")} stroke="#1f6b35" strokeWidth={3} dot={false} activeDot={{ r: 4 }} connectNulls />
-          <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={1.8} strokeOpacity={0.72} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
-          <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={1.8} strokeOpacity={0.72} strokeDasharray="5 4" dot={false} activeDot={{ r: 3 }} connectNulls />
+          <Line type="monotone" dataKey="rcp45" name="RCP4.5" stroke="#2bb6d8" strokeWidth={2.6} strokeDasharray="7 4" dot={{ r: 2.4, fill: "#2bb6d8" }} activeDot={{ r: 4 }} connectNulls />
+          <Line type="monotone" dataKey="rcp85" name="RCP8.5" stroke="#d6453d" strokeWidth={2.6} strokeDasharray="2 4" dot={{ r: 2.4, fill: "#d6453d" }} activeDot={{ r: 4 }} connectNulls />
+          {/* last child on purpose: Recharts paints in JSX order, so
+              the mean line and its label sit on top of the series
+              rather than behind it */}
+          {meanLine(fcAvg, t, unit, t("observed"), digits)}
         </LineChart>
       </ResponsiveContainer>
 

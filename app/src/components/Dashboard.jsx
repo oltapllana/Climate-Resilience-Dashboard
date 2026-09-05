@@ -342,10 +342,15 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
         </>
       )}
 
-      {/* ---- Temperatura — air temperature ---------------------------- */}
-      {(activeMeasId === "air_temp" || unit === "°C") && (
+      {/* ---- Temperatura — air temperature ----------------------------
+          Scoped to air temperature. The block used to open on any °C series,
+          which meant river water temperature — the only other one — landed on a
+          heat-stress page whose indicators had nothing to compute, leaving the
+          stat cards above an all-but-empty card carrying a message about
+          rainfall intensity. */}
+      {activeMeasId === "air_temp" && (
         <>
-          {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
+          {hasValidTemperatureHourly && (
             <>
               {/* Temperatura 1 */}
               <MonthlyTemperatureTrend measurement={data.measurements.air_temp} t={t} />
@@ -361,7 +366,7 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           )}
           {/* Kryesor 3 */}
           <HotDaysIndicator measurement={m} t={t} />
-          {activeMeasId === "air_temp" && hasValidTemperatureHourly && (
+          {hasValidTemperatureHourly && (
             <>
               {/* Kryesor 6 */}
               <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />

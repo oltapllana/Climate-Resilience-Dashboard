@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateExceedanceDays } from "../lib/exceedanceDays.js";
+import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 
 const COMPLETE = "#c1452c";
 const PARTIAL = "#7b8a95";
@@ -46,11 +47,21 @@ export default function ExceedanceDaysChart({
           <YAxis
             width={66}
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => `${value}`}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -8 }}
+            tickFormatter={(value) => `${value} %`}
+            label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<ExceedanceTooltip />} cursor={{ fill: "#f1f5f9" }} />
-          <Bar dataKey="share" barSize={46} isAnimationActive={false}>
+          <Legend
+            {...topLegendProps}
+            payload={[
+              { value: t("fullYearLegend"), type: "square", color: COMPLETE, id: "complete" },
+              { value: t("partialYear"), type: "square", color: PARTIAL, id: "partial" },
+            ]}
+          />
+          {/* A year in which nothing crossed the threshold used to draw no bar
+              at all, which reads as a year with no data rather than a calm one.
+              A stub under the printed "0 %" keeps the year present. */}
+          <Bar dataKey="share" barSize={46} minPointSize={(value) => (value ? 0 : 3)} isAnimationActive={false}>
             {data.map((row) => (
               <Cell key={row.year} fill={row.partial ? PARTIAL : COMPLETE} />
             ))}

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyTemperature } from "../lib/monthlyTemperature.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 // Temperatura 2 and 3 — mean monthly maxima and minima.
 // The review asked for the colours to carry meaning: blue for the minima,
@@ -29,6 +31,11 @@ export default function MonthlyTemperatureExtremes({ measurement, t }) {
   );
 
   if (!data.some((row) => row.meanMax != null)) return null;
+
+  const scale = axisScale(
+    data.flatMap((row) => [row.meanMax, row.meanMin, row.maxLow, row.maxHigh, row.minLow, row.minHigh]).concat([0]),
+    { unit: "°C", allowNegative: true }
+  );
 
   const withValues = data.filter((row) => row.meanMax != null);
   const hottest = withValues.reduce((best, row) => (best == null || row.meanMax > best.meanMax ? row : best), null);
@@ -64,11 +71,18 @@ export default function MonthlyTemperatureExtremes({ measurement, t }) {
         <ComposedChart data={data} margin={{ top: 20, right: 24, left: 46, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+          {/* Framed on the values actually drawn. The stacked bands used to
+              drag the automatic domain down to -11 °C on a record whose real
+              minimum is -1.8 °C, leaving a third of the plot empty. Zero stays
+              in range because the freezing line is drawn on it. */}
           <YAxis
             width={68}
             tick={{ fontSize: 12 }}
-            tickFormatter={format}
-            label={{ value: t("temperatureAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            allowDataOverflow
+            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            label={yAxisLabel(t("temperatureAxis"))}
           />
           <Tooltip content={<MonthTooltip />} />
           <Legend

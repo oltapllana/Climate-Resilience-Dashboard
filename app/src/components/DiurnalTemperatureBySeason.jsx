@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDiurnalTemperature } from "../lib/diurnalTemperature.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 // Temperatura 3 (proposal) — the daily cycle per season instead of one annual
 // curve, each with a ±1 standard-deviation band so between-day variability is
@@ -29,6 +31,20 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
   }, [result]);
 
   if (!data.length) return null;
+
+  const scale = axisScale(
+    data
+      .flatMap((row) => [
+        row.annual,
+        ...result.seasons.flatMap((season) => [
+          row[season.season],
+          row[`${season.season}_low`],
+          row[`${season.season}_low`] == null ? null : row[`${season.season}_low`] + (row[`${season.season}_band`] ?? 0),
+        ]),
+      ])
+      .concat([0]),
+    { unit: "°C", allowNegative: true }
+  );
 
   function ProfileTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
@@ -66,13 +82,20 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
             tickFormatter={formatHour}
             interval={1}
             tick={{ fontSize: 11 }}
-            label={{ value: t("hourOfDay"), position: "insideBottom", offset: -14, fontSize: 12, fontWeight: 600 }}
+            label={xAxisLabel(t("hourOfDay"), -14)}
           />
+          {/* Framed on the values actually drawn. The stacked bands used to
+              drag the automatic domain down to -11 °C on a record whose real
+              minimum is -1.8 °C, leaving a third of the plot empty. Zero stays
+              in range because the freezing line is drawn on it. */}
           <YAxis
             width={68}
             tick={{ fontSize: 12 }}
-            tickFormatter={format}
-            label={{ value: t("temperatureAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            allowDataOverflow
+            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            label={yAxisLabel(t("temperatureAxis"))}
           />
           <Tooltip content={<ProfileTooltip />} />
           <Legend

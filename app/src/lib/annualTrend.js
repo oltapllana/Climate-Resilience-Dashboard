@@ -45,7 +45,13 @@ export function calculateAnnualTrend(dailyRecords) {
 
   const complete = years.filter((row) => !row.partial);
   const fit = complete.length >= 2 ? linearFit(complete.map((row) => ({ x: row.year, y: row.mean }))) : null;
-  const withFit = years.map((row) => ({ ...row, fit: fit ? fit.at(row.year) : null }));
+  // The fit is computed on complete years only, so it is drawn over complete
+  // years only: extended across the partial year at each end it read as a
+  // trend through data that was deliberately left out of it.
+  const withFit = years.map((row) => ({
+    ...row,
+    fit: fit && !row.partial ? fit.at(row.year) : null,
+  }));
 
   return {
     years: withFit,

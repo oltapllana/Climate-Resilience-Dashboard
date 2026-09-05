@@ -96,14 +96,24 @@ export default function HeatColdEpisodes({ measurement, t }) {
             tick={{ fontSize: 11 }}
             label={{ value: t("durationAxis"), position: "insideBottom", offset: -16, fontSize: 12, fontWeight: 600 }}
           />
-          <YAxis type="category" dataKey="key" width={120} tickLine={false} interval={0} tick={<EpisodeTick />} />
+          {/* each row is one continuous episode; the axis never said so */}
+          <YAxis
+            type="category"
+            dataKey="key"
+            width={120}
+            tickLine={false}
+            interval={0}
+            tick={<EpisodeTick />}
+            label={{ value: t("episodeAxis"), angle: -90, position: "insideLeft", offset: -6, style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }}
+          />
           <Tooltip content={<EpisodeTooltip />} cursor={{ fill: "rgba(15,23,42,0.05)" }} />
           <Legend
             verticalAlign="top"
             height={26}
+            wrapperStyle={{ fontSize: 12, paddingBottom: 6 }}
             payload={[
-              { value: t("heatWaveLabel"), type: "square", color: HEAT },
-              { value: t("coldPeriodLabel"), type: "square", color: COLD },
+              { value: t("heatWaveLabel"), type: "square", color: HEAT, id: "heat" },
+              { value: t("coldPeriodLabel"), type: "square", color: COLD, id: "cold" },
             ]}
           />
           <Bar dataKey="length" barSize={20} radius={[0, 3, 3, 0]} isAnimationActive={false}>

@@ -18,6 +18,28 @@ function TimelineTooltip({ item, x, y }) {
   );
 }
 
+// Five different marks and not one of them was named: the reader could not tell
+// a small grey circle from a large red one, or an amber block from a salmon one.
+function TimelineLegend() {
+  const items = [
+    { color: "#dce5ea", label: "Common April–September coverage" },
+    { color: AMBER, label: "Dry spell of 5–6 days" },
+    { color: "#e67c73", label: "Dry spell of 7 days or more" },
+    { color: RED, label: "Hot day (≥30 °C) inside a dry spell", round: true },
+    { color: GREY, label: "Hot day outside a dry spell", round: true },
+  ];
+  return (
+    <div className="swatch-legend">
+      {items.map((item) => (
+        <span key={item.label}>
+          <i className={item.round ? "round" : undefined} style={{ background: item.color }} />
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function CompoundTimeline({ yearly }) {
   const [tooltip, setTooltip] = useState(null);
   const left = 96;
@@ -27,6 +49,7 @@ function CompoundTimeline({ yearly }) {
   const show = (event, item) => setTooltip({ item, x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY });
   return (
     <div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
+      <TimelineLegend />
       <svg viewBox={`0 0 620 ${height}`} style={{ width: "100%", height: 360, display: "block" }} role="img" aria-label="Hot days overlaid on dry spells from April through September">
         {MONTHS.map(([month, offset]) => <g key={month}><line x1={left + offset * scale} x2={left + offset * scale} y1="26" y2={height - 28} stroke="#dce5ea" /><text x={left + offset * scale + 3} y={height - 8} fill="#5f7079" fontSize="11">{month}</text></g>)}
         {yearly.map((row, index) => {
@@ -40,7 +63,7 @@ function CompoundTimeline({ yearly }) {
             <line x1={coverageX} x2={coverageX + coverageWidth} y1={y} y2={y} stroke="#dce5ea" strokeWidth="8" strokeLinecap="round" />
             {row.dryRuns.map((run) => <rect key={run.startDate} x={left + seasonOffset(run.startDate) * scale} y={y - 6} width={Math.max(3, run.length * scale)} height="12" rx="3" fill={run.length >= 7 ? "#e67c73" : AMBER} onMouseMove={(event) => show(event, { ...run, year: row.year, type: "run" })} />)}
             {row.hotDayDates.map((date) => <circle key={date} cx={left + (seasonOffset(date) + 0.5) * scale} cy={y} r={compound5.has(date) ? 5 : 3} fill={compound5.has(date) ? RED : GREY} stroke="#fff" strokeWidth="1" onMouseMove={(event) => show(event, { type: "hot", date, temperature: row.hotDayTemperatures[date], inside5: compound5.has(date), inside7: compound7.has(date) })} />)}
-            {row.year === 2026 && <text x={coverageX + coverageWidth + 5} y={y - 10} fill="#5f7079" fontSize="10" fontWeight="700">limited common coverage</text>}
+            {row.isPartial && <text x={left - 10} y={y + 18} textAnchor="end" fill="#5f7079" fontSize="9.5">{row.availableCommonStart?.slice(5)}–{row.availableCommonEnd?.slice(5)}</text>}
           </g>;
         })}
       </svg>
@@ -65,9 +88,9 @@ export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, tempe
   if (!result.yearly.length) return null;
   return <section className="card landslide-indicator">
     <div className="indicator-grid">
-      <div className="indicator-panel"><div className="indicator-heading"><h2>Hot days in dry spells</h2><p>Hot days overlaid on qualifying dry runs during April–September.</p></div><CompoundTimeline yearly={result.yearly} /></div>
+      <div className="indicator-panel"><div className="indicator-heading"><h2>Hot days in dry spells</h2><p>Hot days overlaid on qualifying dry runs during April–September.</p></div><CompoundTimeline yearly={result.yearly} /><p className="indicator-assumption">* Partly observed season — the dates under the year give the common rainfall-and-temperature coverage.</p></div>
       <div className="indicator-panel"><div className="indicator-heading"><h2>Annual compound heat–drought days</h2><p>Compound ≥7-day counts are included in compound ≥5-day counts.</p></div>
-        <ResponsiveContainer width="100%" height={360}><BarChart data={result.yearly} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} /><YAxis allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft" }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ transform: "translateY(-16px)" }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={360}><BarChart data={result.yearly} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} /><YAxis width={64} allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
         <div className="compound-share-panel">
           <strong>Share of hot days in ≥5-day dry spells:</strong>
           <div className="compound-share-grid">

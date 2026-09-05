@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyTemperature } from "../lib/monthlyTemperature.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 // Temperatura 1 — monthly mean series with the fitted linear trend and the 0 °C
 // reference line the review asked for.
@@ -31,6 +33,12 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
   }, [result]);
 
   if (!data.length) return null;
+
+  const scale = axisScale(
+    data.flatMap((row) => [row.mean, row.absoluteMin, row.absoluteMax, row.trend]).concat([0]),
+    { unit: "°C", allowNegative: true }
+  );
+
   const { slopePerYear, r2 } = result.trend;
   const warmest = result.warmestMonth;
   const coldest = result.coldestMonth;
@@ -67,11 +75,18 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
         <ComposedChart data={data} margin={{ top: 20, right: 24, left: 46, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <XAxis dataKey="month" minTickGap={36} tick={{ fontSize: 10 }} />
+          {/* Framed on the values actually drawn. The stacked bands used to
+              drag the automatic domain down to -11 °C on a record whose real
+              minimum is -1.8 °C, leaving a third of the plot empty. Zero stays
+              in range because the freezing line is drawn on it. */}
           <YAxis
             width={68}
             tick={{ fontSize: 12 }}
-            tickFormatter={format}
-            label={{ value: t("temperatureAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            allowDataOverflow
+            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            label={yAxisLabel(t("temperatureAxis"))}
           />
           <Tooltip content={<MonthTooltip />} />
           <Legend
@@ -98,6 +113,13 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
       </ResponsiveContainer>
       <p className="indicator-explanation">{t("monthlyTempTrendExplanation")}</p>
       <p className="indicator-assumption">{t("monthlyTempTrendAssumption")}</p>
+      {/* A fit this weak is worth saying out loud next to the number rather than
+          leaving as an R² the reader has to interpret unaided. */}
+      {r2 != null && r2 < 0.2 && (
+        <p className="indicator-assumption">
+          {t("weakTrendCaution").replace("{r2}", r2).replace("{pct}", Math.round(r2 * 100))}
+        </p>
+      )}
       <p className="indicator-assumption">{t("coverage")}: {result.firstDate} – {result.lastDate}.</p>
     </section>
   );

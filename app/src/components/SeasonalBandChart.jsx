@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateSeasonalBand } from "../lib/seasonalBand.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 
-const OUTER = "#f0d3c6";
-const INNER = "#dda88f";
+const OUTER = "#fbe6da";
+const INNER = "#dd8b5c";
 const MEDIAN = "#c1452c";
 const CURRENT = "#1e6f8c";
 
@@ -42,6 +44,14 @@ export default function SeasonalBandChart({
     );
   }
 
+  const scale = axisScale(
+    result.days.flatMap((row) => [row.p10, row.p90, row.p50, row.current]),
+    { unit }
+  );
+  // Percentiles taken over a handful of reference years are not a climatology:
+  // one year's sensor outage drags the whole band toward zero for those weeks.
+  const fewReferenceYears = result.historicalYears.length <= 5;
+
   return (
     <section className="card landslide-indicator">
       <div className="indicator-heading">
@@ -65,13 +75,15 @@ export default function SeasonalBandChart({
           />
           <YAxis
             width={72}
-            domain={["auto", "auto"]}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            allowDataOverflow
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -12 }}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<SeasonTooltip />} />
-          <Legend verticalAlign="top" align="left" height={26} />
+          <Legend {...topLegendProps} align="left" height={26} />
           <Area dataKey="outerBase" stackId="outer" stroke="none" fill="transparent" legendType="none" isAnimationActive={false} />
           <Area dataKey="outerBand" stackId="outer" name={`10–90 % (${referenceLabel})`} stroke="none" fill={OUTER} fillOpacity={0.9} isAnimationActive={false} />
           <Area dataKey="innerBase" stackId="inner" stroke="none" fill="transparent" legendType="none" isAnimationActive={false} />
@@ -87,6 +99,12 @@ export default function SeasonalBandChart({
       <p className="indicator-assumption">
         {t("seasonalBandBasis").replace("{years}", referenceLabel).replace("{n}", result.historicalYears.length)}
       </p>
+      {fewReferenceYears && (
+        <p className="indicator-assumption">
+          {t("referenceBandNarrowNote").replace("{years}", result.historicalYears.length)}{" "}
+          {t("seasonalBandOutageNote")}
+        </p>
+      )}
     </section>
   );
 }

@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { calculateHotDays } from "../lib/hotDays.js";
+import { ChartEmptyState } from "./chartLabels.jsx";
 
 const HOT = "#c63a2b";
 const WARM = "#f5a742";
@@ -102,9 +103,9 @@ export default function HotDaysIndicator({ measurement, t }) {
   return (
     <section className="card landslide-indicator">
       {state.status === "loading" && <div className="empty">{t("indicatorLoading")}</div>}
-      {state.status === "empty" && <div className="empty">{t("landslideNoData")}</div>}
-      {state.status === "insufficient" && <div className="empty">{t("landslideNoHourly")}</div>}
-      {state.status === "error" && <div className="empty error-text">{t("landslideCalculationError")}</div>}
+      {state.status === "empty" && <ChartEmptyState title={t("noChartData")} detail={t("landslideNoData")} />}
+      {state.status === "insufficient" && <ChartEmptyState title={t("noChartData")} detail={t("landslideNoHourly")} />}
+      {state.status === "error" && <ChartEmptyState title={t("noChartData")} detail={t("landslideCalculationError")} />}
 
       {state.status === "ready" && (
         <>
@@ -147,8 +148,17 @@ export default function HotDaysIndicator({ measurement, t }) {
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={yearlyData.map((row) => ({ ...row, threshold30: row.days30, threshold40: row.days40 }))} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" vertical={false} />
-                  <XAxis dataKey="year" />
-                  <YAxis allowDecimals={false} domain={[0, Math.max(1, ...yearlyData.map((row) => Math.max(row.days30, row.days40, 1)))]} label={{ value: "Count of days", angle: -90, position: "insideLeft" }} />
+                  {/* 2021 and 2026 are partial records; unmarked, a short year
+                      reads as a mild one */}
+                  <XAxis
+                    dataKey="year"
+                    tickFormatter={(year) => `${year}${yearlyData.find((row) => row.year === year)?.isPartial ? "*" : ""}`}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    domain={[0, Math.max(1, ...yearlyData.map((row) => Math.max(row.days30, row.days40, 1)))]}
+                    label={{ value: "Count of days", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }}
+                  />
                   <Tooltip content={<AnnualTooltip />} />
                   <Legend
                     verticalAlign="top"
@@ -165,7 +175,7 @@ export default function HotDaysIndicator({ measurement, t }) {
                     ))}
                     <LabelList content={<AnnualLabel />} />
                   </Bar>
-                  <Bar dataKey="days40" name="≥40°C" radius={[3, 3, 0, 0]}>
+                  <Bar dataKey="days40" name="≥40°C" minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}>
                     {yearlyData.map((row) => (
                       <Cell key={`${row.year}-40`} fill={row.isPartial ? HOT : MUTED[row.year % MUTED.length]} />
                     ))}
@@ -178,7 +188,7 @@ export default function HotDaysIndicator({ measurement, t }) {
 
           <p className="indicator-explanation">This indicator counts calendar days when the observed daily maximum temperature reached at least 30°C or 40°C.</p>
           <p className="indicator-assumption">
-            Daily maxima use available hourly observations; missing hours or days are not treated as 0°C. 2021 and 2026 are partial records, and this is a single-station record.
+            Daily maxima use available hourly observations; missing hours or days are not treated as 0°C. Years marked with an asterisk are partial records and are not comparable with complete years. This is a single-station record.
           </p>
           <p className="indicator-assumption">
             Record maximum: {fmt(recordMax.temperature, 1)} °C on {recordMax.date}.

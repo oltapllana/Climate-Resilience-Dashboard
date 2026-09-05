@@ -386,6 +386,32 @@ header.masthead {
 @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
 .chart-card { min-height: 320px; }
 
+/* Said under any chart whose y-axis deliberately does not start at zero. */
+.chart-axis-note { margin: 6px 2px 0; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+
+/* An indicator that has nothing to draw: a centred sentence beats an empty
+   plot area with a stray line of small print lost in the middle of it. */
+.chart-empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 160px; padding: 24px 18px; margin-top: 8px;
+  border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;
+  color: var(--muted); font-size: 13px; text-align: center;
+}
+.chart-empty-state strong { color: #475569; font-size: 13.5px; font-weight: 700; }
+
+/* Legend for the charts drawn by hand in SVG, which never pick up Recharts'
+   own legend: the dry-spell runs, the compound heat-drought overlay. */
+.swatch-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 18px;
+  margin: 0 0 8px; color: #475569; font-size: 12px; font-weight: 600;
+}
+.swatch-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch-legend i {
+  width: 14px; height: 10px; border-radius: 3px; display: inline-block;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+.swatch-legend i.round { border-radius: 50%; width: 11px; height: 11px; }
+
 .empty {
   display: flex; align-items: center; justify-content: center; min-height: 300px;
   color: var(--muted); text-align: center; padding: 30px;

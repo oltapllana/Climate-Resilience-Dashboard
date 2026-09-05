@@ -133,7 +133,6 @@ export const STRINGS = {
     winter: "Winter",
     peak: "Peak",
     coverage: "Coverage",
-    partialYear: "partial year",
     observedDays: "Observed days",
     standardDeviation: "standard deviation",
     completeYearsCounted: "Complete years used",
@@ -485,6 +484,50 @@ export const STRINGS = {
       "This is the most direct year-over-year reading in the set: a rising share is a concrete, countable signal, and expressing it as a percentage of monitored days keeps a year with a sensor outage from looking calm.",
     exceedanceDaysAssumption:
       "The threshold is the 90th percentile of this record — a placeholder that puts roughly a tenth of all days above it by construction. An operational indicator needs the regulator's or the ecologist's own limit here, at which point the year-to-year pattern, not the level, is what carries over.",
+
+    // ---- review follow-up: axis framing, legends, empty states ----------
+    axisTruncatedNote:
+      "The vertical axis starts above zero so that the differences between months stay visible.",
+    rainfallWhiskerNote:
+      "Where the between-year deviation is wider than the month's own mean, the lower whisker is drawn down to zero: a month cannot record a negative depth of rain.",
+    dualAxisNote:
+      "Bars are read against the left-hand axis (rain days), the line against the right-hand one (share of observed days).",
+    landslideNoCriticalDetail:
+      "Across the {years} years of record no 1–5 day window reached the configured intensity-duration threshold. That is a statement about the threshold and this record, not a gap in the data — before the indicator is used operationally, confirm the threshold is the one the local geology calls for.",
+    seasonalBandOutageNote:
+      "A stretch where the band collapses toward zero is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
+    weakTrendCaution:
+      "R² = {r2}: the straight line accounts for only {pct} % of the month-to-month variation, so the slope is a screen for a direction, not a measured rate of warming.",
+    largestAnomalies: "Largest departures from the monthly normal: {up} in {upMonth}, {down} in {downMonth}.",
+    fullYearLegend: "Fully observed year",
+    leftAxisSuffix: "left axis",
+    rightAxisSuffix: "right axis",
+    dailyValueLegend: "Daily value",
+    monthlyValueLegend: "Monthly value",
+    monthlyTotalLegend: "Monthly total",
+    anomalyAboveLegend: "Above the monthly average",
+    anomalyBelowLegend: "Below the monthly average",
+    longTermMeanLegend: "Long-term mean",
+    rollingMeanLegend: "30-day rolling mean",
+    episodeAxis: "Episode",
+    countOfDaysAxis: "Number of days",
+    qualifyingDryDaysAxis: "Qualifying dry days",
+    noQualifyingEvents: "No qualifying event recorded in this record.",
+    zeroForYear: "0 — no day met the threshold",
+    partialYearExcluded: "* Partly observed year — not comparable with a full year",
+    windRoseRingNote: "Rings are drawn every {step} % of all observations.",
+    circularMeanNote:
+      "Direction is averaged as a vector (circular mean): the ordinary average of 1° and 359° would be 180°, the opposite bearing.",
+    directionRoseHint:
+      "A bar chart cannot carry a compass bearing — a month averaging 5° and a month averaging 355° both blow from the north but sit at opposite ends of the axis. Read the wind rose above instead.",
+    noChartData: "This chart cannot be drawn",
+    scenarioProjectedLabel: "projected",
+    scenarioObservedLabel: "observed",
+    projectionGapNote:
+      "The observed line ends where the record ends; the last partly observed year is left out so that it does not read as a sudden fall.",
+    trendNotFitted: "No trend fitted — too few fully observed years",
+    referenceBandNarrowNote:
+      "With only {years} reference years the percentile bands rest on a handful of values, so they sit close together and close to the observed range.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -618,7 +661,6 @@ export const STRINGS = {
     winter: "Dimër",
     peak: "Kulmi",
     coverage: "Mbulueshmëria",
-    partialYear: "vit i pjesshëm",
     observedDays: "Ditë të vëzhguara",
     standardDeviation: "devijimi standard",
     completeYearsCounted: "Vite të plota të përdorura",
@@ -970,6 +1012,50 @@ export const STRINGS = {
       "Ky është leximi më i drejtpërdrejtë vit pas viti i gjithë grupit: një pjesë në rritje është sinjal konkret dhe i numërueshëm, ndërsa paraqitja si përqindje e ditëve të monitoruara nuk lejon që një vit me ndërprerje të sensorit të duket i qetë.",
     exceedanceDaysAssumption:
       "Pragu është percentili i 90-të i këtij regjistrimi — një vlerë e përkohshme që, nga vetë ndërtimi, lë rreth një të dhjetën e ditëve mbi të. Një tregues operativ kërkon kufirin e vetë rregullatorit ose të ekologut; atëherë ajo që mbetet e vlefshme është modeli vit-pas-viti, jo niveli.",
+
+    // ---- ndjekje e recensionit: boshtet, legjendat, gjendjet bosh -------
+    axisTruncatedNote:
+      "Boshti vertikal fillon mbi zero që dallimet mes muajve të mbeten të dukshme.",
+    rainfallWhiskerNote:
+      "Aty ku devijimi mes viteve është më i madh se vetë mesatarja e muajit, krahu i poshtëm vizatohet deri në zero: një muaj nuk mund të regjistrojë thellësi negative reshjesh.",
+    dualAxisNote:
+      "Barrat lexohen sipas boshtit të majtë (ditët me shi), vija sipas atij të djathtë (pjesa e ditëve të vëzhguara).",
+    landslideNoCriticalDetail:
+      "Gjatë {years} viteve të regjistruara asnjë dritare 1–5 ditore nuk e arriti pragun e konfiguruar intensitet-kohëzgjatje. Kjo është pohim për pragun dhe këtë regjistrim, jo mungesë e të dhënave — para përdorimit operativ, verifikoni që pragu është ai që kërkon gjeologjia lokale.",
+    seasonalBandOutageNote:
+      "Një segment ku banda bie drejt zeros është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
+    weakTrendCaution:
+      "R² = {r2}: vija e drejtë shpjegon vetëm {pct} % të luhatjes mes muajve, prandaj pjerrësia është tregues drejtimi, jo normë e matur e ngrohjes.",
+    largestAnomalies: "Devijimet më të mëdha nga norma mujore: {up} në {upMonth}, {down} në {downMonth}.",
+    fullYearLegend: "Vit i vëzhguar plotësisht",
+    leftAxisSuffix: "boshti i majtë",
+    rightAxisSuffix: "boshti i djathtë",
+    dailyValueLegend: "Vlera ditore",
+    monthlyValueLegend: "Vlera mujore",
+    monthlyTotalLegend: "Totali mujor",
+    anomalyAboveLegend: "Mbi mesataren mujore",
+    anomalyBelowLegend: "Nën mesataren mujore",
+    longTermMeanLegend: "Mesatarja afatgjate",
+    rollingMeanLegend: "Mesatarja rrëshqitëse 30-ditore",
+    episodeAxis: "Episodi",
+    countOfDaysAxis: "Numri i ditëve",
+    qualifyingDryDaysAxis: "Ditët e thata kualifikuese",
+    noQualifyingEvents: "Asnjë ngjarje kualifikuese e regjistruar në këtë periudhë.",
+    zeroForYear: "0 — asnjë ditë nuk e kaloi pragun",
+    partialYearExcluded: "* Vit i vëzhguar pjesërisht — i pakrahasueshëm me një vit të plotë",
+    windRoseRingNote: "Rrathët vizatohen çdo {step} % të vëzhgimeve totale.",
+    circularMeanNote:
+      "Drejtimi mesatarizohet si vektor (mesatare rrethore): mesatarja e zakonshme e 1° dhe 359° do të ishte 180°, pra drejtimi i kundërt.",
+    directionRoseHint:
+      "Një bar chart nuk mund të paraqesë drejtimin e erës — një muaj me mesatare 5° dhe një muaj me mesatare 355° fryjnë të dy nga veriu, por bien në skaje të kundërta të boshtit. Lexoni rrozën e erës më lart.",
+    noChartData: "Ky grafik nuk mund të vizatohet",
+    scenarioProjectedLabel: "parashikim",
+    scenarioObservedLabel: "vëzhguar",
+    projectionGapNote:
+      "Vija e vëzhguar përfundon aty ku përfundon regjistrimi; viti i fundit i vëzhguar pjesërisht lihet jashtë që të mos duket si rënie e papritur.",
+    trendNotFitted: "Pa trend të llogaritur — shumë pak vite të vëzhguara plotësisht",
+    referenceBandNarrowNote:
+      "Me vetëm {years} vite referimi, bandat e përqindjeve mbështeten në pak vlera, prandaj qëndrojnë afër njëra-tjetrës dhe afër intervalit të vëzhguar.",
   },
 };
 

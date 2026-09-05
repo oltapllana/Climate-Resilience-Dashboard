@@ -51,11 +51,22 @@ export function calculatePrecipitationExtremes(hourlyRecords) {
       (current, row) => (current == null || row.total > current.total ? row : current),
       null
     );
+    // A year the record only half covers cannot be compared with a full one:
+    // 2026's "annual maximum" is the wettest day of a winter, and drawn beside
+    // five complete years it reads as a collapse in extreme rainfall.
+    const observedStart = rows.length ? rows[0].date : null;
+    const observedEnd = rows.length ? rows[rows.length - 1].date : null;
+    const isPartial =
+      observedStart == null || observedStart > `${year}-01-01` || observedEnd < `${year}-12-31`;
     return {
       year,
       maxDate: maxRow ? maxRow.date : null,
       maxTotal: maxRow ? maxRow.total : null,
       exceedsThreshold: maxRow != null && threshold != null && maxRow.total > threshold,
+      observedStart,
+      observedEnd,
+      observedDays: rows.length,
+      isPartial,
     };
   });
 

@@ -16,9 +16,12 @@ import {
 import {
   calculateLandslideRainfallIndicator,
 } from "../lib/landslideRainfall.js";
+import { ChartEmptyState, topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 const RED = "#c63a2b";
-const MUTED = ["#9aaab4", "#719eac", "#aab8bf", "#6f98a6", "#b4c0c5", "#829da7"];
+// One hue per year rather than six shades of the same grey-blue: the review
+// could not separate the curves from each other or from the legend swatches.
+const MUTED = ["#3f7fb0", "#4c9a6a", "#9d7bc4", "#c98a2e", "#5aa9a2", "#a8577c"];
 
 function fmt(value) {
   return value == null
@@ -113,12 +116,18 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
     ];
   }, [chartData]);
 
+  // A record in which no day ever met the threshold: worth saying in words
+  // rather than drawing as six empty columns.
+  const yearlyRows = state.status === "ready" ? state.result.yearly : [];
+  const noCriticalDays = yearlyRows.length > 0 && yearlyRows.every((row) => !row.criticalDays);
+  const coveredYears = yearlyRows.length;
+
   return (
     <section className="card landslide-indicator">
       {state.status === "loading" && <div className="empty">{t("indicatorLoading")}</div>}
-      {state.status === "empty" && <div className="empty">{t("landslideNoData")}</div>}
-      {state.status === "insufficient" && <div className="empty">{t("landslideNoHourly")}</div>}
-      {state.status === "error" && <div className="empty error-text">{t("landslideCalculationError")}</div>}
+      {state.status === "empty" && <ChartEmptyState title={t("noChartData")} detail={t("landslideNoData")} />}
+      {state.status === "insufficient" && <ChartEmptyState title={t("noChartData")} detail={t("landslideNoHourly")} />}
+      {state.status === "error" && <ChartEmptyState title={t("noChartData")} detail={t("landslideCalculationError")} />}
 
       {state.status === "ready" && (
         <>
@@ -160,16 +169,16 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                     type="number"
                     domain={[0.8, 5.2]}
                     ticks={[1, 2, 3, 4, 5]}
-                    label={{ value: t("landslideXAxis"), position: "insideBottom", offset: -12 }}
+                    label={xAxisLabel(t("landslideXAxis"), -12)}
                   />
                   <YAxis
                     scale="log"
                     domain={domain}
                     allowDataOverflow
-                    label={{ value: t("landslideYAxis"), angle: -90, position: "insideLeft", offset: -8 }}
+                    label={yAxisLabel(t("landslideYAxis"))}
                   />
                   <Tooltip content={<IndicatorTooltip t={t} />} />
-                  <Legend verticalAlign="top" height={48} />
+                  <Legend {...topLegendProps} height={44} />
                   <Line
                     dataKey="threshold"
                     name={t("landslideThreshold")}
@@ -201,21 +210,33 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                 <h2>{t("landslideDaysTitle")}</h2>
                 <p>{t("landslideDaysSubtitle")}</p>
               </div>
-              <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={state.result.yearly} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
-                  <CartesianGrid stroke="#dce5ea" vertical={false} />
-                  <XAxis dataKey="year" />
-                  <YAxis
-                    allowDecimals={false}
-                    domain={[0, (max) => Math.max(1, max + 1)]}
-                    label={{ value: t("landslideBarYAxis"), angle: -90, position: "insideLeft" }}
-                  />
-                  <Tooltip content={<DaysTooltip t={t} />} />
-                  <Bar dataKey="criticalDays" name={t("landslideCriticalDays")} fill={RED} radius={[3, 3, 0, 0]}>
-                    <LabelList dataKey="criticalDays" position="top" fontWeight={700} fill="#17242b" />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {/* Six years of zeroes plotted on an axis running 0 to 1 is an
+                  empty rectangle. A sentence carries the same finding, and says
+                  the thing the bars could not: nothing was recorded, which is
+                  not the same as nothing being measured. */}
+              {noCriticalDays ? (
+                <ChartEmptyState
+                  title={t("noQualifyingEvents")}
+                  detail={t("landslideNoCriticalDetail").replace("{years}", coveredYears)}
+                />
+              ) : (
+                <ResponsiveContainer width="100%" height={360}>
+                  <BarChart data={state.result.yearly} margin={{ top: 30, right: 18, left: 24, bottom: 28 }}>
+                    <CartesianGrid stroke="#dce5ea" vertical={false} />
+                    <XAxis dataKey="year" />
+                    <YAxis
+                      width={64}
+                      allowDecimals={false}
+                      domain={[0, (max) => Math.max(1, max + 1)]}
+                      label={yAxisLabel(t("landslideBarYAxis"))}
+                    />
+                    <Tooltip content={<DaysTooltip t={t} />} />
+                    <Bar dataKey="criticalDays" name={t("landslideCriticalDays")} fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}>
+                      <LabelList dataKey="criticalDays" position="top" fontWeight={700} fill="#17242b" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 

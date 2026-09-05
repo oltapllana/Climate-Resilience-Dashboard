@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CLASSIFIED_BANDS, calculateRainyDays } from "../lib/rainyDays.js";
+import { topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 const LINE = "#c63a2b";
 
@@ -74,12 +75,11 @@ export default function RainyDaysIndicator({ measurement, t }) {
                   return row?.isPartial ? `${year}*` : String(year);
                 }}
               />
-              <YAxis width={60} allowDecimals={false} tick={{ fontSize: 12 }} label={{ value: t("rainyDaysAxis"), angle: -90, position: "insideLeft", offset: -8 }} />
+              <YAxis width={60} allowDecimals={false} tick={{ fontSize: 12 }} label={yAxisLabel(t("rainyDaysAxis"))} />
               <Tooltip content={<YearTooltip t={t} />} />
               <Legend
-                verticalAlign="top"
-                height={26}
-                payload={CLASSIFIED_BANDS.map((band) => ({ value: band.label, type: "square", color: band.color }))}
+                {...topLegendProps}
+                payload={CLASSIFIED_BANDS.map((band) => ({ value: band.label, type: "square", color: band.color, id: band.id }))}
               />
               {CLASSIFIED_BANDS.map((band, index) => (
                 <Bar key={band.id} dataKey={band.id} stackId="bands" fill={band.color} radius={index === CLASSIFIED_BANDS.length - 1 ? [4, 4, 0, 0] : undefined}>
@@ -88,7 +88,7 @@ export default function RainyDaysIndicator({ measurement, t }) {
               ))}
             </BarChart>
           </ResponsiveContainer>
-          <p className="indicator-assumption">* {t("partialYear")}</p>
+          <p className="indicator-assumption">{t("partialYearExcluded")}</p>
         </div>
 
         <div className="indicator-panel">
@@ -99,16 +99,34 @@ export default function RainyDaysIndicator({ measurement, t }) {
           <ResponsiveContainer width="100%" height={340}>
             <ComposedChart data={monthlyData} margin={{ top: 30, right: 46, left: 40, bottom: 30 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis yAxisId="left" width={58} allowDecimals={false} tick={{ fontSize: 12 }} label={{ value: t("rainyDaysAxisAllYears"), angle: -90, position: "insideLeft", offset: -8 }} />
-              <YAxis yAxisId="right" orientation="right" width={54} tick={{ fontSize: 12, fill: LINE }} unit="%" />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} label={xAxisLabel(t("month"), -14)} />
+              <YAxis yAxisId="left" width={58} allowDecimals={false} tick={{ fontSize: 12 }} label={yAxisLabel(t("rainyDaysAxisAllYears"))} />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                width={54}
+                tick={{ fontSize: 12, fill: LINE }}
+                unit="%"
+                label={{ value: t("shareOfDays"), angle: 90, position: "insideRight", style: { textAnchor: "middle", fill: LINE, fontSize: 12, fontWeight: 600 } }}
+              />
               <Tooltip content={<MonthTooltip t={t} />} />
-              <Bar yAxisId="left" dataKey="rainDays" fill="#3b7f9e" radius={[4, 4, 0, 0]}>
+              {/* two scales on one plot, and neither the line nor the axes were
+                  named anywhere: the legend now says which series reads against
+                  which side */}
+              <Legend
+                {...topLegendProps}
+                payload={[
+                  { value: `${t("rainDays")} (${t("leftAxisSuffix")})`, type: "square", color: "#3b7f9e", id: "bars" },
+                  { value: `${t("shareOfDays")} (${t("rightAxisSuffix")})`, type: "line", color: LINE, id: "share" },
+                ]}
+              />
+              <Bar yAxisId="left" dataKey="rainDays" name={t("rainDays")} fill="#3b7f9e" radius={[4, 4, 0, 0]}>
                 {monthlyData.map((row) => <Cell key={row.month} fill="#3b7f9e" />)}
               </Bar>
-              <Line yAxisId="right" type="monotone" dataKey="sharePercent" stroke={LINE} strokeWidth={2.4} dot={{ r: 3, fill: LINE }} isAnimationActive={false} />
+              <Line yAxisId="right" type="monotone" dataKey="sharePercent" name={t("shareOfDays")} stroke={LINE} strokeWidth={2.4} dot={{ r: 3, fill: LINE }} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
+          <p className="chart-axis-note">{t("dualAxisNote")}</p>
         </div>
       </div>
       <p className="indicator-explanation">{t("rainyDaysExplanation")}</p>

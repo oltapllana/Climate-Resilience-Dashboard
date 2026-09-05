@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyExtremes } from "../lib/monthlyExtremes.js";
+import { DotLabel, anchorForPosition, topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 // Shtypja 2 — monthly maximum and minimum with the range shaded between them.
 const MAX_LINE = "#e0393e";
@@ -14,6 +15,12 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
   const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const data = result.monthly.map((row) => ({ ...row, base: row.min, band: row.range }));
   const { absoluteMax, absoluteMin, widest } = result;
+
+  // Both extremes are marked on the plot, and either can land in the last
+  // months of the record — where a centred label runs off the right edge and
+  // "Absolute minimum: 906.8 hPa" arrives as "906.8 hP".
+  const maxAnchor = anchorForPosition(data.findIndex((row) => row.month === absoluteMax.month), data.length);
+  const minAnchor = anchorForPosition(data.findIndex((row) => row.month === absoluteMin.month), data.length);
 
   const lows = data.map((row) => row.min);
   const highs = data.map((row) => row.max);
@@ -67,7 +74,7 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
             tickLine={false}
             tick={<YearTick />}
             height={44}
-            label={{ value: t("periodAxis"), position: "insideBottom", offset: -2, fontSize: 12, fontWeight: 600 }}
+            label={xAxisLabel(t("periodAxis"), -2)}
           />
           <YAxis
             width={70}
@@ -75,14 +82,15 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
             allowDataOverflow
             tick={{ fontSize: 11 }}
             tickFormatter={(value) => Number(value).toFixed(0)}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -8 }}
+            label={yAxisLabel(axisLabel, 4)}
           />
           <Tooltip content={<RangeTooltip />} />
-          <Legend verticalAlign="bottom" align="left" height={30} wrapperStyle={{ paddingLeft: 60, paddingTop: 6 }}
+          <Legend
+            {...topLegendProps}
             payload={[
-              { value: t("monthlyRangeLegend"), type: "square", color: BAND },
-              { value: t("maxValueLegend"), type: "line", color: MAX_LINE },
-              { value: t("minValueLegend"), type: "line", color: MIN_LINE },
+              { value: t("monthlyRangeLegend"), type: "square", color: BAND, id: "band" },
+              { value: t("maxValueLegend"), type: "line", color: MAX_LINE, id: "max" },
+              { value: t("minValueLegend"), type: "line", color: MIN_LINE, id: "min" },
             ]}
           />
           <Area dataKey="base" stackId="range" stroke="none" fill="transparent" isAnimationActive={false} />
@@ -91,22 +99,13 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
           <Line type="linear" dataKey="min" stroke={MIN_LINE} strokeWidth={1.5} dot={{ r: 2.2, fill: MIN_LINE, strokeWidth: 0 }} isAnimationActive={false} />
           <ReferenceDot x={absoluteMax.month} y={absoluteMax.value} r={4} fill={MAX_LINE} stroke="#fff" strokeWidth={1.2} isFront>
             <Label
-              value={`${t("absoluteMaximum")}: ${format(absoluteMax.value)} ${unit}`}
-              position="top"
-              offset={10}
-              fill={MAX_LINE}
-              fontSize={11}
-              fontWeight={700}
+              content={<DotLabel text={`${t("absoluteMaximum")}: ${format(absoluteMax.value)} ${unit}`} anchor={maxAnchor} place="top" fill={MAX_LINE} />}
             />
           </ReferenceDot>
           <ReferenceDot x={absoluteMin.month} y={absoluteMin.value} r={4} fill={MIN_LINE} stroke="#fff" strokeWidth={1.2} isFront>
+            {/* the minimum was drawn in the maximum's red */}
             <Label
-              value={`${t("absoluteMinimum")}: ${format(absoluteMin.value)} ${unit}`}
-              position="bottom"
-              offset={10}
-              fill={MAX_LINE}
-              fontSize={11}
-              fontWeight={700}
+              content={<DotLabel text={`${t("absoluteMinimum")}: ${format(absoluteMin.value)} ${unit}`} anchor={minAnchor} place="bottom" fill={MIN_LINE} />}
             />
           </ReferenceDot>
         </ComposedChart>

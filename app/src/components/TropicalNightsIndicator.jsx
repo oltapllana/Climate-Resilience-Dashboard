@@ -101,15 +101,15 @@ export default function TropicalNightsIndicator({ measurement }) {
             <BarChart data={result.annualCounts.map((row) => ({ ...row, yearLabel: `${row.year}${row.isPartial ? "*" : ""}` }))} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
               <XAxis dataKey="yearLabel" />
-              <YAxis allowDecimals={false} domain={[0, maxAnnual + 1]} label={{ value: "Count of nights", angle: -90, position: "insideLeft" }} />
+              <YAxis width={64} allowDecimals={false} domain={[0, maxAnnual + 1]} label={{ value: "Count of nights", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} />
               <Tooltip content={<AnnualTooltip />} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" minPointSize={(value) => (value ? 0 : 3)} radius={[4, 4, 0, 0]}>
                 {result.annualCounts.map((row) => <Cell key={row.year} fill={row.isPartial ? PARTIAL : GREEN} />)}
                 <LabelList content={<ValueLabel />} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <p className="indicator-assumption">* Partial record</p>
+          <p className="indicator-assumption">* Partly observed year — not comparable with a full calendar year.</p>
         </div>
       </div>
 

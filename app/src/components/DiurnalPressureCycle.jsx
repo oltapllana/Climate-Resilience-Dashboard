@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { CartesianGrid, Label, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDiurnalAnomalyCycle } from "../lib/diurnalAnomalyCycle.js";
+import { topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 // Shtypja 3 — "Cikli ditor i shtypjes atmosferike sipas stinës".
 const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -59,20 +60,20 @@ export default function DiurnalPressureCycle({ measurement, unit, t }) {
             tickFormatter={formatHour}
             interval={1}
             tick={{ fontSize: 11 }}
-            label={{ value: t("hourOfDay"), position: "insideBottom", offset: -14, fontSize: 12, fontWeight: 600 }}
+            label={xAxisLabel(t("hourOfDay"), -14)}
           />
+          {/* The unit lived in this title all along; a negative offset pushed the
+              rotated text into the margin, and "(hPa)" was the half that got cut. */}
           <YAxis
             width={76}
             tick={{ fontSize: 12 }}
             tickFormatter={format}
-            label={{ value: t("pressureDeviationAxis"), angle: -90, position: "insideLeft", offset: -18 }}
+            label={yAxisLabel(t("pressureDeviationAxis"), 6)}
           />
           <Tooltip content={<CycleTooltip />} />
           <Legend
-            verticalAlign="bottom"
-            height={30}
-            wrapperStyle={{ paddingTop: 18 }}
-            payload={result.seasons.map((season) => ({ value: t(season.season), type: "line", color: season.color }))}
+            {...topLegendProps}
+            payload={result.seasons.map((season) => ({ value: t(season.season), type: "line", color: season.color, id: season.season }))}
           />
           {/* the day's own mean — every curve is a departure from this */}
           <ReferenceLine y={0} stroke="#8a97a1" strokeWidth={1.2}>

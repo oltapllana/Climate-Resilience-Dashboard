@@ -10,10 +10,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   Cell,
   ReferenceLine,
 } from "recharts";
 import { effectiveClimatology } from "../lib/projection.js";
+import { COMPASS_TICKS, axisScale, circularMeanDeg, compassLabel, formatForAxis } from "../lib/chartAxis.js";
+import { EdgeLabel } from "./chartLabels.jsx";
 
 const GREEN = "#4a9d4a";
 const GREEN_DARK = "#2f7d32";
@@ -66,9 +69,29 @@ function mean(values) {
   return nums.reduce((s, v) => s + Number(v), 0) / nums.length;
 }
 
+// The ETL vector-averages wind direction; the chart layer did not, so the line
+// marked "Mean: 166°" on the direction panels was an ordinary average of
+// bearings — the average of 1° and 359° computed as 180°, the opposite way.
+function seriesMean(values, circular) {
+  return circular ? circularMeanDeg(values) : mean(values);
+}
+
+// A bearing axis always spans the full circle and is read in compass points, so
+// that a month averaging 2° and a month averaging 358° both read as north
+// instead of landing at opposite ends of the axis.
+const COMPASS_SCALE = { domain: [0, 360], ticks: COMPASS_TICKS, decimals: 0 };
+
+function scaleFor(values, options) {
+  return options.circular ? COMPASS_SCALE : axisScale(values, options);
+}
+
+function tickFor(scale, circular) {
+  return circular ? compassLabel : (value) => formatForAxis(value, scale.decimals);
+}
+
 // Dashed horizontal line marking the average of the plotted values. Plain
 // function (not a component) so Recharts receives a real ReferenceLine child.
-function meanLine(value, t, unit) {
+function meanLine(value, t, unit, decimals = 2, format = formatForAxis) {
   if (value == null) return null;
   return (
     <ReferenceLine
@@ -76,15 +99,23 @@ function meanLine(value, t, unit) {
       stroke="#64748b"
       strokeDasharray="6 4"
       strokeWidth={1.2}
-      label={{
-        value: `${t("mean")}: ${fmt(value)} ${unit}`,
-        position: "insideTopRight",
-        fill: AXIS,
-        fontSize: 11,
-        fontWeight: 600,
-      }}
+      // "insideTopRight" let Recharts draw the text past the plot edge, and
+      // every panel in the review lost the end of its own number.
+      label={<EdgeLabel text={`${t("mean")}: ${format(value, decimals)} ${unit}`} topLimit={chartMargin.top + 11} />}
     />
   );
+}
+
+// Recharts' own legend sits under the plot by default; the review asked for it
+// above the drawing so it is read before the lines rather than after them.
+const legendStyle = { fontSize: 12, paddingBottom: 6 };
+
+// A note under a chart whose baseline is not zero. Truncating an axis is the
+// right call when the signal is a 5 hPa wobble around 930, but it has to be
+// said out loud rather than left for the reader to notice.
+function AxisNote({ show, t }) {
+  if (!show) return null;
+  return <p className="chart-axis-note">{t("axisTruncatedNote")}</p>;
 }
 
 export function ClimatologyChart({ series, t, unit, isSum }) {
@@ -96,43 +127,115 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
     est: !!c.est,
   }));
 
+  // A bar of a monthly *total* has to grow from zero — its length is the
+  // quantity. A bar of a monthly *mean* that sits at 930 hPa does not: framed
+  // from zero, twelve months of pressure or humidity look identical.
+  const circular = !!series.circular;
+  const scale = scaleFor(data.map((d) => d.v), { unit, includeZero: isSum, circular });
+  const truncated = !circular && scale.domain[0] > 0;
+  const tickFormat = tickFor(scale, circular);
+
   return (
-    <ResponsiveContainer width="100%" height={250}>
-      <BarChart data={data} margin={chartMargin}>
-        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-        <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} />
-        <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-        <Tooltip
-          formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]}
-          labelFormatter={(label, payload) =>
-            payload?.[0]?.payload?.est ? `${label} ${t("estMonthNote")}` : label
-          }
-        />
-        {meanLine(mean(data.map((d) => d.v)), t, unit)}
-        <Bar dataKey="v" fill={GREEN} radius={[4, 4, 0, 0]}>
-          {data.map((d, i) => (
-            <Cell key={i} fillOpacity={d.est ? 0.45 : 1} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <>
+      <ResponsiveContainer width="100%" height={250}>
+        {/* A bar cannot carry a bearing: a month averaging north sits at 0,
+            which draws as no bar at all. Direction gets markers on a compass
+            axis instead, and the rose above is the chart that reads properly. */}
+        <ComposedChart data={data} margin={chartMargin}>
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+          <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            width={58}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            tickFormatter={tickFormat}
+            allowDataOverflow
+            label={yLabel(unit)}
+          />
+          <Tooltip
+            formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]}
+            labelFormatter={(label, payload) =>
+              payload?.[0]?.payload?.est ? `${label} ${t("estMonthNote")}` : label
+            }
+          />
+          <Legend verticalAlign="top" height={26} wrapperStyle={legendStyle} />
+          {circular ? (
+            <Line
+              type="monotone"
+              dataKey="v"
+              name={t("monthlyValueLegend")}
+              stroke="none"
+              dot={{ r: 4, fill: GREEN }}
+              activeDot={{ r: 6 }}
+              isAnimationActive={false}
+            />
+          ) : (
+            <Bar
+              dataKey="v"
+              name={isSum ? t("monthlyTotalLegend") : t("monthlyValueLegend")}
+              fill={GREEN}
+              radius={[4, 4, 0, 0]}
+            >
+              {data.map((d, i) => (
+                <Cell key={i} fillOpacity={d.est ? 0.45 : 1} />
+              ))}
+            </Bar>
+          )}
+          {/* last child on purpose: Recharts paints in JSX order, so
+              the mean line and its label sit on top of the series
+              rather than behind it */}
+          {meanLine(seriesMean(data.map((d) => d.v), circular), t, unit, scale.decimals, circular ? compassLabel : undefined)}
+        </ComposedChart>
+      </ResponsiveContainer>
+      <AxisNote show={truncated} t={t} />
+      {circular && <p className="chart-axis-note">{t("directionRoseHint")} {t("circularMeanNote")}</p>}
+    </>
   );
 }
 
 export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
   const data = (series.monthly || []).map((m) => ({ m: m.m, v: m.v }));
+  const circular = !!series.circular;
+  const scale = scaleFor(data.map((d) => d.v), { unit, includeZero: isSum, circular });
+  const truncated = !circular && scale.domain[0] > 0;
+  const tickFormat = tickFor(scale, circular);
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
-      <LineChart data={data} margin={chartMargin}>
-        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-        <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} label={xLabel(t("month"))} />
-        <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-        <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
-        {meanLine(mean(data.map((d) => d.v)), t, unit)}
-        <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2.8} dot={false} activeDot={{ r: 4 }} />
-      </LineChart>
-    </ResponsiveContainer>
+    <>
+      <ResponsiveContainer width="100%" height={250}>
+        <LineChart data={data} margin={chartMargin}>
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+          <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} label={xLabel(t("month"))} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            width={58}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            tickFormatter={tickFormat}
+            allowDataOverflow
+            label={yLabel(unit)}
+          />
+          <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
+          <Legend verticalAlign="top" height={26} wrapperStyle={legendStyle} />
+          <Line
+            type="monotone"
+            dataKey="v"
+            name={isSum ? t("monthlyTotalLegend") : t("monthlyValueLegend")}
+            stroke={color}
+            strokeWidth={2.8}
+            dot={false}
+            activeDot={{ r: 4 }}
+          />
+          {/* last child on purpose: Recharts paints in JSX order, so
+              the mean line and its label sit on top of the series
+              rather than behind it */}
+          {meanLine(seriesMean(data.map((d) => d.v), circular), t, unit, scale.decimals, circular ? compassLabel : undefined)}
+        </LineChart>
+      </ResponsiveContainer>
+      <AxisNote show={truncated} t={t} />
+      {circular && <p className="chart-axis-note">{t("circularMeanNote")}</p>}
+    </>
   );
 }
 
@@ -151,22 +254,72 @@ export function AnomaliesChart({ series, t, unit }) {
     return { m: m.m, anom: m.partial ? null : +d.toFixed(3) };
   });
 
+  // An anomaly is a signed departure, so the axis has to be free to go negative
+  // whatever the unit is, and it reads honestly only when the two directions
+  // get the same amount of room.
+  const scale = axisScale(data.map((d) => d.anom), { symmetric: true, allowNegative: true });
+
+  // The review asked for the standout months to be named rather than left for
+  // the reader to find: the -8 hPa spike at the start of 2026 was the single
+  // most conspicuous thing on the pressure panel and nothing said what it was.
+  const observed = data.filter((d) => d.anom != null);
+  const strongestUp = observed.reduce((best, d) => (best == null || d.anom > best.anom ? d : best), null);
+  const strongestDown = observed.reduce((best, d) => (best == null || d.anom < best.anom ? d : best), null);
+  const signed = (value) => `${value > 0 ? "+" : ""}${formatForAxis(value, scale.decimals)} ${unit}`;
+  // "2026-02" is a key, not a date a reader says out loud
+  const monthName = (key) => {
+    const index = Number(String(key).slice(5, 7)) - 1;
+    const name = t("months")[index];
+    return name ? `${name} ${String(key).slice(0, 4)}` : key;
+  };
+
   return (
+    <>
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data} margin={chartMargin}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
         <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} label={xLabel(t("month"))} />
-        <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
+        <YAxis
+          tick={{ fontSize: 12 }}
+          width={58}
+          domain={scale.domain}
+          ticks={scale.ticks}
+          tickFormatter={(v) => formatForAxis(v, scale.decimals)}
+          allowDataOverflow
+          label={yLabel(unit)}
+        />
         <Tooltip formatter={(v) => [`${v > 0 ? "+" : ""}${fmt(v)} ${unit}`, v >= 0 ? t("anomalyAbove") : t("anomalyBelow")]} />
+        <Legend
+          verticalAlign="top"
+          height={26}
+          wrapperStyle={legendStyle}
+          payload={[
+            { value: t("anomalyAboveLegend"), type: "square", color: RED, id: "above" },
+            { value: t("anomalyBelowLegend"), type: "square", color: BLUE, id: "below" },
+          ]}
+        />
         <ReferenceLine y={0} stroke="#9ca3af" />
-        {meanLine(mean(data.map((d) => d.anom)), t, unit)}
         <Bar dataKey="anom">
           {data.map((d, i) => (
             <Cell key={i} fill={d.anom >= 0 ? RED : BLUE} />
           ))}
         </Bar>
+        {/* last child on purpose: Recharts paints in JSX order, so
+            the mean line and its label sit on top of the series
+            rather than behind it */}
+        {meanLine(mean(data.map((d) => d.anom)), t, unit, scale.decimals)}
       </BarChart>
     </ResponsiveContainer>
+      {strongestUp && strongestDown && (
+        <p className="chart-axis-note">
+          {t("largestAnomalies")
+            .replace("{up}", signed(strongestUp.anom))
+            .replace("{upMonth}", monthName(strongestUp.m))
+            .replace("{down}", signed(strongestDown.anom))
+            .replace("{downMonth}", monthName(strongestDown.m))}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -206,23 +359,54 @@ export function DailyChart({ series, t, unit, isSum, color = GREEN_DARK }) {
     );
   }
 
+  // The band is drawn as two stacked areas, so the axis has to cover the top of
+  // the band as well as the daily value itself.
+  const circular = !!series.circular;
+  const scale = scaleFor(
+    data.flatMap((d) => (isSum ? [d.v] : [d.v, d.lo, d.hi])),
+    { unit, includeZero: isSum, circular }
+  );
+  const truncated = !circular && scale.domain[0] > 0;
+  const tickFormat = tickFor(scale, circular);
+
+  const legendPayload = [
+    { value: isSum ? t("monthlyTotalLegend") : t("dailyValueLegend"), type: isSum ? "square" : "line", color, id: "value" },
+  ];
+  if (!isSum) legendPayload.push({ value: t("rangeBand"), type: "square", color, id: "band" });
+  legendPayload.push({ value: t("mean"), type: "plainline", color: "#64748b", payload: { strokeDasharray: "6 4" }, id: "mean" });
+
   return (
-    <ResponsiveContainer width="100%" height={250}>
-      <ComposedChart data={data} margin={chartMargin}>
-        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-        <XAxis dataKey="d" tick={{ fontSize: 11 }} minTickGap={40} label={xLabel(t("date"))} />
-        <YAxis tick={{ fontSize: 12 }} width={58} label={yLabel(unit)} />
-        <Tooltip content={<DailyTooltip />} />
-        {meanLine(mean(data.map((d) => d.v)), t, unit)}
-        {!isSum && <Area dataKey="lo" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />}
-        {!isSum && <Area dataKey="band" stackId="band" stroke="none" fill={color} fillOpacity={0.12} isAnimationActive={false} />}
-        {isSum ? (
-          <Bar dataKey="v" fill={color} />
-        ) : (
-          <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2.2} dot={false} activeDot={{ r: 4 }} />
-        )}
-      </ComposedChart>
-    </ResponsiveContainer>
+    <>
+      <ResponsiveContainer width="100%" height={250}>
+        <ComposedChart data={data} margin={chartMargin}>
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+          <XAxis dataKey="d" tick={{ fontSize: 11 }} minTickGap={40} label={xLabel(t("date"))} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            width={58}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            tickFormatter={tickFormat}
+            allowDataOverflow
+            label={yLabel(unit)}
+          />
+          <Tooltip content={<DailyTooltip />} />
+          <Legend verticalAlign="top" height={26} wrapperStyle={legendStyle} payload={legendPayload} />
+          {!isSum && <Area dataKey="lo" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />}
+          {!isSum && <Area dataKey="band" stackId="band" stroke="none" fill={color} fillOpacity={0.12} isAnimationActive={false} />}
+          {isSum ? (
+            <Bar dataKey="v" fill={color} />
+          ) : (
+            <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2.2} dot={false} activeDot={{ r: 4 }} />
+          )}
+          {/* last child on purpose: Recharts paints in JSX order, so
+              the mean line and its label sit on top of the series
+              rather than behind it */}
+          {meanLine(seriesMean(data.map((d) => d.v), circular), t, unit, scale.decimals, circular ? compassLabel : undefined)}
+        </ComposedChart>
+      </ResponsiveContainer>
+      <AxisNote show={truncated} t={t} />
+    </>
   );
 }
 

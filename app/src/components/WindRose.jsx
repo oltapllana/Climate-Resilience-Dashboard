@@ -1,5 +1,6 @@
 import React from "react";
 import { processWindData, SPEED_RANGES } from "../lib/windRose";
+import { niceStep } from "../lib/chartAxis.js";
 
 const AXIS = "#475569";
 const GRID = "#e2e8f0";
@@ -16,8 +17,21 @@ export function WindRose({ directionData, speedData, t }) {
   const centerX = 200;
   const centerY = 200;
   const radius = 140;
-  const ringCount = 5;
+
+  // The rings used to be one per speed category, so a petal's length said which
+  // speed bands occurred in that direction, not how often the wind blew from
+  // it — while the caption underneath promised "percentage of total
+  // observations". Radius now carries frequency, as the caption always said,
+  // and the rings are labelled so a reader can put a number on a petal.
+  const directionTotals = directions.map((direction) =>
+    SPEED_RANGES.reduce((sum, range) => sum + (parseFloat(windRose[direction][range.label]) || 0), 0)
+  );
+  const maxDirectionShare = Math.max(0.5, ...directionTotals);
+  const ringStep = niceStep(maxDirectionShare, 4);
+  const ringCount = Math.max(1, Math.ceil(maxDirectionShare / ringStep));
+  const axisMax = ringStep * ringCount;
   const ringSpacing = radius / ringCount;
+  const shareToRadius = (share) => (share / axisMax) * radius;
 
   const [hoveredBar, setHoveredBar] = React.useState(null);
   const separator = "|||"; // Use unique separator for splitting
@@ -31,15 +45,15 @@ export function WindRose({ directionData, speedData, t }) {
     };
   };
 
-  // Create path for a bar in the wind rose
-  const createBarPath = (direction, dirIndex, speedIndex) => {
+  // Create path for a bar in the wind rose. The speed bands of one direction
+  // stack outwards, each as long as its own share of all observations.
+  const createBarPath = (dirIndex, innerShare, outerShare) => {
     const barWidth = 22.5 * 0.7; // degrees, with small gap
     const startAngle = dirIndex * 22.5 - barWidth / 2;
     const endAngle = startAngle + barWidth;
 
-    // Inner and outer radius for this speed category
-    const innerRadius = ringSpacing * speedIndex;
-    const outerRadius = ringSpacing * (speedIndex + 1);
+    const innerRadius = shareToRadius(innerShare);
+    const outerRadius = shareToRadius(outerShare);
 
     const p1 = polarToCartesian(startAngle, innerRadius);
     const p2 = polarToCartesian(startAngle, outerRadius);
@@ -159,34 +173,58 @@ export function WindRose({ directionData, speedData, t }) {
             );
           })}
 
-          {/* Wind bars */}
-          {directions.map((direction, dirIndex) => (
-            <g key={`dir-${direction}`}>
-              {SPEED_RANGES.map((range, speedIndex) => {
-                const percentage = parseFloat(windRose[direction][range.label]) || 0;
-                if (percentage === 0) return null;
-
-                const barKey = `${direction}${separator}${range.label}`;
-                const isHovered = hoveredBar === barKey;
-
-                return (
-                  <g key={`bar-${direction}-${speedIndex}`}>
-                    <path
-                      className="wind-bar"
-                      d={createBarPath(direction, dirIndex, speedIndex)}
-                      fill={range.color}
-                      stroke="#fff"
-                      strokeWidth={isHovered ? "1.5" : "0.5"}
-                      opacity={isHovered ? 1 : 0.85}
-                      style={{ cursor: "pointer", transition: "all 0.2s" }}
-                      onMouseEnter={() => setHoveredBar(barKey)}
-                      onMouseLeave={() => setHoveredBar(null)}
-                    />
-                  </g>
-                );
-              })}
-            </g>
+          {/* Ring scale: without it the reader cannot tell whether a petal
+              reaching the third ring means 3 % of the record or 30 %. */}
+          {Array.from({ length: ringCount }).map((_, i) => (
+            <text
+              key={`ring-label-${i}`}
+              x={centerX + 4}
+              y={centerY - ringSpacing * (i + 1) - 3}
+              fontSize="10"
+              fontWeight="600"
+              fill={AXIS}
+              stroke="#ffffff"
+              strokeWidth="3"
+              paintOrder="stroke"
+            >
+              {`${+(ringStep * (i + 1)).toFixed(1)}%`}
+            </text>
           ))}
+
+          {/* Wind bars */}
+          {directions.map((direction, dirIndex) => {
+            let cumulative = 0;
+            return (
+              <g key={`dir-${direction}`}>
+                {SPEED_RANGES.map((range, speedIndex) => {
+                  const percentage = parseFloat(windRose[direction][range.label]) || 0;
+                  if (percentage === 0) return null;
+
+                  const innerShare = cumulative;
+                  cumulative += percentage;
+
+                  const barKey = `${direction}${separator}${range.label}`;
+                  const isHovered = hoveredBar === barKey;
+
+                  return (
+                    <g key={`bar-${direction}-${speedIndex}`}>
+                      <path
+                        className="wind-bar"
+                        d={createBarPath(dirIndex, innerShare, cumulative)}
+                        fill={range.color}
+                        stroke="#fff"
+                        strokeWidth={isHovered ? "1.5" : "0.5"}
+                        opacity={isHovered ? 1 : 0.85}
+                        style={{ cursor: "pointer", transition: "all 0.2s" }}
+                        onMouseEnter={() => setHoveredBar(barKey)}
+                        onMouseLeave={() => setHoveredBar(null)}
+                      />
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
 
           {/* Direction labels */}
           {directions.map((direction, dirIndex) => {
@@ -246,6 +284,8 @@ export function WindRose({ directionData, speedData, t }) {
       <div style={{ paddingTop: "24px", borderTop: "1px solid #e5e7eb", textAlign: "center" }}>
         <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
           {t?.("windRoseNote") || "Frequency is shown as percentage of total observations"}
+          {" "}
+          {(t?.("windRoseRingNote") || "Rings are drawn every {step} % of all observations.").replace("{step}", +ringStep.toFixed(1))}
         </p>
       </div>
     </div>

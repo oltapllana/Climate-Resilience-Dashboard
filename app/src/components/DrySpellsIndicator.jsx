@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { calculateDrySpells } from "../lib/drySpells.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const AMBER = "#f5a742";
 const RED = "#c63a2b";
@@ -37,6 +38,26 @@ function RunTooltip({ run, x, y }) {
   );
 }
 
+// The runs chart is drawn by hand, so it never picked up a Recharts legend and
+// the reader was left to guess what the amber and red blocks meant.
+function RunsLegend() {
+  const items = [
+    { color: "#dce5ea", label: "April–September season" },
+    { color: AMBER, label: "Dry run of 5–6 days" },
+    { color: RED, label: "Dry run of 7 days or more" },
+  ];
+  return (
+    <div className="swatch-legend">
+      {items.map((item) => (
+        <span key={item.label}>
+          <i style={{ background: item.color }} />
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function SeasonalRunsChart({ yearly }) {
   const [tooltip, setTooltip] = useState(null);
   const height = 76 + yearly.length * 42;
@@ -45,6 +66,7 @@ function SeasonalRunsChart({ yearly }) {
   const scale = width / SEASON_DAYS;
   return (
     <div style={{ position: "relative", width: "100%" }} onMouseLeave={() => setTooltip(null)}>
+      <RunsLegend />
       <svg viewBox={`0 0 620 ${height}`} role="img" aria-label="Dry-spell runs from April through September" style={{ display: "block", width: "100%", height: 360 }}>
         {MONTHS.map(([month, offset]) => {
           const x = left + offset * scale;
@@ -80,8 +102,11 @@ function SeasonalRunsChart({ yearly }) {
                   />
                 );
               })}
-              {row.year === 2021 && <text x={left} y={y - 12} fill="#5f7079" fontSize="10">starts 6 Apr</text>}
-              {row.year === 2026 && <text x={left + width} y={y - 12} textAnchor="end" fill="#5f7079" fontSize="10" fontWeight="700">partial</text>}
+              {row.isPartial && (
+                <text x={left} y={y - 12} fill="#5f7079" fontSize="10">
+                  covered {row.availableStart?.slice(5)} – {row.availableEnd?.slice(5)}
+                </text>
+              )}
             </g>
           );
         })}
@@ -123,6 +148,8 @@ export default function DrySpellsIndicator({ measurement }) {
             <p>Qualifying consecutive dry-day runs during April–September.</p>
           </div>
           <SeasonalRunsChart yearly={result.yearly} />
+          <p className="indicator-assumption">Each block spans the days of one run, so its width along the April–September axis is the length of that dry spell; hover a block for its exact dates and length.</p>
+          <p className="indicator-assumption">* Partly observed season — not comparable with a full April–September record.</p>
         </div>
 
         <div className="indicator-panel">
@@ -134,9 +161,9 @@ export default function DrySpellsIndicator({ measurement }) {
             <BarChart data={result.yearly} margin={{ top: 34, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
               <XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} />
-              <YAxis allowDecimals={false} label={{ value: "Qualifying dry days", angle: -90, position: "insideLeft" }} />
+              <YAxis width={64} allowDecimals={false} label={yAxisLabel("Qualifying dry days")} />
               <Tooltip content={<AnnualTooltip />} />
-              <Legend verticalAlign="top" height={30} wrapperStyle={{ transform: "translateY(-16px)" }} />
+              <Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} />
               <Bar dataKey="daysAtLeast5" name="Days in ≥5-day runs" fill={AMBER} radius={[3, 3, 0, 0]}>
                 <LabelList content={<BarLabel />} />
               </Bar>

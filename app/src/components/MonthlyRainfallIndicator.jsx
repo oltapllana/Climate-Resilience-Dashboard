@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SEASONS, calculateMonthlyRainfall } from "../lib/monthlyRainfall.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 const formatMm = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
 
@@ -21,12 +23,27 @@ function MonthTooltip({ active, payload, t }) {
 export default function MonthlyRainfallIndicator({ measurement, t }) {
   const result = useMemo(() => calculateMonthlyRainfall(measurement?.hourly), [measurement]);
   const data = useMemo(
-    () => result.monthly.map((row) => ({ ...row, label: t("months")[row.month - 1] })),
+    () =>
+      result.monthly.map((row) => ({
+        ...row,
+        label: t("months")[row.month - 1],
+        // A deviation wider than the mean sent the lower whisker to -30 mm and
+        // dragged the whole axis to -100. A month cannot rain a negative depth,
+        // so the downward arm stops at zero and the note below says it does.
+        spread:
+          row.mean == null || row.stdDev == null
+            ? null
+            : [Math.min(row.stdDev, row.mean), row.stdDev],
+      })),
     [result.monthly, t],
   );
   if (!result.monthly.some((row) => row.mean != null)) return null;
 
   const wettest = result.wettestMonth;
+  const scale = axisScale(
+    data.flatMap((row) => (row.mean == null ? [] : [row.mean, row.mean + (row.stdDev ?? 0)])),
+    { unit: "mm", includeZero: true }
+  );
 
   return (
     <section className="card landslide-indicator">
@@ -45,19 +62,24 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11 }}
-            label={{ value: t("month"), position: "insideBottom", offset: -14, fontSize: 12, fontWeight: 600 }}
+            label={xAxisLabel(t("month"), -14)}
           />
           <YAxis
             width={66}
             tick={{ fontSize: 12 }}
-            tickFormatter={formatMm}
-            label={{ value: t("monthlyRainfallAxis"), angle: -90, position: "insideLeft", offset: -14 }}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            allowDataOverflow
+            label={yAxisLabel(t("monthlyRainfallAxis"))}
           />
           <Tooltip content={<MonthTooltip t={t} />} />
           <Legend
-            verticalAlign="top"
-            height={26}
-            payload={Object.entries(SEASONS).map(([id, season]) => ({ value: t(id), type: "square", color: season.color }))}
+            {...topLegendProps}
+            payload={[
+              ...Object.entries(SEASONS).map(([id, season]) => ({ value: t(id), type: "square", color: season.color, id })),
+              { value: t("standardDeviation"), type: "plainline", color: "#4b5563", payload: { strokeWidth: 1.4 }, id: "sd" },
+            ]}
           />
           <Bar dataKey="mean" radius={[4, 4, 0, 0]}>
             {data.map((row) => (
@@ -78,12 +100,13 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
                 </text>
               ) : null}
             />
-            <ErrorBar dataKey="stdDev" width={5} strokeWidth={1.4} stroke="#4b5563" direction="y" />
+            <ErrorBar dataKey="spread" width={5} strokeWidth={1.4} stroke="#4b5563" direction="y" />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
       <p className="indicator-explanation">{t("monthlyRainfallExplanation")}</p>
       <p className="indicator-assumption">{t("monthlyRainfallAssumption")}</p>
+      <p className="indicator-assumption">{t("rainfallWhiskerNote")}</p>
     </section>
   );
 }

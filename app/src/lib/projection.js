@@ -287,19 +287,36 @@ export function longTermProjection(meas) {
   const shrink = Math.abs(full85) > cap ? cap / Math.abs(full85) : 1;
   const effSlope = slope * scale * shrink;
 
+  // A partly observed year is not an annual value. The record ends in April, so
+  // 2026's "annual mean" is the mean of a Kosovo winter and 2026's "annual
+  // total" is four months of rain — plotted on the same line as five full
+  // years, both arrive as a cliff that reads as a sensor failure. Partial years
+  // move to their own key so the chart can mark them without pretending they
+  // are comparable, and the projection is anchored to the last complete year so
+  // the observed line and the scenarios still meet.
+  const bridgeYear = latestObserved?.year ?? 2026;
+
   const rows = [];
   for (let year = 2021; year <= 2050; year += 1) {
-    const observed = observedAnnual.find((r) => r.year === year)?.v ?? null;
+    const row = observedAnnual.find((r) => r.year === year);
+    const observed = row?.v ?? null;
+    const partial = row?.partial ?? false;
     const yearsAhead = year - 2026;
     const proj = (factor) => +(baseAt2026 + effSlope * factor * yearsAhead).toFixed(3);
+    const scenarioAt = (factor) => {
+      if (year < bridgeYear) return null;
+      if (year === bridgeYear) return observed ?? proj(factor);
+      return proj(factor);
+    };
     rows.push({
       year,
-      observed,
-      partial: observedAnnual.find((r) => r.year === year)?.partial ?? false,
-      rcp45: year >= 2026 ? proj(SCENARIOS.rcp45.factor) : null,
-      rcp85: year >= 2026 ? proj(SCENARIOS.rcp85.factor) : null,
+      observed: partial ? null : observed,
+      observedPartial: partial ? observed : null,
+      partial,
+      rcp45: scenarioAt(SCENARIOS.rcp45.factor),
+      rcp85: scenarioAt(SCENARIOS.rcp85.factor),
     });
   }
 
-  return { rows, slope, baseAt2026, reliability };
+  return { rows, slope, baseAt2026, reliability, bridgeYear, lastCompleteYear: latestObserved?.year ?? null };
 }

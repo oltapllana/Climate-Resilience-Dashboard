@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateAnnualTrend } from "../lib/annualTrend.js";
+import { axisScale, formatForAxis } from "../lib/chartAxis.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const RANGE = "#e6b3a3";
 const RANGE_PARTIAL = "#c9d1d6";
@@ -44,6 +46,13 @@ export default function AnnualTrendChart({
     );
   }
 
+  // Explicit round ticks: with an automatic domain the TDS axis produced two
+  // ticks that both printed as "0.4".
+  const scale = axisScale(
+    data.flatMap((row) => [row.min, row.max, row.mean, row.fit]),
+    { unit }
+  );
+
   return (
     <section className="card landslide-indicator">
       <div className="indicator-heading">
@@ -63,13 +72,15 @@ export default function AnnualTrendChart({
           <XAxis dataKey="year" tick={{ fontSize: 12 }} />
           <YAxis
             width={72}
-            domain={["auto", "auto"]}
+            domain={scale.domain}
+            ticks={scale.ticks}
+            allowDataOverflow
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -12 }}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<TrendTooltip />} />
-          <Legend verticalAlign="top" align="left" height={26} />
+          <Legend verticalAlign="top" align="left" height={26} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} />
           {bars === "range" && (
             <Bar dataKey="base" stackId="range" fill="transparent" legendType="none" isAnimationActive={false} />
           )}
@@ -84,7 +95,18 @@ export default function AnnualTrendChart({
               <Cell key={row.year} fill={row.partial ? RANGE_PARTIAL : RANGE} />
             ))}
           </Bar>
-          <Line dataKey="mean" name={t("annualMean")} stroke={MEAN} strokeWidth={2.4} dot={{ r: 4, fill: MEAN, strokeWidth: 0 }} isAnimationActive={false} />
+          {/* With no complete year to fit on there is no trend, and a red line
+              joining the annual means reads as one anyway. In that case the
+              means are drawn as markers and nothing is joined up. */}
+          <Line
+            dataKey="mean"
+            name={t("annualMean")}
+            stroke={slope == null ? "none" : MEAN}
+            strokeWidth={2.4}
+            dot={{ r: 4, fill: MEAN, strokeWidth: 0 }}
+            legendType="circle"
+            isAnimationActive={false}
+          />
           {slope != null && (
             <Line
               dataKey="fit"
@@ -102,6 +124,7 @@ export default function AnnualTrendChart({
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
         {t("coverage")}: {result.start} – {result.end}. {t("partialYearsNote")}
+        {slope == null ? ` ${t("trendNotFitted")}.` : ""}
       </p>
     </section>
   );
