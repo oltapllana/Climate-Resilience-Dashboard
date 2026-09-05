@@ -107,7 +107,14 @@ export function axisScale(values, options = {}) {
   let low = min - pad;
   let high = max + pad;
 
-  const negativeAllowed = allowNegative ?? !isNonNegativeUnit(unit);
+  // Two separate questions, and conflating them was a mistake. Whether the
+  // quantity *can* be negative is a property of the unit; whether this axis
+  // *should* show negative space is a property of the data in front of it.
+  // Monthly temperature climatology runs +1 °C to +23 °C — every value positive
+  // — so padding it down to -5 puts the bars afloat above a baseline that means
+  // nothing. The axis goes below zero only when the series does.
+  const unitAllowsNegative = allowNegative ?? !isNonNegativeUnit(unit);
+  const negativeAllowed = unitAllowsNegative && min < 0;
   if (!negativeAllowed && low < 0) low = 0;
   if (symmetric) {
     const reach = Math.max(Math.abs(low), Math.abs(high));

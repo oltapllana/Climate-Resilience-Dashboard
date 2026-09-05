@@ -108,3 +108,23 @@ test("still reads numeric strings", () => {
   const { domain } = axisScale(["931", "955"], { unit: "hPa" });
   assert.ok(domain[0] >= 900 && domain[1] <= 970);
 });
+
+test("does not open negative space for an all-positive series", () => {
+  // monthly temperature climatology runs +1 to +23: the bars must grow from
+  // zero, not float above a -5 baseline that no month reaches
+  const { domain } = axisScale([1.2, 6.3, 14.6, 22.8, 2.6], { unit: "°C" });
+  assert.equal(domain[0], 0);
+});
+
+test("still opens negative space when the series really goes below zero", () => {
+  // the same measurement, monthly means rather than climatology: Jan 2022 was
+  // -0.5 degC and clipping the axis at zero would hide it
+  const { domain } = axisScale([-0.5, 23.9, 11.5], { unit: "°C" });
+  assert.ok(domain[0] < 0, `expected room below zero, got ${domain[0]}`);
+  assert.ok(domain[0] <= -0.5);
+});
+
+test("a symmetric axis keeps both directions even if nothing is negative", () => {
+  const { domain } = axisScale([0.4, 3.4], { symmetric: true, allowNegative: true });
+  assert.equal(domain[0], -domain[1]);
+});
