@@ -122,46 +122,45 @@ export function axisScale(values, options = {}) {
     high = reach;
   }
 
-  // Rounding the ends out to a whole step is what makes the tick labels round,
-  // but a coarse step buys that at the cost of empty plot: a -1.8 to 30.1 °C
-  // record rounded on a step of 10 reaches -10, which is the wasted negative
-  // space the review objected to. Try progressively finer steps and take the
-  // first that does not inflate the framed range by more than a quarter.
+  // The axis keeps the range the data actually needs; the round ticks are laid
+  // out *inside* it. Pushing both ends out to a whole step is what used to buy
+  // round end labels at the price of empty plot — a seasonal temperature cycle
+  // spanning -4 to 32 was framed -10 to 40, wasting a sixth of the height at
+  // each end. An axis end without a tick label on it costs nothing to read.
   const paddedSpan = high - low;
-  const MAX_TICKS = 9;
-  const frame = (candidateTicks) => {
-    const candidateStep = niceStep(paddedSpan, candidateTicks);
-    let lo = Math.floor(low / candidateStep) * candidateStep;
-    let hi = Math.ceil(high / candidateStep) * candidateStep;
-    if (!negativeAllowed && lo < 0) lo = 0;
-    if (hi <= lo) hi = lo + candidateStep;
-    return { step: candidateStep, lo, hi, count: Math.round((hi - lo) / candidateStep) + 1 };
-  };
-
-  // The first frame that neither wastes plot nor crowds the axis; failing that,
-  // the tightest one that still fits inside the tick budget.
-  const frames = [targetTicks, targetTicks + 1, targetTicks + 3, targetTicks + 5].map(frame);
-  const affordable = frames.filter((f) => f.count <= MAX_TICKS);
-  const chosen =
-    affordable.find((f) => f.hi - f.lo <= paddedSpan * 1.25) ||
-    affordable.sort((a, b) => a.hi - a.lo - (b.hi - b.lo))[0] ||
-    frames[0];
-
-  const step = chosen.step;
-  const domainLow = chosen.lo;
   // Relative humidity has a ceiling as well as a floor: padding a series that
   // touches 100 % up to 125 % offers space the quantity cannot occupy.
-  const domainHigh = unit === "%" && max <= 100 && chosen.hi > 100 ? 100 : chosen.hi;
+  if (unit === "%" && max <= 100 && high > 100) high = 100;
+
+  const ticksInside = (candidateStep) => {
+    const first = Math.ceil(low / candidateStep - 1e-9);
+    const last = Math.floor(high / candidateStep + 1e-9);
+    return last - first + 1;
+  };
+
+  // Aim for about six labels: few enough to read, enough to measure against.
+  const TARGET = 6;
+  const candidates = [4, 5, 6, 8, 10].map((n) => niceStep(paddedSpan, n));
+  const step = candidates.reduce((best, candidate) => {
+    const bestCount = ticksInside(best);
+    const count = ticksInside(candidate);
+    if (count < 3) return best;
+    if (bestCount < 3) return candidate;
+    const delta = Math.abs(count - TARGET) - Math.abs(bestCount - TARGET);
+    // on a tie prefer the denser axis: a tall plot carries the extra label
+    return delta < 0 || (delta === 0 && count > bestCount) ? candidate : best;
+  }, candidates[0]);
 
   const decimals = stepDecimals(step);
-  const ticks = [];
-  // Floating-point drift accumulates over a loop of additions; index the step.
-  const count = Math.round((domainHigh - domainLow) / step);
-  for (let i = 0; i <= count; i++) {
-    ticks.push(+(domainLow + i * step).toFixed(decimals + 2));
-  }
+  const round = (value) => +value.toFixed(decimals + 2);
 
-  return { domain: [+domainLow.toFixed(decimals + 2), +domainHigh.toFixed(decimals + 2)], ticks, decimals, step };
+  const ticks = [];
+  const firstIndex = Math.ceil(low / step - 1e-9);
+  const lastIndex = Math.floor(high / step + 1e-9);
+  // Floating-point drift accumulates over a loop of additions; index the step.
+  for (let i = firstIndex; i <= lastIndex; i++) ticks.push(round(i * step));
+
+  return { domain: [round(low), round(high)], ticks, decimals, step };
 }
 
 /**

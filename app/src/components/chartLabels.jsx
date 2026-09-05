@@ -102,11 +102,17 @@ export function xAxisLabel(value, offset = -6) {
   };
 }
 
-/** Legends read before the plot rather than after it. */
+/**
+ * Legends read before the plot rather than after it.
+ *
+ * The reserved height leaves a clear gap under the swatches: several charts
+ * print a value above each bar, and at 28px those numbers sat on the legend row
+ * the moment a bar came near the top of the plot.
+ */
 export const topLegendProps = {
   verticalAlign: "top",
-  height: 28,
-  wrapperStyle: { fontSize: 12, paddingBottom: 6 },
+  height: 50,
+  wrapperStyle: { fontSize: 12, paddingBottom: 14 },
 };
 
 /** A chart with nothing to draw says so, in the middle, at a readable size. */

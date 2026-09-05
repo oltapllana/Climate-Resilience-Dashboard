@@ -3,10 +3,23 @@ import assert from "node:assert/strict";
 import { axisScale, circularMeanDeg, compassLabel, formatForAxis, niceStep, stepDecimals } from "./chartAxis.js";
 
 test("frames a series that lives far from zero instead of starting at zero", () => {
-  // station pressure: the review's own recommendation was 900–960 hPa
-  const { domain } = axisScale([906.8, 934.2, 955.1], { unit: "hPa" });
-  assert.equal(domain[0], 900);
-  assert.equal(domain[1], 960);
+  // station pressure sits around 934 hPa: the axis has to hold the variation,
+  // not the distance back to zero
+  const { domain, ticks } = axisScale([906.8, 934.2, 955.1], { unit: "hPa" });
+  assert.ok(domain[0] > 890 && domain[0] <= 906.8, `floor ${domain[0]} does not sit just under the data`);
+  assert.ok(domain[1] >= 955.1 && domain[1] < 970, `ceiling ${domain[1]} does not sit just over the data`);
+  // and the labels are still round numbers a reader can carry between charts
+  assert.ok(ticks.every((tick) => tick % 10 === 0), ticks.join(", "));
+});
+
+test("spends only a modest share of the plot on padding", () => {
+  // pushing both ends out to a whole step used to frame a -4..32 degC seasonal
+  // cycle as -10..40, throwing away a sixth of the height at each end
+  const { domain } = axisScale([-4, 32, 1, 27.5], { unit: "°C", allowNegative: true });
+  const dataSpan = 32 - -4;
+  const padding = (-4 - domain[0]) + (domain[1] - 32);
+  assert.ok(padding / dataSpan < 0.25, `padding is ${Math.round((padding / dataSpan) * 100)}% of the data span`);
+  assert.ok(domain[0] > -9, `floor ${domain[0]} reaches further down than the data needs`);
 });
 
 test("keeps the floor at zero for a quantity that cannot be negative", () => {
@@ -34,9 +47,12 @@ test("never emits two ticks that print the same text", () => {
 });
 
 test("ticks stay inside the domain and are evenly spaced", () => {
+  // the ticks are laid out within the range the data needs rather than
+  // dictating it, so they sit at or inside the ends, never beyond them
   const { domain, ticks, step } = axisScale([11.4, 47.9, 23.2], { unit: "mm" });
-  assert.equal(ticks[0], domain[0]);
-  assert.equal(ticks[ticks.length - 1], domain[1]);
+  assert.ok(ticks.length >= 3, `only ${ticks.length} ticks`);
+  assert.ok(ticks[0] >= domain[0], `first tick ${ticks[0]} falls below the domain`);
+  assert.ok(ticks[ticks.length - 1] <= domain[1], `last tick ${ticks[ticks.length - 1]} rises above the domain`);
   for (let i = 1; i < ticks.length; i++) {
     assert.ok(Math.abs(ticks[i] - ticks[i - 1] - step) < 1e-9);
   }
