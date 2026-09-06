@@ -50,14 +50,11 @@
   .indicator-heading { min-height: 0; margin-bottom: 12px; }
   .indicator-heading h2 { font-size: 16px; }
   .wind-rose-layout { gap: 18px; margin-bottom: 18px; }
-  .scenario-chart-block { margin-bottom: 30px; }
-  .zoom-hint { display: none; }
-
   .dashboard, .charts, .chart-card, .indicator-panel,
-  .scenario-chart-block { min-width: 0; max-width: 100%; }
+  .landslide-indicator { min-width: 0; max-width: 100%; }
 
   /* Preserve readable axes and legends. Only the chart region scrolls. */
-  .chart-card, .landslide-indicator, .indicator-panel, .scenario-chart-block {
+  .chart-card, .landslide-indicator, .indicator-panel {
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     scrollbar-width: thin;
@@ -66,8 +63,7 @@
   }
   .chart-card > .recharts-responsive-container,
   .landslide-indicator > .recharts-responsive-container,
-  .indicator-panel > .recharts-responsive-container,
-  .scenario-chart-block > .recharts-responsive-container { min-width: 560px !important; }
+  .indicator-panel > .recharts-responsive-container { min-width: 560px !important; }
 
   .chart-card > h2, .landslide-indicator > .indicator-heading,
   .landslide-indicator > .indicator-callout,
@@ -77,13 +73,13 @@
   }
 
   .chart-card::-webkit-scrollbar, .landslide-indicator::-webkit-scrollbar,
-  .indicator-panel::-webkit-scrollbar, .scenario-chart-block::-webkit-scrollbar { height: 6px; }
+  .indicator-panel::-webkit-scrollbar { height: 6px; }
   .chart-card::-webkit-scrollbar-track, .landslide-indicator::-webkit-scrollbar-track,
-  .indicator-panel::-webkit-scrollbar-track, .scenario-chart-block::-webkit-scrollbar-track {
+  .indicator-panel::-webkit-scrollbar-track {
     background: #eef4ef; border-radius: 999px;
   }
   .chart-card::-webkit-scrollbar-thumb, .landslide-indicator::-webkit-scrollbar-thumb,
-  .indicator-panel::-webkit-scrollbar-thumb, .scenario-chart-block::-webkit-scrollbar-thumb {
+  .indicator-panel::-webkit-scrollbar-thumb {
     background: #a9c9ad; border-radius: 999px;
   }
 
@@ -101,6 +97,5 @@
   .map-legend { font-size: 11px; }
   .chart-card > .recharts-responsive-container,
   .landslide-indicator > .recharts-responsive-container,
-  .indicator-panel > .recharts-responsive-container,
-  .scenario-chart-block > .recharts-responsive-container { min-width: 520px !important; }
+  .indicator-panel > .recharts-responsive-container { min-width: 520px !important; }
 }

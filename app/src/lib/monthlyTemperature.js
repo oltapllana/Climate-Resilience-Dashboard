@@ -56,7 +56,7 @@ export function calculateMonthlyTemperature(hourlyRecords) {
   // The trend is fitted on deseasonalized anomalies (each month minus its own
   // calendar-month normal), not on the raw means. Regressing the raw series
   // lets the annual cycle correlate with time and invent a slope that is not
-  // there — the same reason projection.js deseasonalizes before fitting.
+  // there — the same reason the trend calculation removes seasonal effects.
   const normals = new Map();
   for (let monthNumber = 1; monthNumber <= 12; monthNumber += 1) {
     const rows = completeMonths.filter((row) => row.monthNumber === monthNumber);

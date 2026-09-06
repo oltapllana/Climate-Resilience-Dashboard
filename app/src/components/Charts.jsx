@@ -5,7 +5,6 @@ import {
   BarChart,
   Line,
   Bar,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,7 +13,7 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
-import { effectiveClimatology } from "../lib/projection.js";
+import { effectiveClimatology } from "../lib/climatology.js";
 import { COMPASS_TICKS, axisScale, circularMeanDeg, compassLabel, formatForAxis } from "../lib/chartAxis.js";
 import { EdgeLabel } from "./chartLabels.jsx";
 
@@ -319,93 +318,6 @@ export function AnomaliesChart({ series, t, unit }) {
             .replace("{downMonth}", monthName(strongestDown.m))}
         </p>
       )}
-    </>
-  );
-}
-
-export function DailyChart({ series, t, unit, isSum, color = GREEN_DARK }) {
-  const data = (series.daily || []).map((d) => ({
-    d: d.d,
-    v: d.v,
-    lo: d.lo ?? d.v,
-    hi: d.hi ?? null,
-    band: d.hi != null && d.lo != null ? +(d.hi - d.lo).toFixed(3) : 0,
-  }));
-
-  function DailyTooltip({ active, payload, label }) {
-    if (!active || !payload?.length) return null;
-    const row = payload[0]?.payload;
-    if (!row) return null;
-    const hasRange = row.lo != null && row.hi != null;
-    return (
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid #d9e2ec",
-          borderRadius: 6,
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.14)",
-          color: "#1f2937",
-          fontSize: 12,
-          lineHeight: 1.4,
-          padding: "8px 10px",
-          pointerEvents: "none",
-        }}
-      >
-        <p style={{ fontWeight: 700, margin: "0 0 6px" }}>{label}</p>
-        <p style={{ margin: "2px 0" }}>{isSum ? t("total") : t("mean")}: {fmt(row.v)} {unit}</p>
-        {hasRange && <p style={{ margin: "2px 0" }}>{t("min")}: {fmt(row.lo)} {unit}</p>}
-        {hasRange && <p style={{ margin: "2px 0" }}>{t("max")}: {fmt(row.hi)} {unit}</p>}
-      </div>
-    );
-  }
-
-  // The band is drawn as two stacked areas, so the axis has to cover the top of
-  // the band as well as the daily value itself.
-  const circular = !!series.circular;
-  const scale = scaleFor(
-    data.flatMap((d) => (isSum ? [d.v] : [d.v, d.lo, d.hi])),
-    { unit, includeZero: isSum, circular }
-  );
-  const truncated = !circular && scale.domain[0] > 0;
-  const tickFormat = tickFor(scale, circular);
-
-  const legendPayload = [
-    { value: isSum ? t("monthlyTotalLegend") : t("dailyValueLegend"), type: isSum ? "square" : "line", color, id: "value" },
-  ];
-  if (!isSum) legendPayload.push({ value: t("rangeBand"), type: "square", color, id: "band" });
-  legendPayload.push({ value: t("mean"), type: "plainline", color: "#64748b", payload: { strokeDasharray: "6 4" }, id: "mean" });
-
-  return (
-    <>
-      <ResponsiveContainer width="100%" height={250}>
-        <ComposedChart data={data} margin={chartMargin}>
-          <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-          <XAxis dataKey="d" tick={{ fontSize: 11 }} minTickGap={40} label={xLabel(t("date"))} />
-          <YAxis
-            tick={{ fontSize: 12 }}
-            width={58}
-            domain={scale.domain}
-            ticks={scale.ticks}
-            tickFormatter={tickFormat}
-            allowDataOverflow
-            label={yLabel(unit)}
-          />
-          <Tooltip content={<DailyTooltip />} />
-          <Legend verticalAlign="top" height={26} wrapperStyle={legendStyle} payload={legendPayload} />
-          {!isSum && <Area dataKey="lo" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />}
-          {!isSum && <Area dataKey="band" stackId="band" stroke="none" fill={color} fillOpacity={0.12} isAnimationActive={false} />}
-          {isSum ? (
-            <Bar dataKey="v" fill={color} />
-          ) : (
-            <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2.2} dot={false} activeDot={{ r: 4 }} />
-          )}
-          {/* last child on purpose: Recharts paints in JSX order, so
-              the mean line and its label sit on top of the series
-              rather than behind it */}
-          {meanLine(seriesMean(data.map((d) => d.v), circular), t, unit, scale.decimals, circular ? compassLabel : undefined)}
-        </ComposedChart>
-      </ResponsiveContainer>
-      <AxisNote show={truncated} t={t} />
     </>
   );
 }

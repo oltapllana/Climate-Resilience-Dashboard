@@ -103,22 +103,6 @@ If `settlements-kosovo.geojson` is missing, the app keeps all station markers
 visible, shows fallback settlement labels from station metadata, logs a clear
 `[GIS warning]`, and does not create fake polygons.
 
-## Climate scenarios & forecast (RCP4.5 / RCP8.5)
-
-Each measurement panel includes a **scenario projection** chart (monthly profile
-with historic line + 2011–2040 / 2041–2070 / 2071–2100 projected bands, with an
-`All / RCP4.5 / RCP8.5` toggle) and a **next-5-months forecast**.
-
-> These scenarios are **not** IPCC climate-model output — we only have a few
-> years of local sensor data. They are a *simplified statistical projection*:
-> the seasonal cycle is removed, a trend (units/year) is fitted to the observed
-> anomalies, and that trend is extended forward (RCP8.5 = a stronger multiplier
-> than RCP4.5). The 2100 change is capped to ~⅓ of the seasonal amplitude so the
-> lines stay physically believable. Stations with a longer record (Shajkoc,
-> Turiqicë, Lupç ≈ 5 years) give the most meaningful trends; very short records
-> (e.g. Podujevë town ≈ 1.5 years) project weakly — adjust the multipliers in
-> [app/src/lib/projection.js](app/src/lib/projection.js) (`SCENARIOS`, `PERIODS`).
-
 ## Import your own Excel (e.g. Prishtina)
 
 Click **⬆ Import Excel** in the header and choose an `.xlsx` / `.xls` / `.txt`

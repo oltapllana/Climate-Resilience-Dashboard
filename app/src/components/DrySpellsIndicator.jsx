@@ -18,11 +18,17 @@ const RED = "#c63a2b";
 const MONTHS = [
   ["Apr", 0], ["May", 30], ["Jun", 61], ["Jul", 91], ["Aug", 122], ["Sep", 153],
 ];
+const SEASON_TICKS = [0, 14, 28, 44, 59, 75, 90, 105, 120, 136, 151, 167, 182];
 const SEASON_DAYS = 183;
 
 function seasonOffset(date) {
   const year = Number(date.slice(0, 4));
   return Math.round((Date.UTC(year, Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) - Date.UTC(year, 3, 1)) / 86400000);
+}
+
+function seasonTickLabel(offset) {
+  const date = new Date(Date.UTC(2024, 3, 1 + offset));
+  return `${date.toLocaleString("en", { month: "short", timeZone: "UTC" })} ${date.getUTCDate()}`;
 }
 
 function RunTooltip({ run, x, y }) {
@@ -67,16 +73,25 @@ function SeasonalRunsChart({ yearly }) {
   return (
     <div style={{ position: "relative", width: "100%" }} onMouseLeave={() => setTooltip(null)}>
       <RunsLegend />
-      <svg viewBox={`0 0 620 ${height}`} role="img" aria-label="Dry-spell runs from April through September" style={{ display: "block", width: "100%", height: 360 }}>
+      <svg viewBox={`0 0 620 ${height + 12}`} role="img" aria-label="Dry-spell runs from April through September" style={{ display: "block", width: "100%", height: 360 }}>
         {MONTHS.map(([month, offset]) => {
           const x = left + offset * scale;
           return (
             <g key={month}>
               <line x1={x} x2={x} y1="28" y2={height - 28} stroke="#dce5ea" />
-              <text x={x + 3} y={height - 8} fill="#5f7079" fontSize="11">{month}</text>
             </g>
           );
         })}
+        {SEASON_TICKS.map((offset) => {
+          const x = left + offset * scale;
+          return (
+            <g key={offset}>
+              <line x1={x} x2={x} y1={height - 31} y2={height - 24} stroke="#8999a2" />
+              <text x={x} y={height - 8} textAnchor="middle" fill="#5f7079" fontSize="9">{seasonTickLabel(offset)}</text>
+            </g>
+          );
+        })}
+        <text x={left + width / 2} y={height + 8} textAnchor="middle" fill="#5f7079" fontSize="10">Calendar day of April–September season</text>
         {yearly.map((row, rowIndex) => {
           const y = 40 + rowIndex * 42;
           return (
@@ -90,20 +105,22 @@ function SeasonalRunsChart({ yearly }) {
                 const segmentWidth = Math.max(3, run.length * scale);
                 const enriched = { ...run, year: row.year };
                 return (
-                  <rect
-                    key={`${run.startDate}-${run.endDate}`}
-                    x={x}
-                    y={y - 7}
-                    width={segmentWidth}
-                    height="14"
-                    rx="3"
-                    fill={run.length >= 7 ? RED : AMBER}
-                    onMouseMove={(event) => setTooltip({ run: enriched, x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY })}
-                  />
+                  <g key={`${run.startDate}-${run.endDate}`}>
+                    <rect
+                      x={x}
+                      y={y - 7}
+                      width={segmentWidth}
+                      height="14"
+                      rx="3"
+                      fill={run.length >= 7 ? RED : AMBER}
+                      onMouseMove={(event) => setTooltip({ run: enriched, x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY })}
+                    />
+                    <text x={x + segmentWidth / 2} y={y - 11} textAnchor="middle" fill="#42545d" fontSize="9" fontWeight="700">{run.length}d</text>
+                  </g>
                 );
               })}
               {row.isPartial && (
-                <text x={left} y={y - 12} fill="#5f7079" fontSize="10">
+                <text x={left} y={y + 22} fill="#5f7079" fontSize="9.5">
                   covered {row.availableStart?.slice(5)} – {row.availableEnd?.slice(5)}
                 </text>
               )}
@@ -138,6 +155,7 @@ function AnnualTooltip({ active, payload }) {
 export default function DrySpellsIndicator({ measurement }) {
   const result = useMemo(() => calculateDrySpells(measurement?.hourly), [measurement]);
   if (!result.yearly.length) return null;
+  const completeYearly = result.yearly.filter((row) => !row.isPartial);
 
   return (
     <section className="card landslide-indicator">
@@ -158,9 +176,9 @@ export default function DrySpellsIndicator({ measurement }) {
             <p>Days in ≥7-day runs are also included in the ≥5-day total.</p>
           </div>
           <ResponsiveContainer width="100%" height={360}>
-            <BarChart data={result.yearly} margin={{ top: 34, right: 18, left: 14, bottom: 28 }}>
+            <BarChart data={completeYearly} margin={{ top: 34, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
-              <XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} />
+              <XAxis dataKey="year" />
               <YAxis width={64} allowDecimals={false} label={yAxisLabel("Qualifying dry days")} />
               <Tooltip content={<AnnualTooltip />} />
               <Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} />

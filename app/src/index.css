@@ -91,8 +91,8 @@ header.masthead {
 .import-btn-block { width: 100%; margin-top: 10px; text-align: center; }
 .active-meas { color: var(--muted); font-size: 13px; font-weight: 500; }
 
-/* dashboard filter bar — measurement · scenario · period, side by side so the
-   whole thing fits without scrolling */
+/* dashboard filter bar — measurement and period, side by side so the whole
+  thing fits without scrolling */
 .filter-card { display: flex; flex-direction: column; gap: 14px; }
 .filter-bar {
   display: flex;
@@ -101,7 +101,7 @@ header.masthead {
   border-top: 1px solid var(--line);
   padding-top: 14px;
 }
-/* scenario + period share a row below the full-width measurement picker */
+/* period shares a row below the full-width measurement picker */
 .filter-row {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -142,33 +142,6 @@ header.masthead {
   font-size: 13px;
   font-weight: 700;
 }
-.scenario-chart-block {
-  margin-bottom: 48px;
-}
-
-/* drag-to-zoom affordances on the projection charts */
-.zoom-hint {
-  font-size: 11.5px;
-  color: var(--muted);
-  font-weight: 500;
-  user-select: none;
-}
-.zoom-reset {
-  margin-left: auto;
-  font: inherit;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--green-dark);
-  background: #eef6ef;
-  border: 1px solid #cfe3cf;
-  border-radius: 6px;
-  padding: 3px 10px;
-  cursor: pointer;
-}
-.zoom-reset:hover { background: #e2efe2; }
-/* hint cursor inside the zoomable plot area */
-.scenario-chart-block .recharts-surface { cursor: crosshair; }
-
 /* Critical-rainfall indicator: independent two-panel card using the dashboard palette. */
 .landslide-indicator { margin-bottom: 18px; }
 .indicator-grid {

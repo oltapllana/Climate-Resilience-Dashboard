@@ -86,15 +86,16 @@ function CompoundTooltip({ active, payload }) {
 export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, temperatureMeasurement }) {
   const result = useMemo(() => calculateHotDaysInDrySpells(rainfallMeasurement?.hourly, temperatureMeasurement?.hourly), [rainfallMeasurement, temperatureMeasurement]);
   if (!result.yearly.length) return null;
+  const completeYearly = result.yearly.filter((row) => !row.isPartial);
   return <section className="card landslide-indicator">
     <div className="indicator-grid">
       <div className="indicator-panel"><div className="indicator-heading"><h2>Hot days in dry spells</h2><p>Hot days overlaid on qualifying dry runs during April–September.</p></div><CompoundTimeline yearly={result.yearly} /><p className="indicator-assumption">* Partly observed season — the dates under the year give the common rainfall-and-temperature coverage.</p></div>
       <div className="indicator-panel"><div className="indicator-heading"><h2>Annual compound heat–drought days</h2><p>Compound ≥7-day counts are included in compound ≥5-day counts.</p></div>
-        <ResponsiveContainer width="100%" height={360}><BarChart data={result.yearly} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" tickFormatter={(year) => `${year}${result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`} /><YAxis width={64} allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={360}><BarChart data={completeYearly} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" /><YAxis width={64} allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
         <div className="compound-share-panel">
           <strong>Share of hot days in ≥5-day dry spells:</strong>
           <div className="compound-share-grid">
-            {result.yearly.map((row) => (
+            {completeYearly.map((row) => (
               <span key={row.year} className="compound-share-item">
                 <span>{row.year}{row.isPartial ? "*" : ""}</span>
                 <strong>{Math.round(row.compound5Share)}%</strong>

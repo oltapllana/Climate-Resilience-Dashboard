@@ -25,7 +25,6 @@ export default function App() {
   const [imported, setImported] = useState([]); // full station objects (all data is uploaded)
   const [selectedId, setSelectedId] = useState(null);
   const [measId, setMeasId] = useState(null);
-  const [scenario, setScenario] = useState("rcp85"); // worst-case is the default headline
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const fileRef = useRef(null);
@@ -291,8 +290,6 @@ export default function App() {
             data={activeData}
             measId={measId}
             setMeasId={setMeasId}
-            scenario={scenario}
-            setScenario={setScenario}
             lang={lang}
             t={t}
           />

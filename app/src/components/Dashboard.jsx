@@ -1,7 +1,6 @@
-import { ClimatologyChart, EvolutionChart, AnomaliesChart, DailyChart, WindRoseChart } from "./Charts.jsx";
+import { ClimatologyChart, EvolutionChart, AnomaliesChart } from "./Charts.jsx";
 import { WindRose } from "./WindRose.jsx";
 import { WindRiskHeatmap } from "./WindRiskHeatmap.jsx";
-import ScenarioChart from "./ScenarioChart.jsx";
 import LandslideRainfallIndicator from "./LandslideRainfallIndicator.jsx";
 import PrecipitationExtremesIndicator from "./PrecipitationExtremesIndicator.jsx";
 import HotDaysIndicator from "./HotDaysIndicator.jsx";
@@ -86,7 +85,7 @@ function StatCards({ stats, unit, isSum, circular, t }) {
   );
 }
 
-export default function Dashboard({ data, measId, setMeasId, scenario, setScenario, lang, t }) {
+export default function Dashboard({ data, measId, setMeasId, lang, t }) {
   if (!data) {
     return (
       <div className="card">
@@ -108,7 +107,6 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
   const isSum = m.kind === "sum";
   const unit = m.unit;
   const accent = data.type === "hydro" ? "#2b7fc4" : "#2f7d32";
-  const supportsRcp = activeMeasId === "air_temp" || activeMeasId === "rainfall";
   const rainIntensityHourly = data.measurements?.rain_intensity?.hourly;
   const hasValidRainIntensityHourly = Array.isArray(rainIntensityHourly) && rainIntensityHourly.some(
     (row) => !Number.isNaN(new Date(row?.d).getTime()) && Number.isFinite(Number(row?.v)) && Number(row.v) >= 0
@@ -133,7 +131,7 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           <span className="active-meas">{measurementName} ({unit})</span>
         </div>
 
-        {/* extracted filters: measurement · scenario · period of record */}
+        {/* extracted filters: measurement · period of record */}
         <div className="filter-bar">
           {/* measurement gets its own full-width row so many chips wrap cleanly */}
           <div className="filter-sec filter-meas">
@@ -153,20 +151,6 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           </div>
 
           <div className="filter-row">
-            {supportsRcp && (
-              <div className="filter-sec">
-                <label className="cfg-label">{t("scenario")}</label>
-                <div className="seg">
-                  {["rcp85", "rcp45", "all"].map((s) => (
-                    <button key={s} className={scenario === s ? "active" : ""} onClick={() => setScenario(s)}>
-                      {s === "all" ? t("allScenarios") : s === "rcp45" ? "RCP4.5" : "RCP8.5"}
-                    </button>
-                  ))}
-                </div>
-                {scenario === "rcp85" && <p className="cfg-hint">{t("rcp85Hint")}</p>}
-              </div>
-            )}
-
             <div className="filter-sec">
               <label className="cfg-label">
                 {t("period")}: {m.stats.start} → {m.stats.end}
@@ -176,10 +160,6 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           </div>
         </div>
       </div>
-
-      {/* RCP scenarios are climate projections for air temperature and rainfall,
-          not for the dashboard's other sensor measurements. */}
-      {supportsRcp && <ScenarioChart meas={m} scenario={scenario} t={t} unit={unit} />}
 
       {/* ---- Reshje — rainfall -----------------------------------------
           Shown under either rainfall chip. Every chart here is computed from
@@ -570,10 +550,6 @@ export default function Dashboard({ data, measId, setMeasId, scenario, setScenar
           <AnomaliesChart series={m} t={t} unit={unit} />
         </div>
 
-        <div className="card chart-card">
-          <h2>{t("daily")}</h2>
-          <DailyChart series={m} t={t} unit={unit} isSum={isSum} color={accent} />
-        </div>
       </div>
     </div>
   );

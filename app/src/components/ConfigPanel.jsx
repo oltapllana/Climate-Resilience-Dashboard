@@ -1,6 +1,5 @@
-// Left-hand configuration panel: pick a station. Measurement, emission
-// scenario and the period-of-record stats now live in the dashboard's filter
-// bar (Dashboard.jsx). The map (right) and charts (below) react to those.
+// Left-hand configuration panel: pick a station. Measurement and the
+// period-of-record stats live in the dashboard's filter bar (Dashboard.jsx).
 
 export default function ConfigPanel({
   markers,
