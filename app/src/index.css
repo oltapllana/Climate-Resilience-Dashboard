@@ -165,6 +165,16 @@ header.masthead {
   line-height: 1.5;
 }
 .indicator-assumption { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+/* Which series the rainfall depths came from. It sits above the charts rather
+   than inside one because it qualifies all of them, and the fallback wording
+   warns that the numbers are an upper bound. */
+.rainfall-source-note {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-left: 3px solid #b9cdd8;
+  border-radius: 0 6px 6px 0;
+  background: #f2f6f8;
+}
 .wind-rose-layout {
   display: grid;
   grid-template-columns: minmax(190px, .7fr) minmax(320px, 1.6fr) minmax(130px, .5fr);

@@ -241,6 +241,12 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
           </div>
 
           <p className="indicator-explanation">{t("landslideExplanation")}</p>
+          {/* The threshold used to be an undocumented pair of constants. A
+              reader cannot judge an exceedance without knowing which published
+              curve it came from and what it does not claim, so both are stated
+              on the chart itself. */}
+          <p className="indicator-assumption">{t("landslideThresholdSource")}</p>
+          <p className="indicator-assumption">{t("landslideThresholdCaveat")}</p>
           <p className="indicator-assumption">
             {t("landslideMethodologyNote")}
           </p>

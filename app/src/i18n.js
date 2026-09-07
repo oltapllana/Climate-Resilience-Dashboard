@@ -87,13 +87,17 @@ export const STRINGS = {
     landslideInvalidUnit: "The configured rainfall-intensity source unit is not supported.",
     landslideCalculationError: "The rainfall indicator could not be calculated.",
     landslideExplanation:
-      "This indicator identifies days when rainfall intensity over a 1–5 day period exceeded the configured landslide threshold. It indicates critical rainfall conditions, not a confirmed landslide occurrence.",
+      "This indicator identifies days when rainfall intensity over a 1–5 day period exceeded the landslide threshold. It indicates critical rainfall conditions, not a confirmed landslide occurrence.",
+    landslideThresholdSource:
+      "Threshold: I = 8.67·D⁻⁰·⁶¹ (I in mm/h, D in hours) — the intensity-duration curve for the CADSES area of central and south-eastern Europe, which covers Kosovo, from Guzzetti, Peruccacci, Rossi & Stark (2007), Meteorology and Atmospheric Physics 98:239–267, Fig. 6C. It is fitted for durations of 5 minutes to 700 hours; the 24–120 hour windows used here sit inside that range. Over 1 to 5 days it works out at 30, 39, 46, 51 and 56 mm of rain.",
+    landslideThresholdCaveat:
+      "The curve is a lower bound: below it landslides are not expected, above it they become possible. Crossing it does not mean one occurred, and the authors state these thresholds will not predict landslides. The published curve also describes the duration of a rainfall event, whereas this chart applies it to fixed 1–5 day windows that may include dry hours, so exceedances here are more frequent than an event-based reading would give.",
     landslideUnitAssumption:
       "Unit assumption: source rainfall intensity is configured as {unit} and converted explicitly to mm/h.",
     landslideZeroFillWarning:
       "Hours without readings are treated as dry (zero); sensor outages may therefore be hidden.",
     landslideMethodologyNote:
-      "Rainfall intensity is interpreted as mm/h according to the indicator specification. Values are averaged within each clock hour. Hours without logged readings are treated as zero rainfall. These are documented reconstruction assumptions.",
+      "One stored row carries one clock hour, so its value is that hour's depth and is never multiplied by 60. Hours without a logged reading are treated as no rainfall.",
     landslideDepthSourceNote:
       "Source: confirmed rainfall-depth observations in mm; values are never derived from hourly rainfall-intensity means.",
     landslideUnknownHoursWarning:
@@ -117,8 +121,14 @@ export const STRINGS = {
     winter: "Winter",
     peak: "Peak",
     coverage: "Coverage",
+    rainfallFromGauge:
+      "Rainfall depth on this page comes from the station's rain gauge (mm, recorded as hourly totals).",
+    rainfallFromIntensity:
+      "This station has no rain gauge, so rainfall depth is rebuilt from the rain-intensity series by reading each logged hour as an hour of rain at that rate. Because the logger records only while it is raining, this over-states how much fell — at Shajkoc, the one station with both, the same method gives about twice the gauge's annual total. Treat the depths below as an upper bound and do not compare them with gauge-based stations.",
     observedDays: "Observed days",
     standardDeviation: "standard deviation",
+    middleHalf: "Middle half of years",
+    fullRange: "Full range across years",
     completeYearsCounted: "Complete years used",
     longTermMean: "Long-term mean",
     rollingMean30: "30-day rolling mean",
@@ -141,12 +151,12 @@ export const STRINGS = {
     strongestWindsFrom: "Strongest winds come from",
 
     monthlyRainfallTitle: "Mean monthly rainfall",
-    monthlyRainfallDesc: "Average rainfall per calendar month with the between-year standard deviation.",
+    monthlyRainfallDesc: "Average rainfall per calendar month, with the middle half of the observed years.",
     monthlyRainfallAxis: "Mean monthly rainfall (mm)",
     monthlyRainfallExplanation:
-      "Bars are coloured by season. The whiskers show the standard deviation between years — a long whisker means that month varies a great deal from one year to the next.",
+      "Bars are coloured by season. The whiskers span the middle half of the observed years — from the lower quartile to the upper quartile — so a long whisker means that month varies a great deal from one year to the next.",
     monthlyRainfallAssumption:
-      "Depths are reconstructed from hourly rainfall intensity (one clock-hour of mm/h equals mm of depth); intensity readings are never summed directly. Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
+      "Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
     highestRainfallMonth: "Month with the highest rainfall",
 
     topRainDaysTitle: "The {n} days with the highest rainfall",
@@ -156,7 +166,7 @@ export const STRINGS = {
     topRainDaysExplanation:
       "Bars use the same colour bands as the yearly chart, so red means the same thing in both. The dashed line marks the 80 mm boundary of the top band.",
     topRainDaysAssumption:
-      "Daily totals are rebuilt from hourly rainfall intensity — one clock-hour of mm/h equals one mm of depth. Intensity readings are never summed directly, which is what produces impossible totals in the thousands of millimetres.",
+      "Daily totals are the sum of the hourly depths for that day. Intensity readings are never summed directly, which is what produces impossible totals in the thousands of millimetres.",
 
     rainyDaysTitle: "Rain days per year",
     rainyDaysDesc: "Days classified by how much rain fell: 30–50, 50–80 and over 80 mm.",
@@ -482,7 +492,7 @@ export const STRINGS = {
     axisTruncatedNote:
       "The vertical axis starts above zero so that the differences between months stay visible.",
     rainfallWhiskerNote:
-      "Where the between-year deviation is wider than the month's own mean, the lower whisker is drawn down to zero: a month cannot record a negative depth of rain.",
+      "Quartiles are read off the years actually recorded, so the whisker can never reach a negative depth and a single exceptional year cannot stretch it. A quarter of the years sit below each whisker and a quarter above; hover a bar for the full range those outer years cover.",
     dualAxisNote:
       "Bars are read against the left-hand axis (rain days), the line against the right-hand one (share of observed days).",
     landslideNoCriticalDetail:
@@ -603,13 +613,17 @@ export const STRINGS = {
     landslideInvalidUnit: "Njësia burimore e konfiguruar për intensitetin e reshjeve nuk mbështetet.",
     landslideCalculationError: "Treguesi i reshjeve nuk mund të llogaritej.",
     landslideExplanation:
-      "Ky tregues identifikon ditët kur intensiteti i reshjeve gjatë një periudhe 1–5 ditore tejkaloi pragun e konfiguruar për rrëshqitje të dheut. Ai tregon kushte kritike reshjesh, jo një rrëshqitje të konfirmuar.",
+      "Ky tregues identifikon ditët kur intensiteti i reshjeve gjatë një periudhe 1–5 ditore tejkaloi pragun për rrëshqitje të dheut. Ai tregon kushte kritike reshjesh, jo një rrëshqitje të konfirmuar.",
+    landslideThresholdSource:
+      "Pragu: I = 8.67·D⁻⁰·⁶¹ (I në mm/h, D në orë) — kurba intensitet-kohëzgjatje për zonën CADSES të Evropës qendrore dhe juglindore, që përfshin Kosovën, sipas Guzzetti, Peruccacci, Rossi & Stark (2007), Meteorology and Atmospheric Physics 98:239–267, Fig. 6C. Është e vlefshme për kohëzgjatje nga 5 minuta deri në 700 orë; dritaret 24–120 orëshe të përdorura këtu janë brenda atij intervali. Për 1 deri 5 ditë kjo del 30, 39, 46, 51 dhe 56 mm reshje.",
+    landslideThresholdCaveat:
+      "Kurba është kufi i poshtëm: nën të nuk priten rrëshqitje, mbi të ato bëhen të mundshme. Kalimi i saj nuk do të thotë se ndodhi një rrëshqitje, dhe autorët theksojnë se këto pragje nuk parashikojnë rrëshqitje. Kurba e botuar i referohet kohëzgjatjes së një ngjarjeje shiu, ndërsa ky grafik e zbaton mbi dritare fikse 1–5 ditore që mund të përmbajnë orë të thata, prandaj tejkalimet këtu dalin më të shpeshta se me lexim sipas ngjarjes.",
     landslideUnitAssumption:
       "Supozimi i njësisë: intensiteti burimor i reshjeve është konfiguruar si {unit} dhe konvertohet në mënyrë eksplicite në mm/h.",
     landslideZeroFillWarning:
       "Orët pa matje trajtohen si të thata (zero); ndërprerjet e sensorit mund të fshihen.",
     landslideMethodologyNote:
-      "Intensiteti i reshjeve interpretohet si mm/h sipas specifikimit të treguesit. Vlerat mesatarizohen brenda çdo ore. Orët pa matje të regjistruara trajtohen si zero reshje. Këto janë supozime të dokumentuara të rindërtimit.",
+      "Një rresht i ruajtur mbulon një orë të plotë, prandaj vlera e tij është lartësia e asaj ore dhe nuk shumëzohet kurrë me 60. Orët pa matje të regjistruara trajtohen si pa reshje.",
     landslideDepthSourceNote:
       "Burimi: vëzhgime të konfirmuara të thellësisë së reshjeve në mm; vlerat nuk nxirren nga mesataret orare të intensitetit.",
     landslideUnknownHoursWarning:
@@ -634,8 +648,14 @@ export const STRINGS = {
     winter: "Dimër",
     peak: "Kulmi",
     coverage: "Mbulueshmëria",
+    rainfallFromGauge:
+      "Lartësia e reshjeve në këtë faqe vjen nga matësi i shiut i stacionit (mm, të regjistruara si totale orare).",
+    rainfallFromIntensity:
+      "Ky stacion nuk ka matës shiu, prandaj lartësia e reshjeve rindërtohet nga seria e intensitetit duke e lexuar çdo orë të regjistruar si një orë shi me atë ritëm. Meqë loguesi shkruan vetëm kur bie shi, kjo e mbivlerëson sasinë — në Shajkoc, i vetmi stacion me të dyja, e njëjta metodë jep rreth dyfishin e totalit vjetor të matësit. Trajtoji vlerat më poshtë si kufi të sipërm dhe mos i krahaso me stacionet që kanë matës.",
     observedDays: "Ditë të vëzhguara",
     standardDeviation: "devijimi standard",
+    middleHalf: "Gjysma e mesme e viteve",
+    fullRange: "Diapazoni i plotë mes viteve",
     completeYearsCounted: "Vite të plota të përdorura",
     longTermMean: "Mesatarja afatgjate",
     rollingMean30: "Mesatarja lëvizëse 30-ditore",
@@ -658,12 +678,12 @@ export const STRINGS = {
     strongestWindsFrom: "Erërat më të forta vijnë më shpesh nga",
 
     monthlyRainfallTitle: "Reshjet mesatare mujore",
-    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik me devijimin standard mes viteve.",
+    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik, me gjysmën e mesme të viteve të vëzhguara.",
     monthlyRainfallAxis: "Reshjet mesatare mujore (mm)",
     monthlyRainfallExplanation:
-      "Shtyllat janë me ngjyra sipas stinës. Vijat vertikale tregojnë devijimin standard mes viteve — një vijë e gjatë do të thotë se ai muaj ndryshon shumë nga viti në vit.",
+      "Shtyllat janë me ngjyra sipas stinës. Vijat vertikale mbulojnë gjysmën e mesme të viteve të vëzhguara — nga çerekshmërorja e poshtme te ajo e sipërme — prandaj një vijë e gjatë do të thotë se ai muaj ndryshon shumë nga viti në vit.",
     monthlyRainfallAssumption:
-      "Lartësitë e reshjeve rindërtohen nga intensiteti orar i reshjeve (një orë e plotë mm/h barazohet me mm lartësi); vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt. Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
+      "Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
     highestRainfallMonth: "Muaji me sasinë më të lartë të reshjeve",
 
     topRainDaysTitle: "{n} ditët me reshjet më të larta",
@@ -673,7 +693,7 @@ export const STRINGS = {
     topRainDaysExplanation:
       "Shtyllat përdorin të njëjtat breza ngjyrash si grafiku vjetor, prandaj e kuqja ka të njëjtin kuptim në të dy. Vija me ndërprerje shënon kufirin 80 mm të brezit më të lartë.",
     topRainDaysAssumption:
-      "Totalet ditore rindërtohen nga intensiteti orar i reshjeve — një orë e plotë mm/h barazohet me një mm lartësi. Vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt, gjë që është shkaku i totaleve të pamundura prej mijëra milimetrash.",
+      "Totalet ditore janë shuma e lartësive orare të asaj dite. Vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt, gjë që është shkaku i totaleve të pamundura prej mijëra milimetrash.",
 
     rainyDaysTitle: "Numri i ditëve me reshje sipas viteve",
     rainyDaysDesc: "Ditët e klasifikuara sipas sasisë së reshjeve: 30–50, 50–80 dhe mbi 80 mm.",
@@ -999,7 +1019,7 @@ export const STRINGS = {
     axisTruncatedNote:
       "Boshti vertikal fillon mbi zero që dallimet mes muajve të mbeten të dukshme.",
     rainfallWhiskerNote:
-      "Aty ku devijimi mes viteve është më i madh se vetë mesatarja e muajit, krahu i poshtëm vizatohet deri në zero: një muaj nuk mund të regjistrojë thellësi negative reshjesh.",
+      "Çerekshmëroret llogariten nga vitet e regjistruara vërtet, prandaj vija nuk mund të arrijë kurrë thellësi negative dhe një vit i vetëm i jashtëzakonshëm nuk e zgjat dot. Një çerek i viteve qëndron nën çdo vijë dhe një çerek mbi të; kalo mbi shtyllë për diapazonin e plotë që mbulojnë ato vite anësore.",
     dualAxisNote:
       "Barrat lexohen sipas boshtit të majtë (ditët me shi), vija sipas atij të djathtë (pjesa e ditëve të vëzhguara).",
     landslideNoCriticalDetail:

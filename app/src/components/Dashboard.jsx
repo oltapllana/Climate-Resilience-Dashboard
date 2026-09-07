@@ -2,6 +2,7 @@ import { ClimatologyChart, EvolutionChart, AnomaliesChart } from "./Charts.jsx";
 import { WindRose } from "./WindRose.jsx";
 import { WindRiskHeatmap } from "./WindRiskHeatmap.jsx";
 import LandslideRainfallIndicator from "./LandslideRainfallIndicator.jsx";
+import { RAINFALL_SOURCE_GAUGE, selectRainfallDepthSource } from "../lib/landslideRainfall.js";
 import PrecipitationExtremesIndicator from "./PrecipitationExtremesIndicator.jsx";
 import HotDaysIndicator from "./HotDaysIndicator.jsx";
 import DrySpellsIndicator from "./DrySpellsIndicator.jsx";
@@ -107,8 +108,11 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
   const isSum = m.kind === "sum";
   const unit = m.unit;
   const accent = data.type === "hydro" ? "#2b7fc4" : "#2f7d32";
-  const rainIntensityHourly = data.measurements?.rain_intensity?.hourly;
-  const hasValidRainIntensityHourly = Array.isArray(rainIntensityHourly) && rainIntensityHourly.some(
+  // Depth comes from the rain gauge where the station has one, and only falls
+  // back to the intensity series where it does not — see selectRainfallDepthSource.
+  const { measurement: rainDepthMeasurement, source: rainDepthSource } = selectRainfallDepthSource(data);
+  const rainDepthHourly = rainDepthMeasurement?.hourly;
+  const hasValidRainIntensityHourly = Array.isArray(rainDepthHourly) && rainDepthHourly.some(
     (row) => !Number.isNaN(new Date(row?.d).getTime()) && Number.isFinite(Number(row?.v)) && Number(row.v) >= 0
   );
   const temperatureHourly = data.measurements?.air_temp?.hourly;
@@ -166,18 +170,21 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
           the hourly rain_intensity series, but someone looking for rainfall
           charts clicks "Reshjet" first, and hiding them there reads as though
           they were never built. */}
-      {isRainMeas && data.measurements.rain_intensity && (
+      {isRainMeas && rainDepthMeasurement && (
         <>
-          <LandslideRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
-          <PrecipitationExtremesIndicator measurement={data.measurements.rain_intensity} t={t} />
+          <p className="indicator-assumption rainfall-source-note">
+            {t(rainDepthSource === RAINFALL_SOURCE_GAUGE ? "rainfallFromGauge" : "rainfallFromIntensity")}
+          </p>
+          <LandslideRainfallIndicator measurement={rainDepthMeasurement} t={t} />
+          <PrecipitationExtremesIndicator measurement={rainDepthMeasurement} t={t} />
           {hasValidRainIntensityHourly && (
             <>
-              <DrySpellsIndicator measurement={data.measurements.rain_intensity} />
+              <DrySpellsIndicator measurement={rainDepthMeasurement} />
               {/* Reshje 1 */}
-              <MonthlyRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
+              <MonthlyRainfallIndicator measurement={rainDepthMeasurement} t={t} />
               {/* Reshje 3 + 5 */}
-              <RainyDaysIndicator measurement={data.measurements.rain_intensity} t={t} />
-              <TopRainfallDays measurement={data.measurements.rain_intensity} t={t} />
+              <RainyDaysIndicator measurement={rainDepthMeasurement} t={t} />
+              <TopRainfallDays measurement={rainDepthMeasurement} t={t} />
             </>
           )}
         </>
@@ -519,17 +526,17 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
       {(isRainMeas || activeMeasId === "air_temp") && hasValidRainIntensityHourly && hasValidTemperatureHourly && (
         <>
           <HotDaysInDrySpellsIndicator
-            rainfallMeasurement={data.measurements.rain_intensity}
+            rainfallMeasurement={rainDepthMeasurement}
             temperatureMeasurement={data.measurements.air_temp}
           />
           <SnowfallIndicator
             stationId={data.id}
-            rainfallMeasurement={data.measurements.rain_intensity}
+            rainfallMeasurement={rainDepthMeasurement}
             temperatureMeasurement={data.measurements.air_temp}
           />
           <HeavySnowfallIndicator
             stationId={data.id}
-            rainfallMeasurement={data.measurements.rain_intensity}
+            rainfallMeasurement={rainDepthMeasurement}
             temperatureMeasurement={data.measurements.air_temp}
           />
         </>
