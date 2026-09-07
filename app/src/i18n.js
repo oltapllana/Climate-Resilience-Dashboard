@@ -361,7 +361,10 @@ export const STRINGS = {
     /* ---- water datasets: level, water temperature, salinity, TDS, conductivity ---- */
     partialYear: "partly observed year",
     partialYearsNote:
-      "Years the record does not cover end to end are drawn in grey and left out of any fitted trend — their averages are not comparable with a full year's.",
+      "Years the record does not cover end to end are drawn in grey — their figures rest on part of a year and are not comparable with a full one's.",
+    partialYearsTrendNote:
+      "Years the record does not cover end to end are drawn in grey, left out of the fitted trend, and not joined to the neighbouring years by the mean line — their averages are not comparable with a full year's.",
+    partialYearMean: "Partial-year mean (not in trend)",
     yearsShort: "yr",
     completeYearsCount: "{n} fully observed years",
     eventWindowNote: "The window is ±{days} days around the peak of the record.",
@@ -503,6 +506,9 @@ export const STRINGS = {
       "R² = {r2}: the straight line accounts for only {pct} % of the month-to-month variation, so the slope is a screen for a direction, not a measured rate of warming.",
     largestAnomalies: "Largest departures from the monthly normal: {up} in {upMonth}, {down} in {downMonth}.",
     fullYearLegend: "Fully observed year",
+    observedWindow: "Observed window",
+    noCompleteYearNote:
+      "No year here was recorded end to end, so every bar is grey — this is what the record holds, not a fault in the chart. Each share is taken over that year's own observed days, and those windows fall in different seasons, so the years are not directly comparable. Hover a bar for the dates it covers.",
     leftAxisSuffix: "left axis",
     rightAxisSuffix: "right axis",
     dailyValueLegend: "Daily value",
@@ -888,7 +894,10 @@ export const STRINGS = {
     /* ---- të dhënat ujore: niveli, temperatura e ujit, kripshmëria, TDS, përçueshmëria ---- */
     partialYear: "vit i vëzhguar pjesërisht",
     partialYearsNote:
-      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri dhe janë lënë jashtë trendit — mesataret e tyre nuk janë të krahasueshme me ato të një viti të plotë.",
+      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri — shifrat e tyre mbështeten në një pjesë të vitit dhe nuk janë të krahasueshme me ato të një viti të plotë.",
+    partialYearsTrendNote:
+      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri, janë lënë jashtë trendit dhe nuk lidhen me vitet fqinje nga vija e mesatares — mesataret e tyre nuk janë të krahasueshme me ato të një viti të plotë.",
+    partialYearMean: "Mesatarja e vitit të pjesshëm (jashtë trendit)",
     yearsShort: "vit",
     completeYearsCount: "{n} vite të vëzhguara plotësisht",
     eventWindowNote: "Dritarja është ±{days} ditë rreth kulmit të regjistrimit.",
@@ -1030,6 +1039,9 @@ export const STRINGS = {
       "R² = {r2}: vija e drejtë shpjegon vetëm {pct} % të luhatjes mes muajve, prandaj pjerrësia është tregues drejtimi, jo normë e matur e ngrohjes.",
     largestAnomalies: "Devijimet më të mëdha nga norma mujore: {up} në {upMonth}, {down} në {downMonth}.",
     fullYearLegend: "Vit i vëzhguar plotësisht",
+    observedWindow: "Periudha e vëzhguar",
+    noCompleteYearNote:
+      "Asnjë vit këtu nuk është regjistruar nga fillimi në fund, prandaj të gjitha shtyllat janë gri — kështu i ka të dhënat, nuk është defekt i grafikut. Çdo përqindje llogaritet mbi ditët e vëzhguara të atij viti, dhe ato periudha bien në stinë të ndryshme, prandaj vitet nuk janë drejtpërdrejt të krahasueshme. Kalo mbi shtyllë për datat që mbulon.",
     leftAxisSuffix: "boshti i majtë",
     rightAxisSuffix: "boshti i djathtë",
     dailyValueLegend: "Vlera ditore",

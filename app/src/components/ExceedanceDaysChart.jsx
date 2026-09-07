@@ -18,6 +18,8 @@ export default function ExceedanceDaysChart({
 
   const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const data = result.years.map((row) => ({ ...row, share: +row.share.toFixed(1) }));
+  const hasComplete = data.some((row) => !row.partial);
+  const hasPartial = data.some((row) => row.partial);
 
   function ExceedanceTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
@@ -25,6 +27,7 @@ export default function ExceedanceDaysChart({
     return (
       <div className="indicator-tooltip">
         <strong>{row.year}{row.partial ? ` · ${t("partialYear")}` : ""}</strong>
+        {row.first && <span>{t("observedWindow")}: {row.first} – {row.last}</span>}
         <span>{t("exceedingDays")}: {row.exceedingDays} / {row.monitoredDays}</span>
         <span>{t("shareOfMonitoredDays")}: {row.share.toFixed(1)} %</span>
       </div>
@@ -40,6 +43,13 @@ export default function ExceedanceDaysChart({
       <p className="indicator-callout">
         {t("thresholdUsed")}: <strong>{format(result.threshold)} {unit}</strong> ({t("recordPercentilePlaceholder").replace("{p}", 90)})
       </p>
+      {/* Every bar grey and no red one anywhere reads as a broken chart. It is
+          not: this record simply holds no year the sensor covered end to end,
+          and that is worth stating outright rather than leaving the reader to
+          infer it from a legend entry that never appears. */}
+      {!hasComplete && (
+        <p className="indicator-callout indicator-callout--warn">{t("noCompleteYearNote")}</p>
+      )}
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 30, right: 30, left: 48, bottom: 34 }}>
           <CartesianGrid stroke="#eef2f6" vertical={false} />
@@ -53,9 +63,12 @@ export default function ExceedanceDaysChart({
           <Tooltip content={<ExceedanceTooltip />} cursor={{ fill: "#f1f5f9" }} />
           <Legend
             {...topLegendProps}
+            // Only the classes actually on the plot. Advertising "full year"
+            // where none exists sends the reader looking for a bar that is not
+            // there.
             payload={[
-              { value: t("fullYearLegend"), type: "square", color: COMPLETE, id: "complete" },
-              { value: t("partialYear"), type: "square", color: PARTIAL, id: "partial" },
+              ...(hasComplete ? [{ value: t("fullYearLegend"), type: "square", color: COMPLETE, id: "complete" }] : []),
+              ...(hasPartial ? [{ value: t("partialYear"), type: "square", color: PARTIAL, id: "partial" }] : []),
             ]}
           />
           {/* A year in which nothing crossed the threshold used to draw no bar

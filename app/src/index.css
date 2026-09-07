@@ -221,6 +221,13 @@ header.masthead {
   font-size: 12.5px;
   line-height: 1.45;
 }
+/* A callout that reports a limitation of the record rather than a headline
+   number, so it reads as a caveat instead of a result. */
+.indicator-callout--warn {
+  border-left-color: #c9a227;
+  background: #fdf8e7;
+  font-weight: 400;
+}
 .indicator-tooltip {
   display: grid;
   gap: 3px;
