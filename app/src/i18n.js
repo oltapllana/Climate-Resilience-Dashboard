@@ -233,6 +233,15 @@ export const STRINGS = {
     pressureTrendAssumption:
       "The rolling mean starts only once 30 observed days are available. Values are station-level pressure, not reduced to sea level.",
 
+    departureBelow:
+      "Most marked departure: {start} to {end}, averaging {mean} {unit} — {delta} {unit} below the long-term mean.",
+    departureAbove:
+      "Most marked departure: {start} to {end}, averaging {mean} {unit} — {delta} {unit} above the long-term mean.",
+    departureObserved:
+      "Every one of those {days} days carries observations, so the swing is measured data rather than a gap in the record.",
+    departurePartial:
+      "Only {observed} of those {days} days carry observations, so part of the swing may reflect the gaps rather than the weather.",
+
     partialMonth: "partly observed month",
     days: "days",
     temperatureAxis: "Temperature (°C)",
@@ -740,6 +749,15 @@ export const STRINGS = {
       "Shtypja e ajrit në këtë stacion qëndron dukshëm nën vlerat e nivelit të detit për shkak të lartësisë së stacionit; këtu ka rëndësi luhatja, jo niveli absolut.",
     pressureTrendAssumption:
       "Mesatarja lëvizëse fillon vetëm kur janë të disponueshme 30 ditë të vëzhguara. Vlerat janë shtypje në nivel stacioni, jo të reduktuara në nivel deti.",
+
+    departureBelow:
+      "Shmangia më e theksuar: {start} deri {end}, mesatarisht {mean} {unit} — {delta} {unit} nën mesataren afatgjate.",
+    departureAbove:
+      "Shmangia më e theksuar: {start} deri {end}, mesatarisht {mean} {unit} — {delta} {unit} mbi mesataren afatgjate.",
+    departureObserved:
+      "Secila nga ato {days} ditë ka vëzhgime, prandaj lëkundja është e dhënë e matur dhe jo boshllëk në seri.",
+    departurePartial:
+      "Vetëm {observed} nga ato {days} ditë kanë vëzhgime, prandaj një pjesë e lëkundjes mund të pasqyrojë boshllëqet e jo motin.",
 
     partialMonth: "muaj i vëzhguar pjesërisht",
     days: "ditë",

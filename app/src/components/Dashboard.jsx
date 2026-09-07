@@ -303,6 +303,7 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
             dailyColor="#8fb4d9"
             trendColor="#c63a2b"
             digits={1}
+            highlightDeparture
             t={t}
           />
           {/* Shtypja 2 */}
