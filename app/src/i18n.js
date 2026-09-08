@@ -291,10 +291,12 @@ export const STRINGS = {
     linearTrend: "Linear trend",
     trendUnavailable: "Too few complete months to fit a trend.",
     basedOnCompleteMonths: "fitted on {n} fully observed months",
+    trendInterval: "95 % CI {low} to {high}",
+    trendNotSeparable: "not distinguishable from zero",
     warmest: "Warmest",
     coldest: "Coldest",
     monthlyTempTrendExplanation:
-      "The dashed red line is an ordinary least-squares fit through the monthly means: it answers whether temperature over this period is rising, falling or flat. The 0 °C line makes months below freezing readable at a glance.",
+      "The dashed red line is a least-squares fit through the monthly departures from each calendar month's own average, drawn back at the level of the series: removing the seasonal cycle first is what stops January and July from deciding the slope. It answers whether temperature over this period is rising, falling or flat. The 0 °C line makes months below freezing readable at a glance.",
     monthlyTempTrendAssumption:
       "The trend is fitted only on calendar months observed end to end, so a half-recorded month cannot tilt it. Over a record this short a slope is a screen, not a confirmed climate trend — the sign matters more than the value.",
 
@@ -504,6 +506,8 @@ export const STRINGS = {
       "A stretch where the band narrows sharply is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
     weakTrendCaution:
       "R² = {r2}: the straight line accounts for only {pct} % of the month-to-month variation, so the slope is a screen for a direction, not a measured rate of warming.",
+    trendIntervalCaution:
+      "The 95 % confidence interval on the slope runs from {low} to {high} °C/year and contains zero: over this record a slope of {slope} °C/year cannot be told apart from no trend at all. R² = {r2} is the same fact seen from the other side — once the seasonal cycle is removed, the line accounts for {pct} % of the month-to-month variation. The interval already allows for the persistence of one month into the next, which counts these {n} months as roughly {eff} independent observations.",
     largestAnomalies: "Largest departures from the monthly normal: {up} in {upMonth}, {down} in {downMonth}.",
     fullYearLegend: "Fully observed year",
     observedWindow: "Observed window",
@@ -827,10 +831,12 @@ export const STRINGS = {
     linearTrend: "Trendi linear",
     trendUnavailable: "Ka shumë pak muaj të plotë për të llogaritur trendin.",
     basedOnCompleteMonths: "llogaritur mbi {n} muaj të vëzhguar plotësisht",
+    trendInterval: "IB 95 % {low} deri {high}",
+    trendNotSeparable: "nuk dallohet nga zeroja",
     warmest: "Më i ngrohti",
     coldest: "Më i ftohti",
     monthlyTempTrendExplanation:
-      "Vija e kuqe me ndërprerje është një regresion linear përmes mesatareve mujore: ajo tregon nëse temperatura gjatë kësaj periudhe është duke u rritur, duke u ulur apo ka mbetur stabile. Vija te 0 °C mundëson leximin e shpejtë të muajve nën zero.",
+      "Vija e kuqe me ndërprerje është një regresion linear përmes devijimeve mujore nga mesatarja e vetë atij muaji kalendarik, e vizatuar sërish në nivelin e serisë: heqja paraprake e ciklit sezonal është ajo që nuk i lejon janarit dhe korrikut ta vendosin pjerrësinë. Ajo tregon nëse temperatura gjatë kësaj periudhe është duke u rritur, duke u ulur apo ka mbetur stabile. Vija te 0 °C mundëson leximin e shpejtë të muajve nën zero.",
     monthlyTempTrendAssumption:
       "Trendi llogaritet vetëm mbi muajt kalendarikë të vëzhguar nga fillimi në fund, prandaj një muaj i regjistruar përgjysmë nuk mund ta anojë atë. Për një periudhë kaq të shkurtër, pjerrësia është tregues paraprak dhe jo trend klimatik i konfirmuar — shenja ka më shumë rëndësi se vlera.",
 
@@ -1040,6 +1046,8 @@ export const STRINGS = {
       "Një segment ku brezi ngushtohet befas është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
     weakTrendCaution:
       "R² = {r2}: vija e drejtë shpjegon vetëm {pct} % të luhatjes mes muajve, prandaj pjerrësia është tregues drejtimi, jo normë e matur e ngrohjes.",
+    trendIntervalCaution:
+      "Intervali i besimit 95 % për pjerrësinë shkon nga {low} deri {high} °C/vit dhe përmban zeron: mbi këtë regjistrim një pjerrësi prej {slope} °C/vit nuk dallohet dot nga mungesa e plotë e trendit. R² = {r2} është i njëjti fakt parë nga ana tjetër — pasi hiqet cikli sezonal, vija shpjegon {pct} % të luhatjes mes muajve. Intervali e merr tashmë parasysh vazhdimësinë e një muaji në tjetrin, e cila i bën këta {n} muaj sa rreth {eff} vëzhgime të pavarura.",
     largestAnomalies: "Devijimet më të mëdha nga norma mujore: {up} në {upMonth}, {down} në {downMonth}.",
     fullYearLegend: "Vit i vëzhguar plotësisht",
     observedWindow: "Periudha e vëzhguar",

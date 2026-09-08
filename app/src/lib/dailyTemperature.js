@@ -73,9 +73,52 @@ export function standardDeviation(values) {
   return Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1));
 }
 
-// Ordinary least squares against decimal year; returns the slope in units/year.
+// The 97.5th percentile of Student's t, so a two-sided 95 % interval can be
+// formed without shipping a statistics library. Cornish-Fisher expansion around
+// the normal quantile; well under a thousandth out for the tens of degrees of
+// freedom a monthly record supplies.
+function tCritical(df) {
+  if (!(df > 0)) return null;
+  const z = 1.959964;
+  return (
+    z +
+    (z ** 3 + z) / (4 * df) +
+    (5 * z ** 5 + 16 * z ** 3 + 3 * z) / (96 * df ** 2) +
+    (3 * z ** 7 + 19 * z ** 5 + 17 * z ** 3 - 15 * z) / (384 * df ** 3)
+  );
+}
+
+// Monthly anomalies are not independent draws: a warm month tends to follow a
+// warm month, so the record carries fewer independent observations than it has
+// points. Left uncorrected, the ordinary standard error of the slope is too
+// small and a trend looks better established than the data can support. The
+// usual remedy is to discount the sample by the lag-1 autocorrelation of the
+// residuals, n_eff = n (1 - r1) / (1 + r1), and spend the degrees of freedom
+// from that instead. Points must arrive in time order for the lag to mean
+// anything, which is how the callers build them.
+function effectiveSampleSize(residuals) {
+  const n = residuals.length;
+  if (n < 4) return { effective: n, lag1: 0 };
+  let lagged = 0;
+  let total = 0;
+  for (let index = 0; index < n; index += 1) {
+    total += residuals[index] ** 2;
+    if (index > 0) lagged += residuals[index] * residuals[index - 1];
+  }
+  if (total === 0) return { effective: n, lag1: 0 };
+  // negative autocorrelation would inflate the sample rather than discount it;
+  // that is not a claim worth making, so it is floored at independence
+  const lag1 = Math.min(Math.max(lagged / total, 0), 0.99);
+  return { effective: Math.max(3, (n * (1 - lag1)) / (1 + lag1)), lag1 };
+}
+
+// Ordinary least squares against decimal year; returns the slope in units/year,
+// with the interval that says whether the slope is separable from zero at all.
+// R² answers a different question — how much of the scatter the line accounts
+// for — and on a short record it can be tiny while the slope is still real, or
+// respectable while the slope is not. The interval is the one to read first.
 export function linearTrend(points) {
-  if (points.length < 3) return { slopePerYear: null, intercept: null, r2: null };
+  if (points.length < 3) return { slopePerYear: null, intercept: null, r2: null, interval: null };
   const meanX = mean(points.map((point) => point.x));
   const meanY = mean(points.map((point) => point.y));
   let numerator = 0;
@@ -84,14 +127,35 @@ export function linearTrend(points) {
     numerator += (x - meanX) * (y - meanY);
     denominator += (x - meanX) ** 2;
   }
-  if (denominator === 0) return { slopePerYear: null, intercept: null, r2: null };
+  if (denominator === 0) return { slopePerYear: null, intercept: null, r2: null, interval: null };
   const slope = numerator / denominator;
   const intercept = meanY - slope * meanX;
   const totalSquares = points.reduce((sum, { y }) => sum + (y - meanY) ** 2, 0);
-  const residualSquares = points.reduce((sum, { x, y }) => sum + (y - (slope * x + intercept)) ** 2, 0);
+  const residuals = points.map(({ x, y }) => y - (slope * x + intercept));
+  const residualSquares = residuals.reduce((sum, value) => sum + value ** 2, 0);
   return {
     slopePerYear: +slope.toFixed(4),
     intercept,
     r2: totalSquares === 0 ? null : +(1 - residualSquares / totalSquares).toFixed(3),
+    interval: slopeInterval(slope, residuals, residualSquares, denominator),
+  };
+}
+
+function slopeInterval(slope, residuals, residualSquares, sxx) {
+  const { effective, lag1 } = effectiveSampleSize(residuals);
+  const df = effective - 2;
+  const critical = tCritical(df);
+  if (!(df > 0) || critical == null || residualSquares === 0) return null;
+  const standardError = Math.sqrt(residualSquares / df / sxx);
+  const margin = critical * standardError;
+  return {
+    low: +(slope - margin).toFixed(3),
+    high: +(slope + margin).toFixed(3),
+    // an interval straddling zero means the record cannot separate this slope
+    // from no trend at all — the statement the reader actually needs
+    separableFromZero: slope - margin > 0 || slope + margin < 0,
+    lag1: +lag1.toFixed(2),
+    effectiveN: Math.round(effective),
+    observations: residuals.length,
   };
 }
