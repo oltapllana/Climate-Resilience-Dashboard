@@ -379,7 +379,7 @@ export const STRINGS = {
     referencePeriod: "Reference period",
     currentYearOverlay: "Year drawn over it",
     seasonalBandBasis:
-      "Bands are the 10th/25th/50th/75th/90th percentile of each day of the year across the {n} reference years ({years}); the most recent year is drawn over them rather than counted in them.",
+      "Bands are the 10th/25th/50th/75th/90th percentile for each day of the year, taken over a {window}-day window centred on that day across the {n} reference years ({years}) — about {samples} values per day — and each percentile curve is then smoothed over {smooth} days. Each window is detrended against the seasonal cycle before it is ranked, so a steep spring does not widen the band on its own. The window is what makes the two bands separate: one value per year would put the 10th and 90th percentile on the record's minimum and maximum. The most recent year is drawn over the bands rather than counted in them.",
     ofTimeExceeded: "of the time equalled or exceeded",
     medianValue: "Median",
     exceedanceAxis: "Percentage of time the value is equalled or exceeded (%)",
@@ -469,7 +469,7 @@ export const STRINGS = {
     seasonalClimatologyExplanation:
       "The same number means different things in April and in August. Comparing the recent year against the band for that day of the year removes the seasonal cycle, so what is left is the part that is actually unusual.",
     seasonalClimatologyAssumption:
-      "With only a few reference years each percentile rests on a handful of values, so the bands are jagged and the 10th and 90th are close to the observed minimum and maximum. They describe this short record, not a climatological normal.",
+      "Each band is the spread of the reference readings around the seasonal level fitted for that day of the year, not the range of the readings themselves. Fitting the level locally is what lets a steep spring and a flat August be described on the same terms.",
 
     durationCurveTitleWaterTemp: "Thermal duration curve — how often is the river warm, mild or cold?",
     durationCurveTitleSalinity: "Salinity duration curve — how often is the river above a use threshold?",
@@ -501,7 +501,7 @@ export const STRINGS = {
     landslideNoCriticalDetail:
       "Across the {years} years of record no 1–5 day window reached the configured intensity-duration threshold. That is a statement about the threshold and this record, not a gap in the data — before the indicator is used operationally, confirm the threshold is the one the local geology calls for.",
     seasonalBandOutageNote:
-      "A stretch where the band collapses toward zero is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
+      "A stretch where the band narrows sharply is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
     weakTrendCaution:
       "R² = {r2}: the straight line accounts for only {pct} % of the month-to-month variation, so the slope is a screen for a direction, not a measured rate of warming.",
     largestAnomalies: "Largest departures from the monthly normal: {up} in {upMonth}, {down} in {downMonth}.",
@@ -532,7 +532,10 @@ export const STRINGS = {
     noChartData: "This chart cannot be drawn",
     trendNotFitted: "No trend fitted — too few fully observed years",
     referenceBandNarrowNote:
-      "With only {years} reference years the percentile bands rest on a handful of values, so they sit close together and close to the observed range.",
+      "With only {years} reference years the bands describe this short record, not a climatological normal — the usual reference period is 30 years. Read them as “what this station has done so far around this time of year”.",
+    windowSampleSize: "Based on {n} reference values from {years} reference year(s)",
+    seasonalBandDepthNote:
+      "The reference spans {years}, but a typical day of the year is backed by only {depth} of those {n} years. Where that is one, the band is the day-to-day scatter of a single year around its own seasonal level rather than a difference between years — it is the normal wobble at this station, not the range the years disagree over.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -912,7 +915,7 @@ export const STRINGS = {
     referencePeriod: "Periudha e referencës",
     currentYearOverlay: "Viti i mbivendosur",
     seasonalBandBasis:
-      "Brezat janë percentilet 10/25/50/75/90 për çdo ditë të vitit gjatë {n} viteve të referencës ({years}); viti i fundit është vizatuar mbi to, jo i përfshirë në to.",
+      "Brezat janë percentilet 10/25/50/75/90 për çdo ditë të vitit, të llogaritura mbi një dritare {window}-ditore me qendër atë ditë gjatë {n} viteve të referencës ({years}) — rreth {samples} vlera për ditë — dhe secila kurbë percentili zbutet mbi {smooth} ditë. Çdo dritareje i hiqet trendi sezonal para renditjes, që një pranverë me ngjitje të shpejtë të mos e zgjerojë brezin vetvetiu. Dritarja është ajo që i ndan dy brezat: me një vlerë të vetme për vit, percentili 10 dhe 90 do të binin mbi minimumin dhe maksimumin e regjistrimit. Viti i fundit është vizatuar mbi brezat, jo i përfshirë në to.",
     ofTimeExceeded: "e kohës me vlerë të barabartë ose më të lartë",
     medianValue: "Mediana",
     exceedanceAxis: "Përqindja e kohës kur vlera barazohet ose tejkalohet (%)",
@@ -1002,7 +1005,7 @@ export const STRINGS = {
     seasonalClimatologyExplanation:
       "I njëjti numër do të thotë gjëra të ndryshme në prill dhe në gusht. Krahasimi i vitit të fundit me brezin e asaj dite të vitit e heq ciklin sezonal, dhe ajo që mbetet është pjesa vërtet e pazakontë.",
     seasonalClimatologyAssumption:
-      "Me vetëm pak vite referencë, çdo percentil mbështetet në një grusht vlerash, prandaj brezat janë të dhëmbëzuar dhe i 10-ti e i 90-ti janë afër minimumit e maksimumit të vëzhguar. Ata përshkruajnë këtë regjistrim të shkurtër, jo një normë klimatike.",
+      "Çdo brez është shpërndarja e vlerave të referencës rreth nivelit sezonal të llogaritur për atë ditë të vitit, jo intervali i vetë vlerave. Llogaritja e nivelit në mënyrë lokale është ajo që lejon një pranverë me ngjitje të shpejtë dhe një gusht të sheshtë të përshkruhen me të njëjtat terma.",
 
     durationCurveTitleWaterTemp: "Kurba termike e kohëzgjatjes — sa shpesh lumi është i ngrohtë, i butë apo i ftohtë?",
     durationCurveTitleSalinity: "Kurba e kohëzgjatjes së kripshmërisë — sa shpesh lumi është mbi një prag përdorimi?",
@@ -1034,7 +1037,7 @@ export const STRINGS = {
     landslideNoCriticalDetail:
       "Gjatë {years} viteve të regjistruara asnjë dritare 1–5 ditore nuk e arriti pragun e konfiguruar intensitet-kohëzgjatje. Kjo është pohim për pragun dhe këtë regjistrim, jo mungesë e të dhënave — para përdorimit operativ, verifikoni që pragu është ai që kërkon gjeologjia lokale.",
     seasonalBandOutageNote:
-      "Një segment ku banda bie drejt zeros është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
+      "Një segment ku brezi ngushtohet befas është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
     weakTrendCaution:
       "R² = {r2}: vija e drejtë shpjegon vetëm {pct} % të luhatjes mes muajve, prandaj pjerrësia është tregues drejtimi, jo normë e matur e ngrohjes.",
     largestAnomalies: "Devijimet më të mëdha nga norma mujore: {up} në {upMonth}, {down} në {downMonth}.",
@@ -1065,7 +1068,10 @@ export const STRINGS = {
     noChartData: "Ky grafik nuk mund të vizatohet",
     trendNotFitted: "Pa trend të llogaritur — shumë pak vite të vëzhguara plotësisht",
     referenceBandNarrowNote:
-      "Me vetëm {years} vite referimi, bandat e përqindjeve mbështeten në pak vlera, prandaj qëndrojnë afër njëra-tjetrës dhe afër intervalit të vëzhguar.",
+      "Me vetëm {years} vite referimi, brezat përshkruajnë këtë regjistrim të shkurtër, jo një normale klimatologjike — periudha e zakonshme e referencës është 30 vjet. Lexojini si “çfarë ka shënuar ky stacion deri tani rreth kësaj periudhe të vitit”.",
+    windowSampleSize: "Bazuar në {n} vlera referimi nga {years} vit(e) referimi",
+    seasonalBandDepthNote:
+      "Referenca shtrihet mbi {years}, por një ditë tipike e vitit mbështetet vetëm në {depth} nga ato {n} vite. Aty ku ky numër është një, brezi është luhatja ditë-për-ditë e një viti të vetëm rreth nivelit të vet sezonal, jo ndryshim mes viteve — është luhatja normale e këtij stacioni, jo intervali ku vitet nuk pajtohen.",
   },
 };
 

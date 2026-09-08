@@ -4,10 +4,14 @@ import { calculateSeasonalBand } from "../lib/seasonalBand.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 
-const OUTER = "#fbe6da";
-const INNER = "#dd8b5c";
-const MEDIAN = "#c1452c";
-const CURRENT = "#1e6f8c";
+// The two bands are nested, so they have to separate on lightness alone: a pale
+// wash for 10-90 and a distinctly deeper fill for 25-75, both drawn opaque so
+// the overlap is one flat colour rather than a muddy blend of two translucent
+// ones.
+const OUTER = "#66cd58";
+const INNER = "#d3752d";
+const MEDIAN = "#96240f";
+const CURRENT = "#12607e";
 
 // first day-of-year of each calendar month in a non-leap year
 const MONTH_STARTS = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
@@ -38,7 +42,13 @@ export default function SeasonalBandChart({
       <div className="indicator-tooltip">
         <strong>{t("dayOfYear")} {row.slot}</strong>
         {row.p50 != null && <span>{t("historicalMedian")}: {format(row.p50)} {unit}</span>}
+        {row.p25 != null && <span>25–75 %: {format(row.p25)} – {format(row.p75)} {unit}</span>}
         {row.p10 != null && <span>10–90 %: {format(row.p10)} – {format(row.p90)} {unit}</span>}
+        {row.samples > 0 && (
+          <span>
+            {t("windowSampleSize").replace("{n}", row.samples).replace("{years}", row.referenceYears)}
+          </span>
+        )}
         {row.current != null && <span>{result.currentYear}: {format(row.current)} {unit}</span>}
       </div>
     );
@@ -48,9 +58,14 @@ export default function SeasonalBandChart({
     result.days.flatMap((row) => [row.p10, row.p90, row.p50, row.current]),
     { unit }
   );
-  // Percentiles taken over a handful of reference years are not a climatology:
-  // one year's sensor outage drags the whole band toward zero for those weeks.
+  // Even pooled over the ±7-day window, percentiles taken over a handful of
+  // reference years are not a climatology: one year's sensor outage drags the
+  // whole band toward zero for those weeks.
   const fewReferenceYears = result.historicalYears.length <= 5;
+  // The reference label can read 2023–2025 while the typical day is backed by a
+  // single year, and the two say very different things about what the band
+  // measures. Only the second one is worth a caveat of its own.
+  const shallowDepth = result.medianYearDepth > 0 && result.medianYearDepth < result.historicalYears.length;
 
   return (
     <section className="card landslide-indicator">
@@ -85,20 +100,33 @@ export default function SeasonalBandChart({
           <Tooltip content={<SeasonTooltip />} />
           <Legend {...topLegendProps} align="left" height={26} />
           <Area dataKey="outerBase" stackId="outer" stroke="none" fill="transparent" legendType="none" isAnimationActive={false} />
-          <Area dataKey="outerBand" stackId="outer" name={`10–90 % (${referenceLabel})`} stroke="none" fill={OUTER} fillOpacity={0.9} isAnimationActive={false} />
+          <Area dataKey="outerBand" stackId="outer" name={`10–90 % (${referenceLabel})`} stroke="none" fill={OUTER} fillOpacity={1} isAnimationActive={false} />
           <Area dataKey="innerBase" stackId="inner" stroke="none" fill="transparent" legendType="none" isAnimationActive={false} />
-          <Area dataKey="innerBand" stackId="inner" name="25–75 %" stroke="none" fill={INNER} fillOpacity={0.75} isAnimationActive={false} />
-          <Line dataKey="p50" name={`${t("historicalMedian")} (${referenceLabel})`} stroke={MEDIAN} strokeWidth={1.8} strokeDasharray="6 4" dot={false} connectNulls isAnimationActive={false} />
+          <Area dataKey="innerBand" stackId="inner" name="25–75 %" stroke="none" fill={INNER} fillOpacity={1} isAnimationActive={false} />
+          <Line dataKey="p50" name={`${t("historicalMedian")} (${referenceLabel})`} stroke={MEDIAN} strokeWidth={2} strokeDasharray="7 4" dot={false} connectNulls isAnimationActive={false} />
           {result.currentYear != null && (
-            <Line dataKey="current" name={`${result.currentYear}`} stroke={CURRENT} strokeWidth={2.2} dot={false} connectNulls={false} isAnimationActive={false} />
+            <Line dataKey="current" name={`${result.currentYear}`} stroke={CURRENT} strokeWidth={2.4} dot={false} connectNulls={false} isAnimationActive={false} />
           )}
         </ComposedChart>
       </ResponsiveContainer>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("seasonalBandBasis").replace("{years}", referenceLabel).replace("{n}", result.historicalYears.length)}
+        {t("seasonalBandBasis")
+          .replace("{years}", referenceLabel)
+          .replace("{n}", result.historicalYears.length)
+          .replace("{window}", result.windowDays)
+          .replace("{samples}", result.medianSampleSize)
+          .replace("{smooth}", result.smoothingDays)}
       </p>
+      {shallowDepth && (
+        <p className="indicator-assumption">
+          {t("seasonalBandDepthNote")
+            .replace("{depth}", result.medianYearDepth)
+            .replace("{n}", result.historicalYears.length)
+            .replace("{years}", referenceLabel)}
+        </p>
+      )}
       {fewReferenceYears && (
         <p className="indicator-assumption">
           {t("referenceBandNarrowNote").replace("{years}", result.historicalYears.length)}{" "}
