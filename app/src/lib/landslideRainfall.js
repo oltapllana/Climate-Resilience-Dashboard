@@ -140,10 +140,26 @@ export function reconstructHourlyRainfall(hourlyRecords) {
 export function calculateLandslideRainfallIndicator(hourlyRecords) {
   const hourly = reconstructHourlyRainfall(hourlyRecords);
   if (!hourly.length) {
-    return { hourly: [], yearly: [], criticalDays: [], durations: LANDSLIDE_DURATIONS_DAYS };
+    return {
+      hourly: [],
+      yearly: [],
+      criticalDays: [],
+      durations: LANDSLIDE_DURATIONS_DAYS,
+      thresholdAudit: null,
+    };
   }
 
   const years = new Set(hourly.map((row) => row.timestamp.getFullYear()));
+  const coverage = new Map();
+  hourly.forEach((row) => {
+    const year = row.timestamp.getFullYear();
+    const date = localDay(row.timestamp);
+    const current = coverage.get(year);
+    coverage.set(year, {
+      first: current?.first == null || date < current.first ? date : current.first,
+      last: current?.last == null || date > current.last ? date : current.last,
+    });
+  });
   const maxima = new Map();
   const criticalDays = new Set();
 
@@ -171,6 +187,7 @@ export function calculateLandslideRainfallIndicator(hourlyRecords) {
   });
 
   const yearly = [...years].sort((a, b) => a - b).map((year) => {
+    const observed = coverage.get(year);
     const values = LANDSLIDE_DURATIONS_DAYS.map((duration) => {
       const maximum = maxima.get(`${year}:${duration}`) ?? null;
       const threshold = landslideThreshold(duration);
@@ -186,13 +203,53 @@ export function calculateLandslideRainfallIndicator(hourlyRecords) {
       values,
       exceeded: values.some((value) => value.exceeded),
       criticalDays: [...criticalDays].filter((day) => Number(day.slice(0, 4)) === year).length,
+      availableStart: observed?.first ?? null,
+      availableEnd: observed?.last ?? null,
+      isPartial:
+        observed?.first !== `${year}-01-01` ||
+        observed?.last !== `${year}-12-31`,
     };
   });
+
+  // Audit the configured curve against the record instead of silently
+  // accepting a threshold that may never be capable of firing. This does not
+  // pretend to be local geotechnical calibration: it answers the reviewer's
+  // concrete health-check question — whether the configured threshold has
+  // ever activated, and how close the strongest observed window came.
+  const durationChecks = LANDSLIDE_DURATIONS_DAYS.map((duration) => {
+    const threshold = landslideThreshold(duration);
+    const observedMaxima = yearly
+      .map((row) => row.values.find((value) => value.duration === duration)?.maximum)
+      .filter((value) => value != null && Number.isFinite(value));
+    const maximum = observedMaxima.length ? Math.max(...observedMaxima) : null;
+    return {
+      duration,
+      maximum,
+      threshold,
+      ratio: maximum == null ? null : maximum / threshold,
+      exceeded: maximum != null && maximum > threshold,
+    };
+  });
+  const closest = durationChecks
+    .filter((row) => row.ratio != null)
+    .reduce((best, row) => (best == null || row.ratio > best.ratio ? row : best), null);
+  const yearsTriggered = yearly.filter((row) => row.criticalDays > 0).length;
+  const thresholdAudit = {
+    triggered: criticalDays.size > 0,
+    criticalDays: criticalDays.size,
+    yearsTriggered,
+    closestDuration: closest?.duration ?? null,
+    closestMaximum: closest?.maximum ?? null,
+    closestThreshold: closest?.threshold ?? null,
+    closestRatio: closest?.ratio ?? null,
+    durationChecks,
+  };
 
   return {
     hourly,
     yearly,
     criticalDays: [...criticalDays].sort(),
     durations: LANDSLIDE_DURATIONS_DAYS,
+    thresholdAudit,
   };
 }

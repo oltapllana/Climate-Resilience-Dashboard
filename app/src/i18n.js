@@ -98,6 +98,14 @@ export const STRINGS = {
       "Hours without readings are treated as dry (zero); sensor outages may therefore be hidden.",
     landslideMethodologyNote:
       "One stored row carries one clock hour, so its value is that hour's depth and is never multiplied by 60. Hours without a logged reading are treated as no rainfall.",
+    landslideThresholdTriggered:
+      "Threshold check: the configured curve activated on {days} day(s) across {years} year(s). The strongest {duration}-day window reached {ratio}% of its threshold, so this threshold is not too high to ever trigger in this record.",
+    landslideThresholdSilent:
+      "Threshold check: no activation was found. The strongest {duration}-day window reached only {ratio}% of its threshold. Treat this indicator as uncalibrated until a locally validated threshold is configured.",
+    landslideFullYearLegend: "Fully observed year",
+    landslidePartialYearLegend: "Partly observed year",
+    landslidePartialYearNote:
+      "* Partly observed year — its count covers only the displayed observation window and is not comparable with a complete year.",
     landslideDepthSourceNote:
       "Source: confirmed rainfall-depth observations in mm; values are never derived from hourly rainfall-intensity means.",
     landslideUnknownHoursWarning:
@@ -637,6 +645,14 @@ export const STRINGS = {
       "Orët pa matje trajtohen si të thata (zero); ndërprerjet e sensorit mund të fshihen.",
     landslideMethodologyNote:
       "Një rresht i ruajtur mbulon një orë të plotë, prandaj vlera e tij është lartësia e asaj ore dhe nuk shumëzohet kurrë me 60. Orët pa matje të regjistruara trajtohen si pa reshje.",
+    landslideThresholdTriggered:
+      "Kontrolli i pragut: kurba e konfiguruar është aktivizuar në {days} ditë gjatë {years} viteve. Dritarja më e fortë {duration}-ditore arriti {ratio}% të pragut, prandaj ky prag nuk është aq i lartë sa të mos aktivizohet kurrë në këtë rekord.",
+    landslideThresholdSilent:
+      "Kontrolli i pragut: nuk u gjet asnjë aktivizim. Dritarja më e fortë {duration}-ditore arriti vetëm {ratio}% të pragut. Ky tregues duhet konsideruar i pakalibruar derisa të konfigurohet një prag i validuar lokalisht.",
+    landslideFullYearLegend: "Vit i vëzhguar plotësisht",
+    landslidePartialYearLegend: "Vit i vëzhguar pjesërisht",
+    landslidePartialYearNote:
+      "* Vit i vëzhguar pjesërisht — numri mbulon vetëm periudhën e paraqitur të vëzhgimit dhe nuk krahasohet me një vit të plotë.",
     landslideDepthSourceNote:
       "Burimi: vëzhgime të konfirmuara të thellësisë së reshjeve në mm; vlerat nuk nxirren nga mesataret orare të intensitetit.",
     landslideUnknownHoursWarning:

@@ -3,6 +3,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   LabelList,
   Legend,
   Line,
@@ -19,6 +20,7 @@ import {
 import { ChartEmptyState, topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 const RED = "#c63a2b";
+const PARTIAL = "#7b8a95";
 // One hue per year rather than six shades of the same grey-blue: the review
 // could not separate the curves from each other or from the legend swatches.
 const MUTED = ["#3f7fb0", "#4c9a6a", "#9d7bc4", "#c98a2e", "#5aa9a2", "#a8577c"];
@@ -53,8 +55,9 @@ function DaysTooltip({ active, payload, t }) {
   const row = payload[0].payload;
   return (
     <div className="indicator-tooltip">
-      <strong>{row.year}</strong>
+      <strong>{row.year}{row.isPartial ? ` · ${t("partialYear")}` : ""}</strong>
       <span>{t("landslideCriticalDays")}: {row.criticalDays}</span>
+      <span>{t("coverage")}: {row.availableStart} – {row.availableEnd}</span>
     </div>
   );
 }
@@ -121,6 +124,15 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
   const yearlyRows = state.status === "ready" ? state.result.yearly : [];
   const noCriticalDays = yearlyRows.length > 0 && yearlyRows.every((row) => !row.criticalDays);
   const coveredYears = yearlyRows.length;
+  const hasPartialYear = yearlyRows.some((row) => row.isPartial);
+  const thresholdAudit = state.status === "ready" ? state.result.thresholdAudit : null;
+  const auditText = thresholdAudit?.closestRatio == null
+    ? null
+    : t(thresholdAudit.triggered ? "landslideThresholdTriggered" : "landslideThresholdSilent")
+        .replace("{days}", thresholdAudit.criticalDays)
+        .replace("{years}", thresholdAudit.yearsTriggered)
+        .replace("{duration}", thresholdAudit.closestDuration)
+        .replace("{ratio}", Math.round(thresholdAudit.closestRatio * 100));
 
   return (
     <section className="card landslide-indicator">
@@ -131,6 +143,11 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
 
       {state.status === "ready" && (
         <>
+          {auditText && (
+            <p className={`indicator-callout${thresholdAudit.triggered ? "" : " indicator-callout--warn"}`}>
+              {auditText}
+            </p>
+          )}
           <div className="indicator-grid">
             <div className="indicator-panel">
               <div className="indicator-heading">
@@ -192,8 +209,8 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                     <Line
                       key={year.year}
                       dataKey={`year_${year.year}`}
-                      name={`${year.year}${year.exceeded ? ` (${t("landslideExceeded")})` : ""}`}
-                      stroke={year.exceeded ? RED : MUTED[index % MUTED.length]}
+                      name={`${year.year}${year.isPartial ? "*" : ""}${year.exceeded ? ` (${t("landslideExceeded")})` : ""}`}
+                      stroke={year.isPartial ? PARTIAL : year.exceeded ? RED : MUTED[index % MUTED.length]}
                       strokeWidth={year.exceeded ? 3 : 1.8}
                       strokeOpacity={year.exceeded ? 1 : 0.72}
                       dot={{ r: year.exceeded ? 4 : 3 }}
@@ -223,7 +240,10 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                 <ResponsiveContainer width="100%" height={360}>
                   <BarChart data={state.result.yearly} margin={{ top: 30, right: 18, left: 24, bottom: 28 }}>
                     <CartesianGrid stroke="#dce5ea" vertical={false} />
-                    <XAxis dataKey="year" />
+                    <XAxis
+                      dataKey="year"
+                      tickFormatter={(year) => `${year}${state.result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`}
+                    />
                     <YAxis
                       width={64}
                       allowDecimals={false}
@@ -231,11 +251,24 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                       label={yAxisLabel(t("landslideBarYAxis"))}
                     />
                     <Tooltip content={<DaysTooltip t={t} />} />
-                    <Bar dataKey="criticalDays" name={t("landslideCriticalDays")} fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}>
+                    <Legend
+                      {...topLegendProps}
+                      payload={[
+                        { value: t("landslideFullYearLegend"), type: "square", color: RED, id: "full" },
+                        ...(hasPartialYear ? [{ value: t("landslidePartialYearLegend"), type: "square", color: PARTIAL, id: "partial" }] : []),
+                      ]}
+                    />
+                    <Bar dataKey="criticalDays" name={t("landslideCriticalDays")} fill={RED} minPointSize={3} radius={[3, 3, 0, 0]}>
+                      {state.result.yearly.map((row) => (
+                        <Cell key={row.year} fill={row.isPartial ? PARTIAL : RED} />
+                      ))}
                       <LabelList dataKey="criticalDays" position="top" fontWeight={700} fill="#17242b" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+              )}
+              {hasPartialYear && (
+                <p className="indicator-assumption">{t("landslidePartialYearNote")}</p>
               )}
             </div>
           </div>

@@ -67,6 +67,31 @@ test("counts a calendar day once when several durations or hours exceed", () => 
   const result = calculateLandslideRainfallIndicator(records);
   assert.equal(result.criticalDays.length, 5);
   assert.equal(result.yearly[0].criticalDays, 5);
+  assert.equal(result.thresholdAudit.triggered, true);
+  assert.equal(result.thresholdAudit.yearsTriggered, 1);
+  assert.ok(result.thresholdAudit.closestRatio > 1);
+});
+
+test("audits a threshold that never triggers instead of silently accepting it", () => {
+  const records = Array.from({ length: 5 * 24 }, (_, hour) => hourlyRecord(hour, 0.1));
+  const result = calculateLandslideRainfallIndicator(records);
+  assert.equal(result.thresholdAudit.triggered, false);
+  assert.equal(result.thresholdAudit.criticalDays, 0);
+  assert.equal(result.thresholdAudit.yearsTriggered, 0);
+  assert.ok(result.thresholdAudit.closestRatio > 0);
+  assert.ok(result.thresholdAudit.closestRatio < 1);
+});
+
+test("marks the first and last incomplete calendar years with exact coverage", () => {
+  const records = Array.from({ length: 48 }, (_, hour) => ({
+    d: new Date(2026, 3, 10, hour).toISOString(),
+    v: 0,
+  }));
+  const result = calculateLandslideRainfallIndicator(records);
+  assert.equal(result.yearly[0].year, 2026);
+  assert.equal(result.yearly[0].availableStart, "2026-04-10");
+  assert.equal(result.yearly[0].availableEnd, "2026-04-11");
+  assert.equal(result.yearly[0].isPartial, true);
 });
 
 test("selects rain_intensity and never rainfall as the source", () => {
