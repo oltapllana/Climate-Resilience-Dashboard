@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, Label, Legend, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyMeanProfile } from "../lib/monthlyMeanProfile.js";
 import { SEASON_DEFINITIONS, seasonOf } from "../lib/seasons.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 // Rrezatimi 2 — monthly means with the between-year standard deviation as
 // whiskers, bars coloured by meteorological season.
@@ -58,7 +59,7 @@ export default function MonthlyMeanProfile({ measurement, unit, title, descripti
             domain={[0, Math.ceil(headroom / 50) * 50]}
             tick={{ fontSize: 11 }}
             tickFormatter={format}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -10 }}
+            label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<MonthTooltip />} cursor={{ fill: "rgba(15,23,42,0.04)" }} />
           <Legend

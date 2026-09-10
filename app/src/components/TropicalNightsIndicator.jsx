@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { calculateTropicalNights } from "../lib/tropicalNights.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const GREEN = "#2f7d32";
 const WARM = "#d8653b";
@@ -82,7 +83,7 @@ export default function TropicalNightsIndicator({ measurement, t }) {
             <LineChart data={chartData} margin={{ top: 25, right: 22, left: 42, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" />
               <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} />
-              <YAxis width={62} tick={{ fontSize: 12 }} tickFormatter={formatTemperature} label={{ value: t("dailyMinimumShort"), angle: -90, position: "insideLeft", offset: -10 }} />
+              <YAxis width={62} tick={{ fontSize: 12 }} tickFormatter={formatTemperature} label={yAxisLabel(t("dailyMinimumShort"))} />
               <Tooltip content={<DailyTooltip t={t} />} />
               <ReferenceLine y={20} stroke="#17242b" strokeDasharray="6 4" label={{ value: "20°C", position: "insideTopRight", fill: "#17242b", fontSize: 11, fontWeight: 700 }} />
               {warmest.date && <ReferenceLine x={warmest.date} stroke={WARM} strokeDasharray="4 4" label={{ value: `${warmest.date} · ${formatTemperature(warmest.temperature)}°C`, position: "top", fill: WARM, fontSize: 10, fontWeight: 700 }} />}

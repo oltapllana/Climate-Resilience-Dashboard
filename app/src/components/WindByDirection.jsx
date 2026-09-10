@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateWindByDirection } from "../lib/windByDirection.js";
+import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
 const BLUE = "#2b7fc4";
 const HIGHLIGHT = "#e8a33d";
@@ -57,13 +58,13 @@ export default function WindByDirection({ directionMeasurement, speedMeasurement
           <XAxis
             dataKey="direction"
             tick={{ fontSize: 11 }}
-            label={{ value: t("windDirectionAxis"), position: "insideBottom", offset: -14, fontSize: 12, fontWeight: 600 }}
+            label={xAxisLabel(t("windDirectionAxis"), -14)}
           />
           <YAxis
             width={64}
             tick={{ fontSize: 12 }}
             tickFormatter={formatSpeed}
-            label={{ value: t("meanSpeedAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+            label={yAxisLabel(t("meanSpeedAxis"))}
           />
           <Tooltip content={<DirectionTooltip t={t} />} />
           <Bar dataKey="meanSpeed" radius={[4, 4, 0, 0]}>

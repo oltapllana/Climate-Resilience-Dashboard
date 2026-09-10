@@ -5,6 +5,7 @@ import {
   LANDSLIDE_THRESHOLD_VALID_HOURS,
   calculateLandslideRainfallIndicator,
   landslideThreshold,
+  MAX_PLAUSIBLE_DAILY_RAINFALL_MM,
   reconstructHourlyRainfall,
   selectRainIntensityHourly,
 } from "./landslideRainfall.js";
@@ -63,7 +64,7 @@ test("calculates annual maxima separately by year and duration", () => {
 });
 
 test("counts a calendar day once when several durations or hours exceed", () => {
-  const records = Array.from({ length: 5 * 24 }, (_, hour) => hourlyRecord(hour, 20));
+  const records = Array.from({ length: 5 * 24 }, (_, hour) => hourlyRecord(hour, 3));
   const result = calculateLandslideRainfallIndicator(records);
   assert.equal(result.criticalDays.length, 5);
   assert.equal(result.yearly[0].criticalDays, 5);
@@ -156,4 +157,21 @@ test("handles invalid and empty hourly datasets safely", () => {
     calculateLandslideRainfallIndicator([{ d: "invalid", v: "bad" }]).yearly,
     []
   );
+});
+
+test("drops a day whose total is physically impossible and keeps the rest", () => {
+  const good = Array.from({ length: 24 }, (_, hour) => hourlyRecord(hour, 2));
+  // one broken reading carries the second day past the limit on its own
+  const broken = [hourlyRecord(24 + 7, MAX_PLAUSIBLE_DAILY_RAINFALL_MM + 1), hourlyRecord(24 + 8, 4)];
+  const rows = reconstructHourlyRainfall([...good, ...broken]);
+  const days = new Set(rows.map((row) => row.timestamp.getDate()));
+  assert.deepEqual([...days], [1]);
+  assert.equal(rows.reduce((sum, row) => sum + row.depthMm, 0), 48);
+});
+
+test("leaves a heavy but possible day untouched", () => {
+  const heavy = Array.from({ length: 24 }, (_, hour) => hourlyRecord(hour, 6));
+  const rows = reconstructHourlyRainfall(heavy);
+  assert.equal(rows.length, 24);
+  assert.equal(rows.reduce((sum, row) => sum + row.depthMm, 0), 144);
 });

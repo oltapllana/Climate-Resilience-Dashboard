@@ -88,7 +88,7 @@ export default function HeatColdEpisodes({ measurement, t }) {
           .replace("{coldThreshold}", COLD_PERIOD_THRESHOLD_C)}
       </p>
       <ResponsiveContainer width="100%" height={Math.max(320, data.length * 42 + 90)}>
-        <BarChart data={data} layout="vertical" margin={{ top: 10, right: 150, left: 128, bottom: 34 }}>
+        <BarChart data={data} layout="vertical" margin={{ top: 10, right: 150, left: 152, bottom: 34 }}>
           <CartesianGrid stroke="#dce5ea" horizontal={false} />
           <XAxis
             type="number"
@@ -104,7 +104,7 @@ export default function HeatColdEpisodes({ measurement, t }) {
             tickLine={false}
             interval={0}
             tick={<EpisodeTick />}
-            label={{ value: t("episodeAxis"), angle: -90, position: "insideLeft", offset: -6, style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }}
+            label={{ value: t("episodeAxis"), angle: -90, position: "insideLeft", offset: -140, style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }}
           />
           <Tooltip content={<EpisodeTooltip />} cursor={{ fill: "rgba(15,23,42,0.05)" }} />
           <Legend

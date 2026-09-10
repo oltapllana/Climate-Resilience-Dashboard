@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { CartesianGrid, ComposedChart, Label, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateThresholdHydrograph } from "../lib/thresholdHydrograph.js";
 import { dayTicks } from "../lib/seriesUtils.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 // Water-level 1 and water-temperature Chart A — the record's most extreme event
 // replayed over shaded threshold bands. The bands are what make a single number
@@ -81,6 +82,7 @@ export default function ThresholdHydrograph({
             tickFormatter={formatTime}
             minTickGap={28}
             tick={{ fontSize: 11 }}
+            padding={{ left: 24, right: 24 }}
           />
           <YAxis
             width={72}
@@ -88,7 +90,7 @@ export default function ThresholdHydrograph({
             allowDataOverflow
             tick={{ fontSize: 11 }}
             tickFormatter={(value) => Number(value).toFixed(digits === 0 ? 0 : 1)}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -10 }}
+            label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<EventTooltip />} />
           <Line type="monotone" dataKey="value" stroke="#c1452c" strokeWidth={2.4} dot={false} isAnimationActive={false} />

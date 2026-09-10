@@ -60,6 +60,7 @@ export default function DiurnalPressureCycle({ measurement, unit, t }) {
             tickFormatter={formatHour}
             interval={1}
             tick={{ fontSize: 11 }}
+            padding={{ left: 20, right: 20 }}
             label={xAxisLabel(t("hourOfDay"), -14)}
           />
           {/* The unit lived in this title all along; a negative offset pushed the

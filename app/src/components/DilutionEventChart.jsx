@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDilutionEvent } from "../lib/dilutionEvent.js";
 import { dayTicks } from "../lib/seriesUtils.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const QUALITY = "#c1452c";
 const LEVEL = "#3d7f9c";
@@ -69,7 +70,7 @@ export default function DilutionEventChart({
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
             tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits })}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -10 }}
+            label={yAxisLabel(axisLabel)}
           />
           <YAxis
             yAxisId="level"

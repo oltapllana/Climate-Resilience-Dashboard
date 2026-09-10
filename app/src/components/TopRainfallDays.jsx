@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CLASSIFIED_BANDS, INTENSITY_BANDS, bandOf, calculateRainyDays } from "../lib/rainyDays.js";
+import { topLegendProps, xAxisLabel } from "./chartLabels.jsx";
 
 // Reshje — the wettest days on record, ranked. Bars carry the same band colours
 // as the yearly rain-day chart, so a red bar means the same thing in both.
@@ -60,14 +61,14 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
         <h2>{t("topRainDaysTitle").replace("{n}", count)}</h2>
         <p>{t("topRainDaysDesc")}</p>
       </div>
-      <ResponsiveContainer width="100%" height={Math.max(330, data.length * 27 + 96)}>
+      <ResponsiveContainer width="100%" height={Math.max(354, data.length * 27 + 120)}>
         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 96, left: 90, bottom: 36 }}>
           <CartesianGrid stroke="#eef2f6" horizontal={false} />
           <XAxis
             type="number"
             domain={[0, Math.ceil(largest * 1.06)]}
             tick={{ fontSize: 10 }}
-            label={{ value: t("dailyRainfallAxis"), position: "insideBottom", offset: -18, fontSize: 12, fontWeight: 600 }}
+            label={xAxisLabel(t("dailyRainfallAxis"), -18)}
           />
           <YAxis
             type="category"
@@ -78,9 +79,11 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
             tick={{ fontSize: 10, fill: "#3f4d57" }}
           />
           <Tooltip content={<DayTooltip />} cursor={{ fill: "rgba(15,23,42,0.05)" }} />
+          {/* topLegendProps reserves a gap under the swatches: the 80 mm
+              marker prints its label at the top of the plot, and at 26px it
+              landed on the "> 80 mm" entry of the legend. */}
           <Legend
-            verticalAlign="top"
-            height={26}
+            {...topLegendProps}
             payload={CLASSIFIED_BANDS.map((band) => ({ value: band.label, type: "square", color: band.color }))}
           />
           {showThreshold && (

@@ -21,6 +21,19 @@ export default function ExceedanceDaysChart({
   const hasComplete = data.some((row) => !row.partial);
   const hasPartial = data.some((row) => row.partial);
 
+  // The monitored-day count is printed inside its own bar. A year with no
+  // exceeding day draws a bar of zero height, and the count then landed on the
+  // share label and the axis zero together — it is dropped whenever the bar is
+  // too short to hold it, and the tooltip still carries the number.
+  function MonitoredDaysLabel({ x, y, width, height, value }) {
+    if (height < 15) return null;
+    return (
+      <text x={x + width / 2} y={y + height - 5} textAnchor="middle" fill="#f8fafc" fontSize="10">
+        n={value}
+      </text>
+    );
+  }
+
   function ExceedanceTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
@@ -79,7 +92,7 @@ export default function ExceedanceDaysChart({
               <Cell key={row.year} fill={row.partial ? PARTIAL : COMPLETE} />
             ))}
             <LabelList dataKey="share" position="top" formatter={(value) => `${value} %`} fontSize={12} fontWeight={700} fill="#334155" />
-            <LabelList dataKey="monitoredDays" position="insideBottom" formatter={(value) => `n=${value}`} fontSize={10} fill="#f8fafc" />
+            <LabelList dataKey="monitoredDays" content={<MonitoredDaysLabel />} />
           </Bar>
         </ComposedChart>
       </ResponsiveContainer>

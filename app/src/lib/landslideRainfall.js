@@ -48,6 +48,22 @@ export function selectRainIntensityHourly(station) {
   return Array.isArray(hourly) ? hourly : [];
 }
 
+// Plausibility limit for one calendar day of rain, in mm.
+//
+// The review flagged daily totals of 719.6 mm at Batllavë, 180 mm on the same
+// chart, 843.9 mm at Kërpimeh and 364.7 mm at Podujevë as impossible, and they
+// are: each is a single logged hour carrying several hundred millimetres on its
+// own, at stations whose rainfall depth has to be rebuilt from the intensity
+// series because they have no gauge. A whole day above this limit is treated as
+// an unusable record and dropped, exactly as a day the sensor never reported.
+// Every other value is left as measured — a day is only ever removed whole, so
+// no figure on any chart is quietly rewritten.
+//
+// 150 mm sits far above anything observed here (Shajkoc's gauge, the one
+// station measuring depth directly, peaks at 55.8 mm for a full day) and still
+// below every value the review objected to.
+export const MAX_PLAUSIBLE_DAILY_RAINFALL_MM = 150;
+
 export const RAINFALL_SOURCE_GAUGE = "gauge";
 export const RAINFALL_SOURCE_INTENSITY = "intensity";
 
@@ -102,6 +118,10 @@ function localDay(date) {
  * that is exactly the depth measured. From the intensity series (kind "avg") it
  * is a proxy that over-states rain, for the reason set out on
  * selectRainfallDepthSource; only the stations without a gauge rely on it.
+ *
+ * Days totalling more than MAX_PLAUSIBLE_DAILY_RAINFALL_MM are dropped whole as
+ * sensor faults — see the constant. Every rainfall chart derives its daily
+ * totals from here, so one filter keeps them all consistent.
  */
 export function reconstructHourlyRainfall(hourlyRecords) {
   if (!Array.isArray(hourlyRecords) || !hourlyRecords.length) return [];
@@ -134,7 +154,19 @@ export function reconstructHourlyRainfall(hourlyRecords) {
       filled: !bucket,
     });
   }
-  return hourly;
+
+  // A day whose total is physically impossible carries a broken reading
+  // somewhere inside it, and there is no way to tell which hour is at fault —
+  // so the day goes out entire rather than being partly rewritten.
+  const dayTotals = new Map();
+  for (const row of hourly) {
+    const day = localDay(row.timestamp);
+    dayTotals.set(day, (dayTotals.get(day) ?? 0) + row.depthMm);
+  }
+  const implausible = new Set(
+    [...dayTotals.entries()].filter(([, total]) => total > MAX_PLAUSIBLE_DAILY_RAINFALL_MM).map(([day]) => day)
+  );
+  return implausible.size ? hourly.filter((row) => !implausible.has(localDay(row.timestamp))) : hourly;
 }
 
 export function calculateLandslideRainfallIndicator(hourlyRecords) {

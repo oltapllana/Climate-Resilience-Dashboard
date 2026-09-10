@@ -140,7 +140,10 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
               <ResponsiveContainer width="100%" height={360}>
                 <ComposedChart data={dailyData} margin={{ top: 22, right: 22, left: 54, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" />
-                  <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} />
+                  {/* the first date label is centred on the first bar, which
+                      sits on the plot edge — without the padding half of it
+                      hangs over the y-axis and lands on its zero tick */}
+                  <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} padding={{ left: 30, right: 30 }} />
                   <YAxis
                     domain={dailyScale.domain}
                     ticks={dailyScale.ticks}

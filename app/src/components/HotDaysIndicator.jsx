@@ -15,7 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { calculateHotDays } from "../lib/hotDays.js";
-import { ChartEmptyState } from "./chartLabels.jsx";
+import { ChartEmptyState, yAxisLabel } from "./chartLabels.jsx";
 
 const HOT = "#c63a2b";
 const WARM = "#f5a742";
@@ -116,7 +116,7 @@ export default function HotDaysIndicator({ measurement, t }) {
                 <p>{t("hotDaysDesc")}</p>
               </div>
               <ResponsiveContainer width="100%" height={360}>
-                <LineChart data={dailyData} margin={{ top: 14, right: 22, left: 44, bottom: 28 }}>
+                <LineChart data={dailyData} margin={{ top: 26, right: 22, left: 44, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" />
                   <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} />
                   <YAxis
@@ -126,7 +126,7 @@ export default function HotDaysIndicator({ measurement, t }) {
                     width={60}
                     tick={{ fontSize: 12 }}
                     tickFormatter={tidyAxisValue}
-                    label={{ value: t("hotDaysAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+                    label={yAxisLabel(t("hotDaysAxis"))}
                   />
                   <Tooltip content={<DailyTooltip t={t} />} />
                   <ReferenceLine y={30} stroke="#17242b" strokeDasharray="6 4" label={{ value: "30°C", position: "insideTopRight", fill: "#17242b", fontSize: 11, fontWeight: 600 }} />

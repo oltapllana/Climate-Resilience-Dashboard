@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateFloodFrequency } from "../lib/floodFrequency.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const CURVE = "#1e6f8c";
 const BAND = "#cfdfe6";
@@ -61,7 +62,7 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
             tickFormatter={(value) => Number(value).toFixed(1)}
-            label={{ value: axisLabel, angle: -90, position: "insideLeft", offset: -12 }}
+            label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<FrequencyTooltip />} />
           <Legend verticalAlign="top" align="left" height={26} />

@@ -65,6 +65,10 @@ function xLabel(value) {
 
 const chartMargin = { top: 8, right: 18, left: 18, bottom: 28 };
 
+// Keeps the first and last category off the plot edge, so their labels are not
+// half-drawn over the y axis and its ticks.
+const edgePadding = { left: 16, right: 16 };
+
 function mean(values) {
   const nums = values.filter((v) => v != null && Number.isFinite(Number(v)));
   if (!nums.length) return null;
@@ -145,7 +149,7 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
             axis instead, and the rose above is the chart that reads properly. */}
         <ComposedChart data={data} margin={chartMargin}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-          <XAxis dataKey="month" tick={{ fontSize: 12 }} label={xLabel(t("month"))} />
+          <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={edgePadding} label={xLabel(t("month"))} />
           <YAxis
             tick={{ fontSize: 12 }}
             width={58}
@@ -208,7 +212,7 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={data} margin={chartMargin}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-          <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} label={xLabel(t("month"))} />
+          <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} padding={edgePadding} label={xLabel(t("month"))} />
           <YAxis
             tick={{ fontSize: 12 }}
             width={58}
@@ -280,7 +284,7 @@ export function AnomaliesChart({ series, t, unit }) {
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data} margin={chartMargin}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-        <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} label={xLabel(t("month"))} />
+        <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} padding={edgePadding} label={xLabel(t("month"))} />
         <YAxis
           tick={{ fontSize: 12 }}
           width={58}

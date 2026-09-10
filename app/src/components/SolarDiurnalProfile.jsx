@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { OPTIMAL_WINDOW, SOLAR_HOUR_REFERENCE_W_M2, calculateSolarDiurnalProfile } from "../lib/solarDiurnalProfile.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const formatHours = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
 const formatHour = (hour) => `${String(hour).padStart(2, "0")}:00`;
@@ -59,6 +60,7 @@ export default function SolarDiurnalProfile({ measurement, t }) {
             dataKey="hour"
             tickFormatter={formatHour}
             interval={1}
+            padding={{ left: 20, right: 20 }}
             tick={{ fontSize: 11 }}
             label={{ value: t("hourOfDay"), position: "insideBottom", offset: -14, fontSize: 12, fontWeight: 600 }}
           />
@@ -66,7 +68,7 @@ export default function SolarDiurnalProfile({ measurement, t }) {
             width={70}
             tick={{ fontSize: 12 }}
             tickFormatter={formatHours}
-            label={{ value: t("solarHoursAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+            label={yAxisLabel(t("solarHoursAxis"))}
           />
           <Tooltip content={<ProfileTooltip />} />
           <Legend

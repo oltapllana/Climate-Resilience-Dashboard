@@ -49,6 +49,13 @@ const QUALITY_DURATION_MARKERS = [10, 90];
 // all three are derived from the same conductivity signal at this station
 const WATER_QUALITY_MEAS = ["salinity", "tds", "conductivity"];
 
+// Withdrawn from the dashboard on review: salinity, TDS and conductivity at
+// Turiqicë are all read off one uncalibrated conductivity probe and no chemist
+// has validated them, so they are not shown at all rather than shown with a
+// caveat. The series stay in the database — deleting this line brings the
+// chips and their charts back once a professional validation exists.
+const HIDDEN_MEAS = new Set(WATER_QUALITY_MEAS);
+
 // Charts A–E carry the measurement's own name in their titles, and Albanian
 // needs it in the genitive, so each series gets its own written-out string
 // rather than one title with the name substituted in.
@@ -97,13 +104,20 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
 
   const name = lang === "sq" ? data.name_sq : data.name_en;
   // chips sorted alphabetically by their label in the active language
-  const measIds = Object.keys(data.measurements).sort((a, b) => {
+  const measIds = Object.keys(data.measurements).filter((id) => !HIDDEN_MEAS.has(id)).sort((a, b) => {
     const la = lang === "sq" ? data.measurements[a].label_sq : data.measurements[a].label_en;
     const lb = lang === "sq" ? data.measurements[b].label_sq : data.measurements[b].label_en;
     return la.localeCompare(lb, lang);
   });
-  const activeMeasId = data.measurements[measId] ? measId : measIds[0];
+  const activeMeasId = measIds.includes(measId) ? measId : measIds[0];
   const m = data.measurements[activeMeasId];
+  if (!m) {
+    return (
+      <div className="card">
+        <div className="empty">{t("noData")}</div>
+      </div>
+    );
+  }
   const measurementName = lang === "sq" ? m.label_sq : m.label_en;
   const isSum = m.kind === "sum";
   const unit = m.unit;
@@ -124,6 +138,14 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
   const windSpeedId = Object.keys(data.measurements).find((id) => id.includes("wind_speed"));
   const windDirId = Object.keys(data.measurements).find((id) => id.includes("wind_dir"));
   const isWindMeas = activeMeasId === windSpeedId || activeMeasId === windDirId;
+  // "Monthly climatology" reads as jargon; each measurement gets the name of
+  // the quantity actually plotted, and everything else keeps the generic term.
+  const climatologyTitleKey =
+    isRainMeas ? "climatologyRainfall" : activeMeasId === "water_level" ? "climatologyLevel" : "climatology";
+  // Both rainfall chips lead to the same charts, so the ranked wettest days
+  // would otherwise be drawn twice for one station. It belongs with rainfall
+  // depth, and only falls to the intensity chip at stations without a gauge.
+  const showTopRainfallDays = activeMeasId === "rainfall" || !data.measurements.rainfall;
 
   return (
     <div>
@@ -184,7 +206,7 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
               <MonthlyRainfallIndicator measurement={rainDepthMeasurement} t={t} />
               {/* Reshje 3 + 5 */}
               <RainyDaysIndicator measurement={rainDepthMeasurement} t={t} />
-              <TopRainfallDays measurement={rainDepthMeasurement} t={t} />
+              {showTopRainfallDays && <TopRainfallDays measurement={rainDepthMeasurement} t={t} />}
             </>
           )}
         </>
@@ -546,10 +568,14 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
       )}
 
       <div className="charts">
-        <div className="card chart-card">
-          <h2>{t("climatology")}</h2>
-          <ClimatologyChart series={m} t={t} unit={unit} isSum={isSum} />
-        </div>
+        {/* Air pressure has no meaningful monthly climatology — twelve bars of
+            934 hPa say nothing — so the panel is dropped there entirely. */}
+        {activeMeasId !== "pressure" && (
+          <div className="card chart-card">
+            <h2>{t(climatologyTitleKey)}</h2>
+            <ClimatologyChart series={m} t={t} unit={unit} isSum={isSum} />
+          </div>
+        )}
 
         <div className="card chart-card">
           <h2>{t("evolution")}</h2>

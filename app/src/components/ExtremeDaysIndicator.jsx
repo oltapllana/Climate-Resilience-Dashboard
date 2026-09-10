@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DEFAULT_EXTREME_COUNT, calculateExtremeDays } from "../lib/extremeDays.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 // Temperatura 5 — the coldest and hottest days on record, cold bars below the
 // zero line and hot bars above it.
@@ -70,7 +71,7 @@ export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTR
             width={68}
             domain={domain}
             tick={{ fontSize: 11 }}
-            label={{ value: t("airTemperatureAxis"), angle: -90, position: "insideLeft", offset: -10 }}
+            label={yAxisLabel(t("airTemperatureAxis"))}
           />
           <Tooltip content={<ExtremeTooltip />} cursor={{ fill: "rgba(15,23,42,0.05)" }} />
           <Legend

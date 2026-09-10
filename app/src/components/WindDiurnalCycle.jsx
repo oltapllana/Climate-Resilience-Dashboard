@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateWindDiurnalCycle } from "../lib/windDiurnalCycle.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const BLUE = "#2b7fc4";
 
@@ -39,6 +40,7 @@ export default function WindDiurnalCycle({ speedMeasurement, t }) {
             dataKey="hour"
             tickFormatter={formatHour}
             interval={1}
+            padding={{ left: 20, right: 20 }}
             tick={{ fontSize: 11 }}
             label={{ value: t("hourOfDay"), position: "insideBottom", offset: -14, fontSize: 12, fontWeight: 600 }}
           />
@@ -46,7 +48,7 @@ export default function WindDiurnalCycle({ speedMeasurement, t }) {
             width={64}
             tick={{ fontSize: 12 }}
             tickFormatter={formatSpeed}
-            label={{ value: t("meanSpeedAxis"), angle: -90, position: "insideLeft", offset: -12 }}
+            label={yAxisLabel(t("meanSpeedAxis"))}
           />
           <Tooltip content={<DiurnalTooltip />} />
           {overallMean != null && (

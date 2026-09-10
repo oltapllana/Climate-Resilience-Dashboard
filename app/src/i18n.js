@@ -14,6 +14,10 @@ export const STRINGS = {
     meteo: "Meteorological",
     overview: "Overview",
     climatology: "Monthly Climatology",
+    // "Monthly climatology" is the meteorologist's term, not the reader's. The
+    // panel is named after what it actually plots for the measurement in view.
+    climatologyRainfall: "Monthly rainfall",
+    climatologyLevel: "Monthly mean water level",
     climatologyDesc: "Average monthly profile across all years of record",
     evolution: "Annual Trend",
     evolutionDesc: "Monthly mean of the selected measurement over time",
@@ -222,7 +226,7 @@ export const STRINGS = {
     solarExtremeDaysAssumption:
       "The daily maximum is the highest single reading of the day, not the daily average. A day with sensor gaps around midday may rank lower than it truly was.",
 
-    solarHeatmapTitle: "Solar radiation map by month and year",
+    solarHeatmapTitle: "Solar radiation by month and year",
     solarHeatmapDesc: "Comparison of mean radiation — a warmer colour means higher radiation.",
     solarHeatmapScale: "Mean radiation (W/m²)",
     solarHeatmapExplanation:
@@ -696,13 +700,15 @@ export const STRINGS = {
     meteo: "Meteorologjike",
     overview: "Përmbledhje",
     climatology: "Klimatologjia mujore",
+    climatologyRainfall: "Sasia mujore e reshjeve",
+    climatologyLevel: "Nivelet mesatare mujore",
     climatologyDesc: "Profili mesatar mujor përgjatë gjithë viteve të regjistrimit",
     evolution: "Trendi vjetor",
     evolutionDesc: "Mesatarja mujore e matjes së zgjedhur me kalimin e kohës",
     anomalies: "Anomalitë mujore",
     anomaliesDesc: "Devijimi i çdo muaji nga mesatarja afatgjate mujore",
     daily: "Ditore",
-    windRose: "Rroza e erës",
+    windRose: "Trëndafili i erës",
     windRoseDesc: "Shpërndarja e drejtimit dhe shpejtësisë së erës",
     windRiskHeatmap: "Harta termike e rrezikut të erës",
     windRiskDescription: "Përqindja e orëve me erë të fortë",
@@ -835,7 +841,7 @@ export const STRINGS = {
     windByDirectionTitle: "Rastisja e shpejtësisë së erës sipas drejtimeve",
     windByDirectionDesc: "Shpejtësia mesatare e erës për secilin nga 16 sektorët e busullës.",
     windByDirectionExplanation:
-      "Ky grafik tregon sa e fortë është era kur fryn nga secili drejtim, ndryshe nga sa shpesh fryn nga aty (atë e tregon rroza e erës).",
+      "Ky grafik tregon sa e fortë është era kur fryn nga secili drejtim, ndryshe nga sa shpesh fryn nga aty (atë e tregon trëndafili i erës).",
     windByDirectionAssumption:
       "Drejtimi dhe shpejtësia çiftohen sipas kohës së njëjtë, prandaj një matje numërohet vetëm kur të dy sensorët kanë regjistruar.",
     windDirectionAxis: "Drejtimi i erës",
@@ -905,7 +911,7 @@ export const STRINGS = {
     solarExtremeDaysAssumption:
       "Maksimumi ditor është matja më e lartë e vetme e asaj dite, jo mesatarja ditore. Një ditë me ndërprerje të sensorit rreth mesditës mund të renditet më poshtë sesa ka qenë në realitet.",
 
-    solarHeatmapTitle: "Harta e rrezatimit diellor sipas muajit dhe vitit",
+    solarHeatmapTitle: "Rrezatimi diellor sipas muajit dhe vitit",
     solarHeatmapDesc: "Krahasimi i rrezatimit mesatar — ngjyra më e ngrohtë = rrezatim më i lartë.",
     solarHeatmapScale: "Rrezatimi mesatar (W/m²)",
     solarHeatmapExplanation:

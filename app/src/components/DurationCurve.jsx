@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDurationCurve } from "../lib/durationCurve.js";
+import { yAxisLabel } from "./chartLabels.jsx";
 
 const EARLY = "#9dbdd0";
 const RECENT = "#1e4f63";
@@ -71,7 +72,7 @@ export default function DurationCurve({
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
             tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits })}
-            label={{ value: useLog ? `${axisLabel} — ${t("logScale")}` : axisLabel, angle: -90, position: "insideLeft", offset: -12 }}
+            label={yAxisLabel(useLog ? `${axisLabel} — ${t("logScale")}` : axisLabel)}
           />
           <Tooltip content={<CurveTooltip />} />
           <Legend verticalAlign="top" align="right" height={26} />

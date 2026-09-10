@@ -37,7 +37,7 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
     return (
       <g transform={`translate(${x},${y})`}>
         <text y={12} textAnchor="middle" fill="#475569" fontSize="11">{head}</text>
-        <text y={25} textAnchor="middle" fill="#475569" fontSize="11">{year}</text>
+        <text y={28} textAnchor="middle" fill="#475569" fontSize="11">{year}</text>
       </g>
     );
   }
@@ -73,7 +73,8 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
             interval={0}
             tickLine={false}
             tick={<YearTick />}
-            height={44}
+            // two stacked lines (month over year) plus the axis title below them
+            height={52}
             label={xAxisLabel(t("periodAxis"), -2)}
           />
           <YAxis
