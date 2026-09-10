@@ -7,6 +7,7 @@ import { yAxisLabel } from "./chartLabels.jsx";
 const RANGE = "#e6b3a3";
 const RANGE_PARTIAL = "#c9d1d6";
 const MEAN = "#c1452c";
+const MEAN_PARTIAL = "#7d8b96";
 const TREND = "#1e6f8c";
 
 // Chart B of the water-quality and water-temperature specs — the primary
@@ -28,7 +29,20 @@ export default function AnnualTrendChart({
   const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   // recharts draws a bar from the axis baseline, so a min–max bar is carried as
   // a transparent pad up to the minimum plus the range above it
-  const data = result.years.map((row) => ({ ...row, base: row.min, band: row.range }));
+  // The mean marker is drawn for every year, but only complete years are joined
+  // up. The bars already grey out a partial year, and the fitted line already
+  // stops short of one, yet the red mean line ran straight through both ends
+  // and tied them into the same series — which is the reading the note under
+  // the chart explicitly denies, since a mean of whatever months happened to be
+  // recorded is not comparable with a full year's.
+  const data = result.years.map((row) => ({
+    ...row,
+    base: row.min,
+    band: row.range,
+    meanComplete: row.partial ? null : row.mean,
+    meanPartial: row.partial ? row.mean : null,
+  }));
+  const hasPartialYear = result.years.some((row) => row.partial);
   const slope = result.trend?.slope ?? null;
   const formatSlope = (value) =>
     `${value > 0 ? "+" : ""}${value.toLocaleString(undefined, { maximumFractionDigits: slopeDigits })} ${unit}/${t("yearsShort")}`;
@@ -99,14 +113,30 @@ export default function AnnualTrendChart({
               joining the annual means reads as one anyway. In that case the
               means are drawn as markers and nothing is joined up. */}
           <Line
-            dataKey="mean"
+            dataKey="meanComplete"
             name={t("annualMean")}
             stroke={slope == null ? "none" : MEAN}
             strokeWidth={2.4}
             dot={{ r: 4, fill: MEAN, strokeWidth: 0 }}
+            connectNulls={false}
             legendType="circle"
             isAnimationActive={false}
           />
+          {hasPartialYear && (
+            <Line
+              dataKey="meanPartial"
+              name={t("partialYearMean")}
+              stroke={MEAN_PARTIAL}
+              strokeWidth={0}
+              // Markers only. Left to itself recharts spans the gap between the
+              // first and last partial year, and a zero width is the wrong
+              // thing to be relying on to keep that off the plot.
+              connectNulls={false}
+              dot={{ r: 4, fill: MEAN_PARTIAL, strokeWidth: 0 }}
+              legendType="circle"
+              isAnimationActive={false}
+            />
+          )}
           {slope != null && (
             <Line
               dataKey="fit"
@@ -123,7 +153,7 @@ export default function AnnualTrendChart({
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("coverage")}: {result.start} – {result.end}. {t("partialYearsNote")}
+        {t("coverage")}: {result.start} – {result.end}. {t("partialYearsTrendNote")}
         {slope == null ? ` ${t("trendNotFitted")}.` : ""}
       </p>
     </section>

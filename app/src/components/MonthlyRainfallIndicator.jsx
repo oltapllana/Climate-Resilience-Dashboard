@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { SEASONS, calculateMonthlyRainfall } from "../lib/monthlyRainfall.js";
+import { SEASONS, calculateMonthlyRainfall, whiskerSpread } from "../lib/monthlyRainfall.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
@@ -14,7 +14,10 @@ function MonthTooltip({ active, payload, t }) {
     <div className="indicator-tooltip">
       <strong>{t("months")[row.month - 1]}</strong>
       <span>{t("mean")}: {formatMm(row.mean)} mm</span>
-      <span>± {formatMm(row.stdDev)} mm ({t("standardDeviation")})</span>
+      <span>{t("middleHalf")}: {formatMm(row.q1)} – {formatMm(row.q3)} mm</span>
+      {/* the whisker deliberately stops at the quartiles, so the years it
+          leaves outside are named here rather than being lost */}
+      <span>{t("fullRange")}: {formatMm(row.lowest)} – {formatMm(row.highest)} mm</span>
       <span>{t("completeYearsCounted")}: {row.yearCount}{row.years.length ? ` (${row.years.join(", ")})` : ""}</span>
     </div>
   );
@@ -27,13 +30,7 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
       result.monthly.map((row) => ({
         ...row,
         label: t("months")[row.month - 1],
-        // A deviation wider than the mean sent the lower whisker to -30 mm and
-        // dragged the whole axis to -100. A month cannot rain a negative depth,
-        // so the downward arm stops at zero and the note below says it does.
-        spread:
-          row.mean == null || row.stdDev == null
-            ? null
-            : [Math.min(row.stdDev, row.mean), row.stdDev],
+        spread: whiskerSpread(row.mean, row.q1, row.q3),
       })),
     [result.monthly, t],
   );
@@ -41,7 +38,7 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
 
   const wettest = result.wettestMonth;
   const scale = axisScale(
-    data.flatMap((row) => (row.mean == null ? [] : [row.mean, row.mean + (row.stdDev ?? 0)])),
+    data.flatMap((row) => (row.mean == null ? [] : [row.mean, row.q1 ?? row.mean, row.q3 ?? row.mean])),
     { unit: "mm", includeZero: true }
   );
 
@@ -78,7 +75,7 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
             {...topLegendProps}
             payload={[
               ...Object.entries(SEASONS).map(([id, season]) => ({ value: t(id), type: "square", color: season.color, id })),
-              { value: t("standardDeviation"), type: "plainline", color: "#4b5563", payload: { strokeWidth: 1.4 }, id: "sd" },
+              { value: t("middleHalf"), type: "plainline", color: "#94a3b8", payload: { strokeWidth: 1.4 }, id: "iqr" },
             ]}
           />
           <Bar dataKey="mean" radius={[4, 4, 0, 0]}>
@@ -101,7 +98,12 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
                 </text>
               ) : null}
             />
-            <ErrorBar dataKey="spread" width={5} strokeWidth={1.4} stroke="#4b5563" direction="y" />
+            {/* Between-year spread reaches 286 mm against a tallest bar of 172,
+                so drawn in the old near-black at 1.4px it read as the subject
+                of the chart and the means became a low band underneath it. The
+                extent is real and stays; only its weight drops, so the bars
+                carry the eye and the whiskers qualify them. */}
+            <ErrorBar dataKey="spread" width={4} strokeWidth={1} stroke="#4b5563" strokeOpacity={0.85} direction="y" />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

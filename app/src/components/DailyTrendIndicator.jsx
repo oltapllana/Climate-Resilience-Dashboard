@@ -6,12 +6,18 @@ import { EdgeLabel, topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 
 // Shared by Rrezatimi 1 (solar radiation) and Shtypja 1 (air pressure): daily
 // values with a 30-day rolling mean over them, plus the long-term average.
-export default function DailyTrendIndicator({ measurement, unit, title, description, axisLabel, explanation, assumption, dailyColor, trendColor, digits = 1, t }) {
+// `highlightDeparture` is opt-in rather than automatic. The largest swing away
+// from the long-term mean is only worth naming where the series has no strong
+// season of its own: on solar radiation the calculation faithfully reports
+// summer, which tells the reader nothing. Pressure has no such cycle, so a run
+// that far from the mean there is genuinely an event.
+export default function DailyTrendIndicator({ measurement, unit, title, description, axisLabel, explanation, assumption, dailyColor, trendColor, digits = 1, highlightDeparture = false, t }) {
   const result = useMemo(() => calculateDailyTrend(measurement?.daily), [measurement]);
   if (!result.daily.length) return null;
 
   const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
   const { longTermMean, maximum, minimum } = result;
+  const departure = highlightDeparture ? result.departure : null;
 
   // Framed on the values actually plotted rather than from zero: at this
   // station pressure varies by ~50 hPa around 930, and a zero-based axis
@@ -82,6 +88,21 @@ export default function DailyTrendIndicator({ measurement, unit, title, descript
         </ComposedChart>
       </ResponsiveContainer>
       <p className="indicator-explanation">{explanation}</p>
+      {departure && (
+        <p className="indicator-explanation">
+          {t(departure.direction === "below" ? "departureBelow" : "departureAbove")
+            .replace("{start}", departure.start)
+            .replace("{end}", departure.end)
+            .replace("{mean}", format(departure.mean))
+            .replace("{delta}", format(Math.abs(departure.delta)))
+            .replace(/\{unit\}/g, unit)}{" "}
+          {departure.complete
+            ? t("departureObserved").replace("{days}", departure.spanDays)
+            : t("departurePartial")
+                .replace("{observed}", departure.observedDays)
+                .replace("{days}", departure.spanDays)}
+        </p>
+      )}
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
         {t("coverage")}: {result.daily[0].date} – {result.daily.at(-1).date}. {t("max")}: {format(maximum.value)} {unit} ({maximum.date}). {t("min")}: {format(minimum.value)} {unit} ({minimum.date}).

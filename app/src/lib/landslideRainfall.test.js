@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  LANDSLIDE_DURATIONS_DAYS,
+  LANDSLIDE_THRESHOLD_VALID_HOURS,
   calculateLandslideRainfallIndicator,
   landslideThreshold,
   reconstructHourlyRainfall,
@@ -65,6 +67,31 @@ test("counts a calendar day once when several durations or hours exceed", () => 
   const result = calculateLandslideRainfallIndicator(records);
   assert.equal(result.criticalDays.length, 5);
   assert.equal(result.yearly[0].criticalDays, 5);
+  assert.equal(result.thresholdAudit.triggered, true);
+  assert.equal(result.thresholdAudit.yearsTriggered, 1);
+  assert.ok(result.thresholdAudit.closestRatio > 1);
+});
+
+test("audits a threshold that never triggers instead of silently accepting it", () => {
+  const records = Array.from({ length: 5 * 24 }, (_, hour) => hourlyRecord(hour, 0.1));
+  const result = calculateLandslideRainfallIndicator(records);
+  assert.equal(result.thresholdAudit.triggered, false);
+  assert.equal(result.thresholdAudit.criticalDays, 0);
+  assert.equal(result.thresholdAudit.yearsTriggered, 0);
+  assert.ok(result.thresholdAudit.closestRatio > 0);
+  assert.ok(result.thresholdAudit.closestRatio < 1);
+});
+
+test("marks the first and last incomplete calendar years with exact coverage", () => {
+  const records = Array.from({ length: 48 }, (_, hour) => ({
+    d: new Date(2026, 3, 10, hour).toISOString(),
+    v: 0,
+  }));
+  const result = calculateLandslideRainfallIndicator(records);
+  assert.equal(result.yearly[0].year, 2026);
+  assert.equal(result.yearly[0].availableStart, "2026-04-10");
+  assert.equal(result.yearly[0].availableEnd, "2026-04-11");
+  assert.equal(result.yearly[0].isPartial, true);
 });
 
 test("selects rain_intensity and never rainfall as the source", () => {
@@ -85,9 +112,41 @@ test("selects rain_intensity and never rainfall as the source", () => {
   );
 });
 
-test("keeps the documented threshold equation unchanged", () => {
-  [1, 2, 3, 4, 5].forEach((duration) => {
-    assert.ok(Math.abs(landslideThreshold(duration) - 8.76 * duration ** -0.61) < 1e-12);
+test("matches the published CADSES curve, evaluated in hours", () => {
+  // Guzzetti et al. (2007), Meteorology and Atmospheric Physics 98:239-267,
+  // Fig. 6C: I = 8.67 D^-0.61 with D in hours. The previous version restated
+  // whatever the source happened to contain, so it went on passing while the
+  // duration was handed over in days.
+  LANDSLIDE_DURATIONS_DAYS.forEach((days) => {
+    const published = 8.67 * (days * 24) ** -0.61;
+    assert.ok(
+      Math.abs(landslideThreshold(days) - published) < 1e-12,
+      `${days} d: ${landslideThreshold(days)} vs published ${published}`,
+    );
+  });
+});
+
+test("asks for a depth of rain this basin can actually reach", () => {
+  // the reviewer's point: six years and not one critical day. Fed days, the
+  // one-day bar stood at 210 mm against a wettest day on record of 83 mm.
+  const oneDayDepth = landslideThreshold(1) * 24;
+  assert.ok(oneDayDepth > 20 && oneDayDepth < 60, `one-day bar is ${oneDayDepth.toFixed(1)} mm`);
+  const fiveDayDepth = landslideThreshold(5) * 120;
+  assert.ok(fiveDayDepth < 100, `five-day bar is ${fiveDayDepth.toFixed(1)} mm`);
+});
+
+test("stays inside the range the published curve was fitted over", () => {
+  const [minHours, maxHours] = LANDSLIDE_THRESHOLD_VALID_HOURS;
+  LANDSLIDE_DURATIONS_DAYS.forEach((days) => {
+    const hours = days * 24;
+    assert.ok(hours >= minHours && hours <= maxHours, `${days} d = ${hours} h is outside ${minHours}-${maxHours} h`);
+  });
+});
+
+test("falls as the window lengthens", () => {
+  const thresholds = LANDSLIDE_DURATIONS_DAYS.map(landslideThreshold);
+  thresholds.slice(1).forEach((value, index) => {
+    assert.ok(value < thresholds[index], `threshold rose from ${thresholds[index]} to ${value}`);
   });
 });
 

@@ -39,7 +39,8 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
     { unit: "°C", allowNegative: true }
   );
 
-  const { slopePerYear, r2 } = result.trend;
+  const { slopePerYear, r2, interval } = result.trend;
+  const signed = (value) => `${value > 0 ? "+" : ""}${format(value)}`;
   const warmest = result.warmestMonth;
   const coldest = result.coldestMonth;
 
@@ -66,8 +67,14 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
         {slopePerYear == null
           ? t("trendUnavailable")
           : <>
-              {t("linearTrend")}: <strong>{slopePerYear > 0 ? "+" : ""}{format(slopePerYear)} °C/{t("yearSingular")}</strong>
-              {r2 == null ? "" : ` (R² = ${r2})`} · {t("basedOnCompleteMonths").replace("{n}", result.completeMonthCount)}
+              {t("linearTrend")}: <strong>{signed(slopePerYear)} °C/{t("yearSingular")}</strong>
+              {interval && ` (${t("trendInterval").replace("{low}", signed(interval.low)).replace("{high}", signed(interval.high))})`}
+              {interval && !interval.separableFromZero && <> · <strong>{t("trendNotSeparable")}</strong></>}
+              {/* R² stays on show — it is the number a reader is likely to ask
+                  for — but after the interval, which is what actually answers
+                  whether there is a trend here at all. */}
+              {r2 != null && <> · R² = {r2}</>}
+              {" · "}{t("basedOnCompleteMonths").replace("{n}", result.completeMonthCount)}
             </>}
         {warmest && coldest && <> · {t("warmest")}: {warmest.month} ({format(warmest.mean)} °C) · {t("coldest")}: {coldest.month} ({format(coldest.mean)} °C)</>}
       </p>
@@ -113,12 +120,28 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
       </ResponsiveContainer>
       <p className="indicator-explanation">{t("monthlyTempTrendExplanation")}</p>
       <p className="indicator-assumption">{t("monthlyTempTrendAssumption")}</p>
-      {/* A fit this weak is worth saying out loud next to the number rather than
-          leaving as an R² the reader has to interpret unaided. */}
-      {r2 != null && r2 < 0.2 && (
+      {/* R² is the wrong statistic to leave a reader alone with here: it answers
+          how much scatter the line accounts for, not whether the slope is
+          separable from zero, and on a short record the two come apart. When
+          the interval straddles zero that is the finding, and it is said in
+          those words rather than left as a number to interpret unaided. */}
+      {interval && !interval.separableFromZero ? (
         <p className="indicator-assumption">
-          {t("weakTrendCaution").replace("{r2}", r2).replace("{pct}", Math.round(r2 * 100))}
+          {t("trendIntervalCaution")
+            .replace("{low}", signed(interval.low))
+            .replace("{high}", signed(interval.high))
+            .replace("{slope}", signed(slopePerYear))
+            .replace("{r2}", r2 ?? "—")
+            .replace("{pct}", r2 == null ? "—" : Math.round(r2 * 100))
+            .replace("{n}", interval.observations)
+            .replace("{eff}", interval.effectiveN)}
         </p>
+      ) : (
+        r2 != null && r2 < 0.2 && (
+          <p className="indicator-assumption">
+            {t("weakTrendCaution").replace("{r2}", r2).replace("{pct}", Math.round(r2 * 100))}
+          </p>
+        )
       )}
       <p className="indicator-assumption">{t("coverage")}: {result.firstDate} – {result.lastDate}.</p>
     </section>

@@ -27,6 +27,15 @@ function fullYear(year, valueFor) {
   return rows;
 }
 
+// Deterministic pseudo-random noise. A repeating pattern will not do here: one
+// whose period matches the percentile window puts an identical multiset of
+// values in every window, and then a flat percentile curve is the data's doing
+// rather than the smoother's.
+function wobble(year, month, day) {
+  const x = Math.sin(year * 10000 + month * 100 + day) * 10000;
+  return (x - Math.floor(x) - 0.5) * 6;
+}
+
 test("duration curve splits the record into an early and a recent window", () => {
   const rows = [2021, 2022, 2023, 2024].flatMap((year) => fullYear(year, () => year - 2020));
   const result = calculateDurationCurve(rows);
@@ -142,6 +151,127 @@ test("seasonal band keeps the latest year out of its own reference bands", () =>
   assert.equal(midYear.p50, 10);
   assert.equal(midYear.p90, 10);
   assert.equal(midYear.current, 50);
+});
+
+test("seasonal band pools a centred window so the quartiles sit inside the 10-90 band", () => {
+  // one value per year per day would make the 10th and 90th percentile the
+  // minimum and the maximum of three numbers, and the two bands identical
+  const rows = [2021, 2022, 2023, 2024].flatMap((year) =>
+    fullYear(year, (month, day) => 10 + wobble(year, month, day))
+  );
+
+  const result = calculateSeasonalBand(rows);
+  assert.equal(result.windowDays, 15);
+  const midYear = result.days.find((day) => day.slot === 100);
+  assert.equal(midYear.samples, 45, "15-day window over 3 reference years");
+  assert.ok(midYear.p10 < midYear.p25, "the outer band has to be visibly wider than the inner one");
+  assert.ok(midYear.p75 < midYear.p90);
+  assert.ok(midYear.p25 < midYear.p50 && midYear.p50 < midYear.p75);
+});
+
+test("seasonal band smooths the percentile staircase without letting the bands cross", () => {
+  const rows = [2021, 2022, 2023, 2024].flatMap((year) =>
+    fullYear(year, (month, day) => 10 + wobble(year, month, day))
+  );
+
+  const result = calculateSeasonalBand(rows);
+  assert.equal(result.smoothingDays, 11);
+  for (const day of result.days) {
+    assert.ok(
+      day.p10 <= day.p25 && day.p25 <= day.p50 && day.p50 <= day.p75 && day.p75 <= day.p90,
+      `percentiles out of order on slot ${day.slot}`
+    );
+  }
+  // a raw order statistic holds flat for days at a time; the smoothed curve
+  // should almost never repeat the previous day's value exactly
+  const repeats = result.days.filter((day, index) => index > 0 && day.p90 === result.days[index - 1].p90);
+  assert.ok(repeats.length < result.days.length * 0.05, `${repeats.length} flat steps left in the 90th percentile`);
+});
+
+test("seasonal band width does not inflate where the seasonal cycle is steep", () => {
+  // The same noise on a flat series and on one climbing 0.1 units a day. A
+  // 15-day window on the ramp carries ~1.4 units of pure seasonal rise, and
+  // ranking the window undetrended lets that rise into the band: measured
+  // without the detrending step the width at day 100 goes from 0.49 to 1.19,
+  // more than doubling on identical spread. The noise is scaled down on
+  // purpose — at full amplitude it swamps the artefact and the test stops
+  // testing anything.
+  const build = (ramp) =>
+    [2021, 2022, 2023, 2024].flatMap((year) =>
+      fullYear(year, (month, day) => {
+        const slot = Math.round((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86400000) + 1;
+        return 10 + ramp * slot + wobble(year, month, day) * 0.1;
+      })
+    );
+
+  const widthAt = (rows, slot) => {
+    const day = calculateSeasonalBand(rows).days.find((entry) => entry.slot === slot);
+    return day.p90 - day.p10;
+  };
+
+  const flat = widthAt(build(0), 100);
+  const steep = widthAt(build(0.1), 100);
+  assert.ok(flat > 0.4, `the flat case needs a band to compare against, got ${flat.toFixed(3)}`);
+  assert.ok(
+    Math.abs(steep - flat) < 0.05,
+    `the ramp changed the band width by ${(steep - flat).toFixed(3)} on identical spread`
+  );
+});
+
+test("seasonal band does not collapse to a hairline on a thin window", () => {
+  // a reference year recorded only every tenth day leaves windows holding two
+  // values. A straight line through two points fits them exactly: every
+  // residual is zero and the correction for the two spent degrees of freedom
+  // divides by zero, so detrending such a window yields a band of no width, or
+  // of no number at all. Below the threshold the window is ranked as it is.
+  const sparse = [];
+  for (const year of [2023, 2024]) {
+    for (let slot = 1; slot <= 360; slot += 10) {
+      const date = new Date(Date.UTC(year, 0, slot));
+      const key = `${year}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+      sparse.push({ d: key, v: 10 + wobble(year, date.getUTCMonth() + 1, date.getUTCDate()) });
+    }
+  }
+
+  const result = calculateSeasonalBand(sparse);
+  const thin = result.days.filter((entry) => entry.samples === 2);
+  assert.ok(thin.length > 0, "the fixture needs windows holding exactly two values");
+  for (const day of thin) {
+    assert.ok(Number.isFinite(day.p10) && Number.isFinite(day.p90), `slot ${day.slot} produced ${day.p10}`);
+  }
+  assert.ok(
+    thin.some((day) => day.p90 - day.p10 > 0.2),
+    "every thin window drew a hairline band"
+  );
+});
+
+test("seasonal band reports how many reference years actually back a typical day", () => {
+  // the label spans 2022-2023, but 2022 only starts in October, so most of the
+  // calendar rests on 2023 alone
+  const rows = [
+    ...fullYear(2023, (month, day) => 10 + wobble(2023, month, day)),
+    ...fullYear(2024, (month, day) => 10 + wobble(2024, month, day)),
+  ];
+  for (let day = 1; day <= 31; day += 1) {
+    rows.push({ d: `2022-10-${pad(day)}`, v: 10 + wobble(2022, 10, day) });
+  }
+
+  const result = calculateSeasonalBand(rows);
+  assert.deepEqual(result.historicalYears, [2022, 2023]);
+  assert.equal(result.medianYearDepth, 1, "a typical day is backed by 2023 alone");
+  // mid-October is the one stretch both reference years cover
+  assert.equal(result.days.find((entry) => entry.slot === 289).referenceYears, 2);
+});
+
+test("seasonal band wraps its window across the turn of the year", () => {
+  const rows = [2021, 2022, 2023, 2024].flatMap((year) => fullYear(year, () => 5));
+  const result = calculateSeasonalBand(rows);
+  // 1 January reaches back into the previous week of December rather than
+  // resting on half a window. 14 of the 15 slots carry values — day 366 is
+  // absent because none of the three reference years is a leap year — so the
+  // count lands on 42 rather than the 24 a truncated window would give.
+  assert.equal(result.days.find((day) => day.slot === 1).samples, 42);
+  assert.equal(result.days.find((day) => day.slot === 365).samples, 42);
 });
 
 test("threshold hydrograph windows the record around its peak", () => {

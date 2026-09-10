@@ -165,6 +165,16 @@ header.masthead {
   line-height: 1.5;
 }
 .indicator-assumption { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+/* Which series the rainfall depths came from. It sits above the charts rather
+   than inside one because it qualifies all of them, and the fallback wording
+   warns that the numbers are an upper bound. */
+.rainfall-source-note {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-left: 3px solid #b9cdd8;
+  border-radius: 0 6px 6px 0;
+  background: #f2f6f8;
+}
 .wind-rose-layout {
   display: grid;
   grid-template-columns: minmax(190px, .7fr) minmax(320px, 1.6fr) minmax(130px, .5fr);
@@ -210,6 +220,13 @@ header.masthead {
   color: var(--text);
   font-size: 12.5px;
   line-height: 1.45;
+}
+/* A callout that reports a limitation of the record rather than a headline
+   number, so it reads as a caveat instead of a result. */
+.indicator-callout--warn {
+  border-left-color: #c9a227;
+  background: #fdf8e7;
+  font-weight: 400;
 }
 .indicator-tooltip {
   display: grid;

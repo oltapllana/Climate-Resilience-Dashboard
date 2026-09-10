@@ -28,13 +28,29 @@ export function calculateExceedanceDays(dailyRecords, { percentile: rank = 90 } 
     byYear.set(year, bucket);
   }
 
+  // A year's window is carried through with it. Where the record covers only
+  // part of a year the share is taken over that part, and at Turiqicë one year
+  // is 29 December days: without saying which days a bar stands for, its 0 %
+  // reads as a calm year rather than as a month nobody expected heat in.
   const years = [...byYear.values()]
     .sort((a, b) => a.year - b.year)
-    .map((bucket) => ({
-      ...bucket,
-      share: (bucket.exceedingDays / bucket.monitoredDays) * 100,
-      partial: coverage.get(bucket.year)?.partial ?? false,
-    }));
+    .map((bucket) => {
+      const span = coverage.get(bucket.year);
+      return {
+        ...bucket,
+        share: (bucket.exceedingDays / bucket.monitoredDays) * 100,
+        partial: span?.partial ?? false,
+        first: span?.first ?? null,
+        last: span?.last ?? null,
+      };
+    });
 
-  return { threshold, years, count: rows.length, start: rows[0].key.slice(0, 10), end: rows.at(-1).key.slice(0, 10) };
+  return {
+    threshold,
+    years,
+    completeYears: years.filter((row) => !row.partial).length,
+    count: rows.length,
+    start: rows[0].key.slice(0, 10),
+    end: rows.at(-1).key.slice(0, 10),
+  };
 }

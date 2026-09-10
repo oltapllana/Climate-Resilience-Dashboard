@@ -87,13 +87,25 @@ export const STRINGS = {
     landslideInvalidUnit: "The configured rainfall-intensity source unit is not supported.",
     landslideCalculationError: "The rainfall indicator could not be calculated.",
     landslideExplanation:
-      "This indicator identifies days when rainfall intensity over a 1–5 day period exceeded the configured landslide threshold. It indicates critical rainfall conditions, not a confirmed landslide occurrence.",
+      "This indicator identifies days when rainfall intensity over a 1–5 day period exceeded the landslide threshold. It indicates critical rainfall conditions, not a confirmed landslide occurrence.",
+    landslideThresholdSource:
+      "Threshold: I = 8.67·D⁻⁰·⁶¹ (I in mm/h, D in hours) — the intensity-duration curve for the CADSES area of central and south-eastern Europe, which covers Kosovo, from Guzzetti, Peruccacci, Rossi & Stark (2007), Meteorology and Atmospheric Physics 98:239–267, Fig. 6C. It is fitted for durations of 5 minutes to 700 hours; the 24–120 hour windows used here sit inside that range. Over 1 to 5 days it works out at 30, 39, 46, 51 and 56 mm of rain.",
+    landslideThresholdCaveat:
+      "The curve is a lower bound: below it landslides are not expected, above it they become possible. Crossing it does not mean one occurred, and the authors state these thresholds will not predict landslides. The published curve also describes the duration of a rainfall event, whereas this chart applies it to fixed 1–5 day windows that may include dry hours, so exceedances here are more frequent than an event-based reading would give.",
     landslideUnitAssumption:
       "Unit assumption: source rainfall intensity is configured as {unit} and converted explicitly to mm/h.",
     landslideZeroFillWarning:
       "Hours without readings are treated as dry (zero); sensor outages may therefore be hidden.",
     landslideMethodologyNote:
-      "Rainfall intensity is interpreted as mm/h according to the indicator specification. Values are averaged within each clock hour. Hours without logged readings are treated as zero rainfall. These are documented reconstruction assumptions.",
+      "One stored row carries one clock hour, so its value is that hour's depth and is never multiplied by 60. Hours without a logged reading are treated as no rainfall.",
+    landslideThresholdTriggered:
+      "Threshold check: the configured curve activated on {days} day(s) across {years} year(s). The strongest {duration}-day window reached {ratio}% of its threshold, so this threshold is not too high to ever trigger in this record.",
+    landslideThresholdSilent:
+      "Threshold check: no activation was found. The strongest {duration}-day window reached only {ratio}% of its threshold. Treat this indicator as uncalibrated until a locally validated threshold is configured.",
+    landslideFullYearLegend: "Fully observed year",
+    landslidePartialYearLegend: "Partly observed year",
+    landslidePartialYearNote:
+      "* Partly observed year — its count covers only the displayed observation window and is not comparable with a complete year.",
     landslideDepthSourceNote:
       "Source: confirmed rainfall-depth observations in mm; values are never derived from hourly rainfall-intensity means.",
     landslideUnknownHoursWarning:
@@ -117,8 +129,14 @@ export const STRINGS = {
     winter: "Winter",
     peak: "Peak",
     coverage: "Coverage",
+    rainfallFromGauge:
+      "Rainfall depth on this page comes from the station's rain gauge (mm, recorded as hourly totals).",
+    rainfallFromIntensity:
+      "This station has no rain gauge, so rainfall depth is rebuilt from the rain-intensity series by reading each logged hour as an hour of rain at that rate. Because the logger records only while it is raining, this over-states how much fell — at Shajkoc, the one station with both, the same method gives about twice the gauge's annual total. Treat the depths below as an upper bound and do not compare them with gauge-based stations.",
     observedDays: "Observed days",
     standardDeviation: "standard deviation",
+    middleHalf: "Middle half of years",
+    fullRange: "Full range across years",
     completeYearsCounted: "Complete years used",
     longTermMean: "Long-term mean",
     rollingMean30: "30-day rolling mean",
@@ -141,12 +159,12 @@ export const STRINGS = {
     strongestWindsFrom: "Strongest winds come from",
 
     monthlyRainfallTitle: "Mean monthly rainfall",
-    monthlyRainfallDesc: "Average rainfall per calendar month with the between-year standard deviation.",
+    monthlyRainfallDesc: "Average rainfall per calendar month, with the middle half of the observed years.",
     monthlyRainfallAxis: "Mean monthly rainfall (mm)",
     monthlyRainfallExplanation:
-      "Bars are coloured by season. The whiskers show the standard deviation between years — a long whisker means that month varies a great deal from one year to the next.",
+      "Bars are coloured by season. The whiskers span the middle half of the observed years — from the lower quartile to the upper quartile — so a long whisker means that month varies a great deal from one year to the next.",
     monthlyRainfallAssumption:
-      "Depths are reconstructed from hourly rainfall intensity (one clock-hour of mm/h equals mm of depth); intensity readings are never summed directly. Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
+      "Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
     highestRainfallMonth: "Month with the highest rainfall",
 
     topRainDaysTitle: "The {n} days with the highest rainfall",
@@ -156,7 +174,7 @@ export const STRINGS = {
     topRainDaysExplanation:
       "Bars use the same colour bands as the yearly chart, so red means the same thing in both. The dashed line marks the 80 mm boundary of the top band.",
     topRainDaysAssumption:
-      "Daily totals are rebuilt from hourly rainfall intensity — one clock-hour of mm/h equals one mm of depth. Intensity readings are never summed directly, which is what produces impossible totals in the thousands of millimetres.",
+      "Daily totals are the sum of the hourly depths for that day. Intensity readings are never summed directly, which is what produces impossible totals in the thousands of millimetres.",
 
     rainyDaysTitle: "Rain days per year",
     rainyDaysDesc: "Days classified by how much rain fell: 30–50, 50–80 and over 80 mm.",
@@ -233,6 +251,15 @@ export const STRINGS = {
     pressureTrendAssumption:
       "The rolling mean starts only once 30 observed days are available. Values are station-level pressure, not reduced to sea level.",
 
+    departureBelow:
+      "Most marked departure: {start} to {end}, averaging {mean} {unit} — {delta} {unit} below the long-term mean.",
+    departureAbove:
+      "Most marked departure: {start} to {end}, averaging {mean} {unit} — {delta} {unit} above the long-term mean.",
+    departureObserved:
+      "Every one of those {days} days carries observations, so the swing is measured data rather than a gap in the record.",
+    departurePartial:
+      "Only {observed} of those {days} days carry observations, so part of the swing may reflect the gaps rather than the weather.",
+
     partialMonth: "partly observed month",
     days: "days",
     temperatureAxis: "Temperature (°C)",
@@ -272,10 +299,12 @@ export const STRINGS = {
     linearTrend: "Linear trend",
     trendUnavailable: "Too few complete months to fit a trend.",
     basedOnCompleteMonths: "fitted on {n} fully observed months",
+    trendInterval: "95 % CI {low} to {high}",
+    trendNotSeparable: "not distinguishable from zero",
     warmest: "Warmest",
     coldest: "Coldest",
     monthlyTempTrendExplanation:
-      "The dashed red line is an ordinary least-squares fit through the monthly means: it answers whether temperature over this period is rising, falling or flat. The 0 °C line makes months below freezing readable at a glance.",
+      "The dashed red line is a least-squares fit through the monthly departures from each calendar month's own average, drawn back at the level of the series: removing the seasonal cycle first is what stops January and July from deciding the slope. It answers whether temperature over this period is rising, falling or flat. The 0 °C line makes months below freezing readable at a glance.",
     monthlyTempTrendAssumption:
       "The trend is fitted only on calendar months observed end to end, so a half-recorded month cannot tilt it. Over a record this short a slope is a screen, not a confirmed climate trend — the sign matters more than the value.",
 
@@ -342,7 +371,10 @@ export const STRINGS = {
     /* ---- water datasets: level, water temperature, salinity, TDS, conductivity ---- */
     partialYear: "partly observed year",
     partialYearsNote:
-      "Years the record does not cover end to end are drawn in grey and left out of any fitted trend — their averages are not comparable with a full year's.",
+      "Years the record does not cover end to end are drawn in grey — their figures rest on part of a year and are not comparable with a full one's.",
+    partialYearsTrendNote:
+      "Years the record does not cover end to end are drawn in grey, left out of the fitted trend, and not joined to the neighbouring years by the mean line — their averages are not comparable with a full year's.",
+    partialYearMean: "Partial-year mean (not in trend)",
     yearsShort: "yr",
     completeYearsCount: "{n} fully observed years",
     eventWindowNote: "The window is ±{days} days around the peak of the record.",
@@ -357,7 +389,7 @@ export const STRINGS = {
     referencePeriod: "Reference period",
     currentYearOverlay: "Year drawn over it",
     seasonalBandBasis:
-      "Bands are the 10th/25th/50th/75th/90th percentile of each day of the year across the {n} reference years ({years}); the most recent year is drawn over them rather than counted in them.",
+      "Bands are the 10th/25th/50th/75th/90th percentile for each day of the year, taken over a {window}-day window centred on that day across the {n} reference years ({years}) — about {samples} values per day — and each percentile curve is then smoothed over {smooth} days. Each window is detrended against the seasonal cycle before it is ranked, so a steep spring does not widen the band on its own. The window is what makes the two bands separate: one value per year would put the 10th and 90th percentile on the record's minimum and maximum. The most recent year is drawn over the bands rather than counted in them.",
     ofTimeExceeded: "of the time equalled or exceeded",
     medianValue: "Median",
     exceedanceAxis: "Percentage of time the value is equalled or exceeded (%)",
@@ -447,7 +479,7 @@ export const STRINGS = {
     seasonalClimatologyExplanation:
       "The same number means different things in April and in August. Comparing the recent year against the band for that day of the year removes the seasonal cycle, so what is left is the part that is actually unusual.",
     seasonalClimatologyAssumption:
-      "With only a few reference years each percentile rests on a handful of values, so the bands are jagged and the 10th and 90th are close to the observed minimum and maximum. They describe this short record, not a climatological normal.",
+      "Each band is the spread of the reference readings around the seasonal level fitted for that day of the year, not the range of the readings themselves. Fitting the level locally is what lets a steep spring and a flat August be described on the same terms.",
 
     durationCurveTitleWaterTemp: "Thermal duration curve — how often is the river warm, mild or cold?",
     durationCurveTitleSalinity: "Salinity duration curve — how often is the river above a use threshold?",
@@ -473,17 +505,22 @@ export const STRINGS = {
     axisTruncatedNote:
       "The vertical axis starts above zero so that the differences between months stay visible.",
     rainfallWhiskerNote:
-      "Where the between-year deviation is wider than the month's own mean, the lower whisker is drawn down to zero: a month cannot record a negative depth of rain.",
+      "Quartiles are read off the years actually recorded, so the whisker can never reach a negative depth and a single exceptional year cannot stretch it. A quarter of the years sit below each whisker and a quarter above; hover a bar for the full range those outer years cover.",
     dualAxisNote:
       "Bars are read against the left-hand axis (rain days), the line against the right-hand one (share of observed days).",
     landslideNoCriticalDetail:
       "Across the {years} years of record no 1–5 day window reached the configured intensity-duration threshold. That is a statement about the threshold and this record, not a gap in the data — before the indicator is used operationally, confirm the threshold is the one the local geology calls for.",
     seasonalBandOutageNote:
-      "A stretch where the band collapses toward zero is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
+      "A stretch where the band narrows sharply is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
     weakTrendCaution:
       "R² = {r2}: the straight line accounts for only {pct} % of the month-to-month variation, so the slope is a screen for a direction, not a measured rate of warming.",
+    trendIntervalCaution:
+      "The 95 % confidence interval on the slope runs from {low} to {high} °C/year and contains zero: over this record a slope of {slope} °C/year cannot be told apart from no trend at all. R² = {r2} is the same fact seen from the other side — once the seasonal cycle is removed, the line accounts for {pct} % of the month-to-month variation. The interval already allows for the persistence of one month into the next, which counts these {n} months as roughly {eff} independent observations.",
     largestAnomalies: "Largest departures from the monthly normal: {up} in {upMonth}, {down} in {downMonth}.",
     fullYearLegend: "Fully observed year",
+    observedWindow: "Observed window",
+    noCompleteYearNote:
+      "No year here was recorded end to end, so every bar is grey — this is what the record holds, not a fault in the chart. Each share is taken over that year's own observed days, and those windows fall in different seasons, so the years are not directly comparable. Hover a bar for the dates it covers.",
     leftAxisSuffix: "left axis",
     rightAxisSuffix: "right axis",
     dailyValueLegend: "Daily value",
@@ -507,7 +544,7 @@ export const STRINGS = {
     noChartData: "This chart cannot be drawn",
     trendNotFitted: "No trend fitted — too few fully observed years",
     referenceBandNarrowNote:
-      "With only {years} reference years the percentile bands rest on a handful of values, so they sit close together and close to the observed range.",
+      "With only {years} reference years the bands describe this short record, not a climatological normal — the usual reference period is 30 years. Read them as ‘what this station has done so far around this time of year’.",
     measurementAxisTemperature: "Temperature (°C)",
     measurementAxisHumidity: "Humidity (%)",
     measurementAxisRainIntensity: "Rainfall intensity (mm/h)",
@@ -643,6 +680,9 @@ export const STRINGS = {
     outsideLongDrySpell: "Not in a ≥7-day spell",
     hotDryMethodology: "Compound ≥7-day counts are included in compound ≥5-day counts. Dry days use daily rainfall below 1 mm; temperature uses daily maximum ≥30°C. Existing missing-rainfall-hour reconstruction assumptions apply. Only overlapping dates from the same station are combined. 2021 and 2026 are partial records.",
     hotDryShareNote: "Percentages show the share of all hot days (daily maximum ≥30°C) that occurred within a ≥5-day dry spell; they do not compare the orange and red bars. * Partial record means the common April–September rainfall and temperature record does not cover the full season.",
+    windowSampleSize: "Based on {n} reference values from {years} reference year(s)",
+    seasonalBandDepthNote:
+      "The reference spans {years}, but a typical day of the year is backed by only {depth} of those {n} years. Where that is one, the band is the day-to-day scatter of a single year around its own seasonal level rather than a difference between years — it is the normal wobble at this station, not the range the years disagree over.",
   },
   sq: {
     appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
@@ -729,13 +769,25 @@ export const STRINGS = {
     landslideInvalidUnit: "Njësia burimore e konfiguruar për intensitetin e reshjeve nuk mbështetet.",
     landslideCalculationError: "Treguesi i reshjeve nuk mund të llogaritej.",
     landslideExplanation:
-      "Ky tregues identifikon ditët kur intensiteti i reshjeve gjatë një periudhe 1–5 ditore tejkaloi pragun e konfiguruar për rrëshqitje të dheut. Ai tregon kushte kritike reshjesh, jo një rrëshqitje të konfirmuar.",
+      "Ky tregues identifikon ditët kur intensiteti i reshjeve gjatë një periudhe 1–5 ditore tejkaloi pragun për rrëshqitje të dheut. Ai tregon kushte kritike reshjesh, jo një rrëshqitje të konfirmuar.",
+    landslideThresholdSource:
+      "Pragu: I = 8.67·D⁻⁰·⁶¹ (I në mm/h, D në orë) — kurba intensitet-kohëzgjatje për zonën CADSES të Evropës qendrore dhe juglindore, që përfshin Kosovën, sipas Guzzetti, Peruccacci, Rossi & Stark (2007), Meteorology and Atmospheric Physics 98:239–267, Fig. 6C. Është e vlefshme për kohëzgjatje nga 5 minuta deri në 700 orë; dritaret 24–120 orëshe të përdorura këtu janë brenda atij intervali. Për 1 deri 5 ditë kjo del 30, 39, 46, 51 dhe 56 mm reshje.",
+    landslideThresholdCaveat:
+      "Kurba është kufi i poshtëm: nën të nuk priten rrëshqitje, mbi të ato bëhen të mundshme. Kalimi i saj nuk do të thotë se ndodhi një rrëshqitje, dhe autorët theksojnë se këto pragje nuk parashikojnë rrëshqitje. Kurba e botuar i referohet kohëzgjatjes së një ngjarjeje shiu, ndërsa ky grafik e zbaton mbi dritare fikse 1–5 ditore që mund të përmbajnë orë të thata, prandaj tejkalimet këtu dalin më të shpeshta se me lexim sipas ngjarjes.",
     landslideUnitAssumption:
       "Supozimi i njësisë: intensiteti burimor i reshjeve është konfiguruar si {unit} dhe konvertohet në mënyrë eksplicite në mm/h.",
     landslideZeroFillWarning:
       "Orët pa matje trajtohen si të thata (zero); ndërprerjet e sensorit mund të fshihen.",
     landslideMethodologyNote:
-      "Intensiteti i reshjeve interpretohet si mm/h sipas specifikimit të treguesit. Vlerat mesatarizohen brenda çdo ore. Orët pa matje të regjistruara trajtohen si zero reshje. Këto janë supozime të dokumentuara të rindërtimit.",
+      "Një rresht i ruajtur mbulon një orë të plotë, prandaj vlera e tij është lartësia e asaj ore dhe nuk shumëzohet kurrë me 60. Orët pa matje të regjistruara trajtohen si pa reshje.",
+    landslideThresholdTriggered:
+      "Kontrolli i pragut: kurba e konfiguruar është aktivizuar në {days} ditë gjatë {years} viteve. Dritarja më e fortë {duration}-ditore arriti {ratio}% të pragut, prandaj ky prag nuk është aq i lartë sa të mos aktivizohet kurrë në këtë rekord.",
+    landslideThresholdSilent:
+      "Kontrolli i pragut: nuk u gjet asnjë aktivizim. Dritarja më e fortë {duration}-ditore arriti vetëm {ratio}% të pragut. Ky tregues duhet konsideruar i pakalibruar derisa të konfigurohet një prag i validuar lokalisht.",
+    landslideFullYearLegend: "Vit i vëzhguar plotësisht",
+    landslidePartialYearLegend: "Vit i vëzhguar pjesërisht",
+    landslidePartialYearNote:
+      "* Vit i vëzhguar pjesërisht — numri mbulon vetëm periudhën e paraqitur të vëzhgimit dhe nuk krahasohet me një vit të plotë.",
     landslideDepthSourceNote:
       "Burimi: vëzhgime të konfirmuara të thellësisë së reshjeve në mm; vlerat nuk nxirren nga mesataret orare të intensitetit.",
     landslideUnknownHoursWarning:
@@ -760,8 +812,14 @@ export const STRINGS = {
     winter: "Dimër",
     peak: "Kulmi",
     coverage: "Mbulueshmëria",
+    rainfallFromGauge:
+      "Lartësia e reshjeve në këtë faqe vjen nga matësi i shiut i stacionit (mm, të regjistruara si totale orare).",
+    rainfallFromIntensity:
+      "Ky stacion nuk ka matës shiu, prandaj lartësia e reshjeve rindërtohet nga seria e intensitetit duke e lexuar çdo orë të regjistruar si një orë shi me atë ritëm. Meqë loguesi shkruan vetëm kur bie shi, kjo e mbivlerëson sasinë — në Shajkoc, i vetmi stacion me të dyja, e njëjta metodë jep rreth dyfishin e totalit vjetor të matësit. Trajtoji vlerat më poshtë si kufi të sipërm dhe mos i krahaso me stacionet që kanë matës.",
     observedDays: "Ditë të vëzhguara",
     standardDeviation: "devijimi standard",
+    middleHalf: "Gjysma e mesme e viteve",
+    fullRange: "Diapazoni i plotë mes viteve",
     completeYearsCounted: "Vite të plota të përdorura",
     longTermMean: "Mesatarja afatgjate",
     rollingMean30: "Mesatarja lëvizëse 30-ditore",
@@ -784,12 +842,12 @@ export const STRINGS = {
     strongestWindsFrom: "Erërat më të forta vijnë më shpesh nga",
 
     monthlyRainfallTitle: "Reshjet mesatare mujore",
-    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik me devijimin standard mes viteve.",
+    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik, me gjysmën e mesme të viteve të vëzhguara.",
     monthlyRainfallAxis: "Reshjet mesatare mujore (mm)",
     monthlyRainfallExplanation:
-      "Shtyllat janë me ngjyra sipas stinës. Vijat vertikale tregojnë devijimin standard mes viteve — një vijë e gjatë do të thotë se ai muaj ndryshon shumë nga viti në vit.",
+      "Shtyllat janë me ngjyra sipas stinës. Vijat vertikale mbulojnë gjysmën e mesme të viteve të vëzhguara — nga çerekshmërorja e poshtme te ajo e sipërme — prandaj një vijë e gjatë do të thotë se ai muaj ndryshon shumë nga viti në vit.",
     monthlyRainfallAssumption:
-      "Lartësitë e reshjeve rindërtohen nga intensiteti orar i reshjeve (një orë e plotë mm/h barazohet me mm lartësi); vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt. Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
+      "Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
     highestRainfallMonth: "Muaji me sasinë më të lartë të reshjeve",
 
     topRainDaysTitle: "{n} ditët me reshjet më të larta",
@@ -799,7 +857,7 @@ export const STRINGS = {
     topRainDaysExplanation:
       "Shtyllat përdorin të njëjtat breza ngjyrash si grafiku vjetor, prandaj e kuqja ka të njëjtin kuptim në të dy. Vija me ndërprerje shënon kufirin 80 mm të brezit më të lartë.",
     topRainDaysAssumption:
-      "Totalet ditore rindërtohen nga intensiteti orar i reshjeve — një orë e plotë mm/h barazohet me një mm lartësi. Vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt, gjë që është shkaku i totaleve të pamundura prej mijëra milimetrash.",
+      "Totalet ditore janë shuma e lartësive orare të asaj dite. Vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt, gjë që është shkaku i totaleve të pamundura prej mijëra milimetrash.",
 
     rainyDaysTitle: "Numri i ditëve me reshje sipas viteve",
     rainyDaysDesc: "Ditët e klasifikuara sipas sasisë së reshjeve: 30–50, 50–80 dhe mbi 80 mm.",
@@ -876,6 +934,15 @@ export const STRINGS = {
     pressureTrendAssumption:
       "Mesatarja lëvizëse fillon vetëm kur janë të disponueshme 30 ditë të vëzhguara. Vlerat janë shtypje në nivel stacioni, jo të reduktuara në nivel deti.",
 
+    departureBelow:
+      "Shmangia më e theksuar: {start} deri {end}, mesatarisht {mean} {unit} — {delta} {unit} nën mesataren afatgjate.",
+    departureAbove:
+      "Shmangia më e theksuar: {start} deri {end}, mesatarisht {mean} {unit} — {delta} {unit} mbi mesataren afatgjate.",
+    departureObserved:
+      "Secila nga ato {days} ditë ka vëzhgime, prandaj lëkundja është e dhënë e matur dhe jo boshllëk në seri.",
+    departurePartial:
+      "Vetëm {observed} nga ato {days} ditë kanë vëzhgime, prandaj një pjesë e lëkundjes mund të pasqyrojë boshllëqet e jo motin.",
+
     partialMonth: "muaj i vëzhguar pjesërisht",
     days: "ditë",
     temperatureAxis: "Temperatura (°C)",
@@ -915,10 +982,12 @@ export const STRINGS = {
     linearTrend: "Trendi linear",
     trendUnavailable: "Ka shumë pak muaj të plotë për të llogaritur trendin.",
     basedOnCompleteMonths: "llogaritur mbi {n} muaj të vëzhguar plotësisht",
+    trendInterval: "IB 95 % {low} deri {high}",
+    trendNotSeparable: "nuk dallohet nga zeroja",
     warmest: "Më i ngrohti",
     coldest: "Më i ftohti",
     monthlyTempTrendExplanation:
-      "Vija e kuqe me ndërprerje është një regresion linear përmes mesatareve mujore: ajo tregon nëse temperatura gjatë kësaj periudhe është duke u rritur, duke u ulur apo ka mbetur stabile. Vija te 0 °C mundëson leximin e shpejtë të muajve nën zero.",
+      "Vija e kuqe me ndërprerje është një regresion linear përmes devijimeve mujore nga mesatarja e vetë atij muaji kalendarik, e vizatuar sërish në nivelin e serisë: heqja paraprake e ciklit sezonal është ajo që nuk i lejon janarit dhe korrikut ta vendosin pjerrësinë. Ajo tregon nëse temperatura gjatë kësaj periudhe është duke u rritur, duke u ulur apo ka mbetur stabile. Vija te 0 °C mundëson leximin e shpejtë të muajve nën zero.",
     monthlyTempTrendAssumption:
       "Trendi llogaritet vetëm mbi muajt kalendarikë të vëzhguar nga fillimi në fund, prandaj një muaj i regjistruar përgjysmë nuk mund ta anojë atë. Për një periudhë kaq të shkurtër, pjerrësia është tregues paraprak dhe jo trend klimatik i konfirmuar — shenja ka më shumë rëndësi se vlera.",
 
@@ -985,7 +1054,10 @@ export const STRINGS = {
     /* ---- të dhënat ujore: niveli, temperatura e ujit, kripshmëria, TDS, përçueshmëria ---- */
     partialYear: "vit i vëzhguar pjesërisht",
     partialYearsNote:
-      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri dhe janë lënë jashtë trendit — mesataret e tyre nuk janë të krahasueshme me ato të një viti të plotë.",
+      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri — shifrat e tyre mbështeten në një pjesë të vitit dhe nuk janë të krahasueshme me ato të një viti të plotë.",
+    partialYearsTrendNote:
+      "Vitet që regjistrimi nuk i mbulon nga fillimi në fund janë vizatuar me gri, janë lënë jashtë trendit dhe nuk lidhen me vitet fqinje nga vija e mesatares — mesataret e tyre nuk janë të krahasueshme me ato të një viti të plotë.",
+    partialYearMean: "Mesatarja e vitit të pjesshëm (jashtë trendit)",
     yearsShort: "vit",
     completeYearsCount: "{n} vite të vëzhguara plotësisht",
     eventWindowNote: "Dritarja është ±{days} ditë rreth kulmit të regjistrimit.",
@@ -1000,7 +1072,7 @@ export const STRINGS = {
     referencePeriod: "Periudha e referencës",
     currentYearOverlay: "Viti i mbivendosur",
     seasonalBandBasis:
-      "Brezat janë percentilet 10/25/50/75/90 për çdo ditë të vitit gjatë {n} viteve të referencës ({years}); viti i fundit është vizatuar mbi to, jo i përfshirë në to.",
+      "Brezat janë percentilet 10/25/50/75/90 për çdo ditë të vitit, të llogaritura mbi një dritare {window}-ditore me qendër atë ditë gjatë {n} viteve të referencës ({years}) — rreth {samples} vlera për ditë — dhe secila kurbë percentili zbutet mbi {smooth} ditë. Çdo dritareje i hiqet trendi sezonal para renditjes, që një pranverë me ngjitje të shpejtë të mos e zgjerojë brezin vetvetiu. Dritarja është ajo që i ndan dy brezat: me një vlerë të vetme për vit, percentili 10 dhe 90 do të binin mbi minimumin dhe maksimumin e regjistrimit. Viti i fundit është vizatuar mbi brezat, jo i përfshirë në to.",
     ofTimeExceeded: "e kohës me vlerë të barabartë ose më të lartë",
     medianValue: "Mediana",
     exceedanceAxis: "Përqindja e kohës kur vlera barazohet ose tejkalohet (%)",
@@ -1090,7 +1162,7 @@ export const STRINGS = {
     seasonalClimatologyExplanation:
       "I njëjti numër do të thotë gjëra të ndryshme në prill dhe në gusht. Krahasimi i vitit të fundit me brezin e asaj dite të vitit e heq ciklin sezonal, dhe ajo që mbetet është pjesa vërtet e pazakontë.",
     seasonalClimatologyAssumption:
-      "Me vetëm pak vite referencë, çdo percentil mbështetet në një grusht vlerash, prandaj brezat janë të dhëmbëzuar dhe i 10-ti e i 90-ti janë afër minimumit e maksimumit të vëzhguar. Ata përshkruajnë këtë regjistrim të shkurtër, jo një normë klimatike.",
+      "Çdo brez është shpërndarja e vlerave të referencës rreth nivelit sezonal të llogaritur për atë ditë të vitit, jo intervali i vetë vlerave. Llogaritja e nivelit në mënyrë lokale është ajo që lejon një pranverë me ngjitje të shpejtë dhe një gusht të sheshtë të përshkruhen me të njëjtat terma.",
 
     durationCurveTitleWaterTemp: "Kurba termike e kohëzgjatjes — sa shpesh lumi është i ngrohtë, i butë apo i ftohtë?",
     durationCurveTitleSalinity: "Kurba e kohëzgjatjes së kripshmërisë — sa shpesh lumi është mbi një prag përdorimi?",
@@ -1116,17 +1188,22 @@ export const STRINGS = {
     axisTruncatedNote:
       "Boshti vertikal fillon mbi zero që dallimet mes muajve të mbeten të dukshme.",
     rainfallWhiskerNote:
-      "Aty ku devijimi mes viteve është më i madh se vetë mesatarja e muajit, krahu i poshtëm vizatohet deri në zero: një muaj nuk mund të regjistrojë thellësi negative reshjesh.",
+      "Çerekshmëroret llogariten nga vitet e regjistruara vërtet, prandaj vija nuk mund të arrijë kurrë thellësi negative dhe një vit i vetëm i jashtëzakonshëm nuk e zgjat dot. Një çerek i viteve qëndron nën çdo vijë dhe një çerek mbi të; kalo mbi shtyllë për diapazonin e plotë që mbulojnë ato vite anësore.",
     dualAxisNote:
       "Barrat lexohen sipas boshtit të majtë (ditët me shi), vija sipas atij të djathtë (pjesa e ditëve të vëzhguara).",
     landslideNoCriticalDetail:
       "Gjatë {years} viteve të regjistruara asnjë dritare 1–5 ditore nuk e arriti pragun e konfiguruar intensitet-kohëzgjatje. Kjo është pohim për pragun dhe këtë regjistrim, jo mungesë e të dhënave — para përdorimit operativ, verifikoni që pragu është ai që kërkon gjeologjia lokale.",
     seasonalBandOutageNote:
-      "Një segment ku banda bie drejt zeros është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
+      "Një segment ku brezi ngushtohet befas është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
     weakTrendCaution:
       "R² = {r2}: vija e drejtë shpjegon vetëm {pct} % të luhatjes mes muajve, prandaj pjerrësia është tregues drejtimi, jo normë e matur e ngrohjes.",
+    trendIntervalCaution:
+      "Intervali i besimit 95 % për pjerrësinë shkon nga {low} deri {high} °C/vit dhe përmban zeron: mbi këtë regjistrim një pjerrësi prej {slope} °C/vit nuk dallohet dot nga mungesa e plotë e trendit. R² = {r2} është i njëjti fakt parë nga ana tjetër — pasi hiqet cikli sezonal, vija shpjegon {pct} % të luhatjes mes muajve. Intervali e merr tashmë parasysh vazhdimësinë e një muaji në tjetrin, e cila i bën këta {n} muaj sa rreth {eff} vëzhgime të pavarura.",
     largestAnomalies: "Devijimet më të mëdha nga norma mujore: {up} në {upMonth}, {down} në {downMonth}.",
     fullYearLegend: "Vit i vëzhguar plotësisht",
+    observedWindow: "Periudha e vëzhguar",
+    noCompleteYearNote:
+      "Asnjë vit këtu nuk është regjistruar nga fillimi në fund, prandaj të gjitha shtyllat janë gri — kështu i ka të dhënat, nuk është defekt i grafikut. Çdo përqindje llogaritet mbi ditët e vëzhguara të atij viti, dhe ato periudha bien në stinë të ndryshme, prandaj vitet nuk janë drejtpërdrejt të krahasueshme. Kalo mbi shtyllë për datat që mbulon.",
     leftAxisSuffix: "boshti i majtë",
     rightAxisSuffix: "boshti i djathtë",
     dailyValueLegend: "Vlera ditore",
@@ -1150,7 +1227,7 @@ export const STRINGS = {
     noChartData: "Ky grafik nuk mund të vizatohet",
     trendNotFitted: "Pa trend të llogaritur — shumë pak vite të vëzhguara plotësisht",
     referenceBandNarrowNote:
-      "Me vetëm {years} vite referimi, bandat e përqindjeve mbështeten në pak vlera, prandaj qëndrojnë afër njëra-tjetrës dhe afër intervalit të vëzhguar.",
+      "Me vetëm {years} vite referimi, brezat përshkruajnë këtë regjistrim të shkurtër, jo një normale klimatologjike — periudha e zakonshme e referencës është 30 vjet. Lexojini si ‘çfarë ka shënuar ky stacion deri tani rreth kësaj periudhe të vitit’.",
     measurementAxisTemperature: "Temperatura (°C)",
     measurementAxisHumidity: "Lagështia (%)",
     measurementAxisRainIntensity: "Intensiteti i reshjeve (mm/h)",
@@ -1290,6 +1367,9 @@ export const STRINGS = {
     outsideLongDrySpell: "Nuk është në një periudhë ≥7-ditore",
     hotDryMethodology: "Numrat e periudhave ≥7-ditore përfshihen në numrat e periudhave ≥5-ditore. Ditët e thata përdorin reshjet ditore nën 1 mm; temperatura përdor maksimumin ditor ≥30°C. Zbatohen supozimet ekzistuese për rindërtimin e orëve të munguara të reshjeve. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Vitet 2021 dhe 2026 janë të pjesshme.",
     hotDryShareNote: "Përqindjet tregojnë pjesën e të gjitha ditëve të nxehta (maksimumi ditor ≥30°C) që ndodhën brenda një periudhe të thatë ≥5-ditore; ato nuk krahasojnë shtyllat portokalli dhe të kuqe. * Regjistrimi i pjesshëm do të thotë se regjistrimi i përbashkët i reshjeve dhe temperaturës prill–shtator nuk mbulon gjithë sezonin.",
+    windowSampleSize: "Bazuar në {n} vlera referimi nga {years} vit(e) referimi",
+    seasonalBandDepthNote:
+      "Referenca shtrihet mbi {years}, por një ditë tipike e vitit mbështetet vetëm në {depth} nga ato {n} vite. Aty ku ky numër është një, brezi është luhatja ditë-për-ditë e një viti të vetëm rreth nivelit të vet sezonal, jo ndryshim mes viteve — është luhatja normale e këtij stacioni, jo intervali ku vitet nuk pajtohen.",
   },
 };
 

@@ -15,6 +15,41 @@ export function seasonOf(month) {
   return seasonDefinitionOf(month)?.id ?? null;
 }
 
+/**
+ * Linear-interpolated quantile of a set of values.
+ */
+export function quantile(values, p) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const position = (sorted.length - 1) * p;
+  const low = Math.floor(position);
+  const high = Math.ceil(position);
+  return sorted[low] + (sorted[high] - sorted[low]) * (position - low);
+}
+
+/**
+ * The arm lengths [down, up] running from the mean bar out to the quartiles.
+ *
+ * This chart used to whisker one standard deviation either side of the mean,
+ * which fails twice on monthly rainfall. A standard deviation assumes the years
+ * sit symmetrically around their mean, and rainfall totals do not: five wet
+ * Septembers of 25, 37, 116, 175 and 301 mm are a long right tail. So the arm
+ * ran wider than the mean itself in four months and put January's lower end at
+ * -6.9 mm, on a quantity that cannot go below zero; and the upward arm reached
+ * 286 mm against a tallest bar of 172, leaving the bars in the bottom 60% of
+ * the plot with the whiskers towering over them.
+ *
+ * Quartiles are read off the observed totals instead. They cannot fall outside
+ * the range actually recorded, so the axis keeps its floor at zero without
+ * being clamped, and the top drops from 286 mm to 240 mm.
+ */
+export function whiskerSpread(mean, q1, q3) {
+  if (![mean, q1, q3].every(Number.isFinite)) return null;
+  // A long enough right tail can drag the mean past Q3; an arm is a length, so
+  // it stops at the bar rather than turning back on itself.
+  return [Math.max(0, mean - q1), Math.max(0, q3 - mean)];
+}
+
 function standardDeviation(values) {
   if (values.length < 2) return 0;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -72,6 +107,10 @@ export function calculateMonthlyRainfall(hourlyRecords) {
       season: seasonOf(month),
       mean: mean == null ? null : +mean.toFixed(1),
       stdDev: values.length ? +standardDeviation(values).toFixed(1) : null,
+      q1: values.length ? +quantile(values, 0.25).toFixed(1) : null,
+      q3: values.length ? +quantile(values, 0.75).toFixed(1) : null,
+      lowest: values.length ? +Math.min(...values).toFixed(1) : null,
+      highest: values.length ? +Math.max(...values).toFixed(1) : null,
       years: complete.map((row) => row.year),
       yearCount: values.length,
     });
