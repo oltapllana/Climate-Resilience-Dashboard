@@ -172,7 +172,7 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
           <PrecipitationExtremesIndicator measurement={data.measurements.rain_intensity} t={t} />
           {hasValidRainIntensityHourly && (
             <>
-              <DrySpellsIndicator measurement={data.measurements.rain_intensity} />
+              <DrySpellsIndicator measurement={data.measurements.rain_intensity} t={t} />
               {/* Reshje 1 */}
               <MonthlyRainfallIndicator measurement={data.measurements.rain_intensity} t={t} />
               {/* Reshje 3 + 5 */}
@@ -349,10 +349,10 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
           {hasValidTemperatureHourly && (
             <>
               {/* Kryesor 6 */}
-              <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} />
+              <FreezeThawCyclesIndicator measurement={data.measurements.air_temp} t={t} />
               {/* Kryesor 9 — scoped to air temperature; it used to render under
                   every measurement that happened to have hourly temperature */}
-              <TropicalNightsIndicator measurement={data.measurements.air_temp} />
+              <TropicalNightsIndicator measurement={data.measurements.air_temp} t={t} />
             </>
           )}
         </>
@@ -517,19 +517,22 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
       {/* ---- Kryesor 5, 7, 8 — need rainfall and temperature together -- */}
       {(isRainMeas || activeMeasId === "air_temp") && hasValidRainIntensityHourly && hasValidTemperatureHourly && (
         <>
-          <HotDaysInDrySpellsIndicator
+            <HotDaysInDrySpellsIndicator
             rainfallMeasurement={data.measurements.rain_intensity}
             temperatureMeasurement={data.measurements.air_temp}
+              t={t}
           />
           <SnowfallIndicator
             stationId={data.id}
             rainfallMeasurement={data.measurements.rain_intensity}
             temperatureMeasurement={data.measurements.air_temp}
+            t={t}
           />
           <HeavySnowfallIndicator
             stationId={data.id}
             rainfallMeasurement={data.measurements.rain_intensity}
             temperatureMeasurement={data.measurements.air_temp}
+            t={t}
           />
         </>
       )}

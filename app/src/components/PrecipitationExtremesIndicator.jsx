@@ -23,32 +23,32 @@ function fmt(value, digits = 3) {
   return value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
-function thresholdLabel(value) {
+function thresholdLabel(value, t) {
   if (value == null) return "";
-  return `99.9th percentile: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })} mm/day`;
+  return `${t("percentileThreshold")}: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })} mm/ditë`;
 }
 
-function DailyTooltip({ active, payload }) {
+function DailyTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
     <div className="indicator-tooltip">
       <strong>{row.date}</strong>
-      <span>Daily total: {fmt(row.total)} mm/day</span>
-      <span>{row.isExtreme ? "Extreme day" : ""}</span>
+      <span>{t("dailyTotal")}: {fmt(row.total)} mm/ditë</span>
+      <span>{row.isExtreme ? t("extremeDay") : ""}</span>
     </div>
   );
 }
 
-function YearTooltip({ active, payload }) {
+function YearTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
     <div className="indicator-tooltip">
       <strong>{row.year}</strong>
-      <span>Maximum date: {row.maxDate}</span>
-      <span>Maximum: {fmt(row.maxTotal)} mm/day</span>
-      <span>Threshold: {fmt(row.threshold)} mm/day</span>
+      <span>{t("maximumDate")}: {row.maxDate}</span>
+      <span>{t("maximum")}: {fmt(row.maxTotal)} mm/ditë</span>
+      <span>{t("threshold")}: {fmt(row.threshold)} mm/ditë</span>
     </div>
   );
 }
@@ -129,8 +129,8 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
           <div className="indicator-grid">
             <div className="indicator-panel">
               <div className="indicator-heading">
-                <h2>Precipitation extremes</h2>
-                <p>This indicator identifies exceptionally wet days relative to the 99.9th percentile of the available daily precipitation record.</p>
+                <h2>{t("precipitationExtremesTitle")}</h2>
+                <p>{t("precipitationExtremesDesc")}</p>
               </div>
               {/* This panel was a LineChart with a Bar inside it. Recharts does
                   not render bars in a LineChart, so the plot came out empty —
@@ -148,9 +148,9 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                     width={72}
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => formatForAxis(value, dailyScale.decimals)}
-                    label={yAxisLabel("Daily precipitation (mm)")}
+                    label={yAxisLabel(t("dailyPrecipitationAxis"))}
                   />
-                  <Tooltip content={<DailyTooltip />} />
+                  <Tooltip content={<DailyTooltip t={t} />} />
                   <Bar dataKey="total" fill="#2b7fc4" minPointSize={(value) => (value ? 1 : 0)} isAnimationActive={false}>
                     {dailyData.map((row, index) => (
                       <Cell key={row.date} fill={row.isExtreme ? RED : MUTED[index % MUTED.length]} />
@@ -163,7 +163,7 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                     y={threshold}
                     stroke="#17242b"
                     strokeDasharray="8 5"
-                    label={<EdgeLabel text={thresholdLabel(threshold)} fill="#17242b" topLimit={26} />}
+                    label={<EdgeLabel text={thresholdLabel(threshold, t)} fill="#17242b" topLimit={26} />}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -171,8 +171,8 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
 
             <div className="indicator-panel">
               <div className="indicator-heading">
-                <h2>Each year's most extreme day</h2>
-                <p>Annual maximum daily totals compared with the same record-wide threshold.</p>
+                <h2>{t("eachYearExtremeDay")}</h2>
+                <p>{t("annualExtremeDayDesc")}</p>
               </div>
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={yearlyData.map((row) => ({ ...row, threshold }))} margin={{ top: 30, right: 18, left: 54, bottom: 28 }}>
@@ -185,10 +185,10 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                     allowDataOverflow
                     width={72}
                     tickFormatter={(value) => formatForAxis(value, yearlyScale.decimals)}
-                    label={yAxisLabel("Annual daily maximum (mm)")}
+                    label={yAxisLabel(t("annualDailyMaximumAxis"))}
                   />
-                  <Tooltip content={<YearTooltip />} />
-                  <Bar dataKey="maxTotal" name="Maximum daily total" radius={[3, 3, 0, 0]}>
+                  <Tooltip content={<YearTooltip t={t} />} />
+                  <Bar dataKey="maxTotal" name={t("maximumDailyTotal")} radius={[3, 3, 0, 0]}>
                     {yearlyData.map((row) => (
                       <Cell key={row.year} fill={row.exceedsThreshold ? RED : "#719eac"} />
                     ))}
@@ -200,22 +200,20 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                     y={threshold}
                     stroke="#17242b"
                     strokeDasharray="8 5"
-                    label={<EdgeLabel text={thresholdLabel(threshold)} fill="#17242b" topLimit={30} />}
+                    label={<EdgeLabel text={thresholdLabel(threshold, t)} fill="#17242b" topLimit={30} />}
                   />
                 </BarChart>
               </ResponsiveContainer>
               {hasPartialYear && (
                 <p className="indicator-assumption">
-                  * Partly observed year — its annual maximum is the wettest day of a part-year and is not comparable with a complete one.
+                  {t("partialWettestDayNote")}
                 </p>
               )}
             </div>
           </div>
 
-          <p className="indicator-explanation">This indicator identifies exceptionally wet days relative to the 99.9th percentile of the available daily precipitation record.</p>
-          <p className="indicator-assumption">
-            The threshold is provisional because it is based on a short record rather than a conventional long-term climate baseline. Hourly values are reconstructed by averaging observations within each clock hour. Hours without logged readings are treated as zero rainfall. Extreme daily totals should be validated against raw gauge volume/tip data before operational use.
-          </p>
+          <p className="indicator-explanation">{t("precipitationExtremesDesc")}</p>
+          <p className="indicator-assumption">{t("precipitationExtremesAssumption")}</p>
         </>
       )}
     </section>

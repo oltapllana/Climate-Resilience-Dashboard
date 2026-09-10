@@ -96,7 +96,8 @@ export default function MonthlyRainfallIndicator({ measurement, t }) {
                   fontSize="11"
                   fontWeight="700"
                 >
-                  Peak: {formatMm(data[index].mean)} mm
+                  <tspan x={x + width / 2} dy="0">{t("peak")}:</tspan>
+                  <tspan x={x + width / 2} dy="13">{formatMm(data[index].mean)} mm</tspan>
                 </text>
               ) : null}
             />

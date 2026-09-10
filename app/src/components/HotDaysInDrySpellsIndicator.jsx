@@ -8,25 +8,25 @@ const GREY = "#8999a2";
 const MONTHS = [["Apr", 0], ["May", 30], ["Jun", 61], ["Jul", 91], ["Aug", 122], ["Sep", 153]];
 const seasonOffset = (date) => Math.round((Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) - Date.UTC(Number(date.slice(0, 4)), 3, 1)) / 86400000);
 
-function TimelineTooltip({ item, x, y }) {
+function TimelineTooltip({ item, x, y, t }) {
   if (!item) return null;
   return (
     <div className="indicator-tooltip" style={{ position: "absolute", left: x + 10, top: y + 10, zIndex: 2, pointerEvents: "none" }}>
       <strong>{item.type === "run" ? item.year : item.date}</strong>
-      {item.type === "run" ? <><span>Start: {item.startDate}</span><span>End: {item.endDate}</span><span>Length: {item.length} days</span><span>{item.length >= 7 ? "≥7-day dry spell" : "≥5-day dry spell"}</span></> : <><span>Daily maximum: {item.temperature.toLocaleString(undefined, { maximumFractionDigits: 1 })}°C</span><span>{item.inside5 ? "Inside qualifying dry spell" : "Outside qualifying dry spell"}</span><span>{item.inside7 ? "Belongs to a ≥7-day spell" : "Not in a ≥7-day spell"}</span></>}
+      {item.type === "run" ? <><span>{t("start")}: {item.startDate}</span><span>{t("end")}: {item.endDate}</span><span>{t("duration")}: {item.length} {t("days")}</span><span>{item.length >= 7 ? t("hotDryRunLong") : t("hotDryRunShort")}</span></> : <><span>{t("dailyMaximumShort")}: {item.temperature.toLocaleString(undefined, { maximumFractionDigits: 1 })}°C</span><span>{item.inside5 ? t("insideDrySpell") : t("outsideDrySpell")}</span><span>{item.inside7 ? t("insideLongDrySpell") : t("outsideLongDrySpell")}</span></>}
     </div>
   );
 }
 
 // Five different marks and not one of them was named: the reader could not tell
 // a small grey circle from a large red one, or an amber block from a salmon one.
-function TimelineLegend() {
+function TimelineLegend({ t }) {
   const items = [
-    { color: "#dce5ea", label: "Common April–September coverage" },
-    { color: AMBER, label: "Dry spell of 5–6 days" },
-    { color: "#e67c73", label: "Dry spell of 7 days or more" },
-    { color: RED, label: "Hot day (≥30 °C) inside a dry spell", round: true },
-    { color: GREY, label: "Hot day outside a dry spell", round: true },
+    { color: "#dce5ea", label: t("commonAprSepCoverage") },
+    { color: AMBER, label: t("hotDryRunShort") },
+    { color: "#e67c73", label: t("hotDryRunLong") },
+    { color: RED, label: t("hotDayInsideDry"), round: true },
+    { color: GREY, label: t("hotDayOutsideDry"), round: true },
   ];
   return (
     <div className="swatch-legend">
@@ -40,7 +40,7 @@ function TimelineLegend() {
   );
 }
 
-function CompoundTimeline({ yearly }) {
+function CompoundTimeline({ yearly, t }) {
   const [tooltip, setTooltip] = useState(null);
   const left = 96;
   const plotWidth = 500;
@@ -49,8 +49,8 @@ function CompoundTimeline({ yearly }) {
   const show = (event, item) => setTooltip({ item, x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY });
   return (
     <div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
-      <TimelineLegend />
-      <svg viewBox={`0 0 620 ${height}`} style={{ width: "100%", height: 360, display: "block" }} role="img" aria-label="Hot days overlaid on dry spells from April through September">
+      <TimelineLegend t={t} />
+      <svg viewBox={`0 0 620 ${height}`} style={{ width: "100%", height: 360, display: "block" }} role="img" aria-label={t("hotDryAria")}>
         {MONTHS.map(([month, offset]) => <g key={month}><line x1={left + offset * scale} x2={left + offset * scale} y1="26" y2={height - 28} stroke="#dce5ea" /><text x={left + offset * scale + 3} y={height - 8} fill="#5f7079" fontSize="11">{month}</text></g>)}
         {yearly.map((row, index) => {
           const y = 40 + index * 42;
@@ -67,7 +67,7 @@ function CompoundTimeline({ yearly }) {
           </g>;
         })}
       </svg>
-      <TimelineTooltip {...tooltip} />
+      <TimelineTooltip {...tooltip} t={t} />
     </div>
   );
 }
@@ -75,25 +75,25 @@ function CompoundTimeline({ yearly }) {
 function CountLabel({ x, y, width, value }) {
   return <text x={x + width / 2} y={y - 8} textAnchor="middle" fill="#17242b" fontSize="10" fontWeight="700">{value}</text>;
 }
-function CompoundTooltip({ active, payload }) {
+function CompoundTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const item = payload[0];
   const row = item.payload;
   const share = row.totalHotDays ? item.value / row.totalHotDays * 100 : 0;
-  return <div className="indicator-tooltip"><strong>{row.year}{row.isPartial ? " (partial)" : ""}</strong><span>{item.dataKey === "compound5Count" ? "Hot days in ≥5-day spells" : "Hot days in ≥7-day spells"}: {item.value}</span><span>Total hot days: {row.totalHotDays}</span><span>Share of all hot days represented by this bar: {Math.round(share)}%</span><span>Common coverage: {row.availableCommonStart} – {row.availableCommonEnd}</span><span>{row.isPartial ? "Partial record" : "Full record"}</span></div>;
+  return <div className="indicator-tooltip"><strong>{row.year}{row.isPartial ? ` (${t("partialRecord")})` : ""}</strong><span>{item.dataKey === "compound5Count" ? t("hotDaysInFiveDry") : t("hotDaysInSevenDry")}: {item.value}</span><span>{t("totalHotDays")}: {row.totalHotDays}</span><span>{t("hotDaysShareDetail")}: {Math.round(share)}%</span><span>{t("commonCoverage")}: {row.availableCommonStart} – {row.availableCommonEnd}</span><span>{row.isPartial ? t("partialRecord") : t("fullRecord")}</span></div>;
 }
 
-export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, temperatureMeasurement }) {
+export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, temperatureMeasurement, t }) {
   const result = useMemo(() => calculateHotDaysInDrySpells(rainfallMeasurement?.hourly, temperatureMeasurement?.hourly), [rainfallMeasurement, temperatureMeasurement]);
   if (!result.yearly.length) return null;
   const completeYearly = result.yearly.filter((row) => !row.isPartial);
   return <section className="card landslide-indicator">
     <div className="indicator-grid">
-      <div className="indicator-panel"><div className="indicator-heading"><h2>Hot days in dry spells</h2><p>Hot days overlaid on qualifying dry runs during April–September.</p></div><CompoundTimeline yearly={result.yearly} /><p className="indicator-assumption">* Partly observed season — the dates under the year give the common rainfall-and-temperature coverage.</p></div>
-      <div className="indicator-panel"><div className="indicator-heading"><h2>Annual compound heat–drought days</h2><p>Compound ≥7-day counts are included in compound ≥5-day counts.</p></div>
-        <ResponsiveContainer width="100%" height={360}><BarChart data={completeYearly} margin={{ top: 42, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" /><YAxis width={64} allowDecimals={false} label={{ value: "Compound days", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip />} /><Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} /><Bar dataKey="compound5Count" name="Hot days in ≥5-day spells" fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name="Hot days in ≥7-day spells (included in ≥5)" fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
+      <div className="indicator-panel"><div className="indicator-heading"><h2>{t("hotDryTitle")}</h2><p>{t("hotDryDesc")}</p></div><CompoundTimeline yearly={result.yearly} t={t} /><p className="indicator-assumption">* {t("partialYearExcluded")}</p></div>
+      <div className="indicator-panel"><div className="indicator-heading"><h2>{t("hotDryAnnualTitle")}</h2><p>{t("hotDryAnnualDesc")}</p></div>
+        <ResponsiveContainer width="100%" height={360}><BarChart data={completeYearly} margin={{ top: 66, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" /><YAxis width={64} allowDecimals={false} label={{ value: t("compoundDaysAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip t={t} />} /><Legend verticalAlign="top" height={48} wrapperStyle={{ fontSize: 12, paddingBottom: 12, lineHeight: "20px" }} /><Bar dataKey="compound5Count" name={t("hotDaysInFiveDry")} fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name={t("hotDaysInSevenDry")} fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
         <div className="compound-share-panel">
-          <strong>Share of hot days in ≥5-day dry spells:</strong>
+          <strong>{t("hotDryShare")}</strong>
           <div className="compound-share-grid">
             {completeYearly.map((row) => (
               <span key={row.year} className="compound-share-item">
@@ -103,10 +103,10 @@ export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, tempe
             ))}
           </div>
         </div>
-        <p className="indicator-assumption">Percentages show the share of all hot days (daily maximum ≥30°C) that occurred within a ≥5-day dry spell; they do not compare the orange and red bars. * Partial record means the common April–September rainfall and temperature record does not cover the full season.</p>
+        <p className="indicator-assumption">{t("hotDryShareNote")}</p>
       </div>
     </div>
-    <p className="indicator-explanation">This indicator counts days when daily maximum temperature reached at least 30°C while the same date belonged to a qualifying dry spell during April–September.</p>
-    <p className="indicator-assumption">Compound ≥7-day counts are included in compound ≥5-day counts. Dry days use daily rainfall below 1 mm; temperature uses daily maximum ≥30°C. Existing missing-rainfall-hour reconstruction assumptions apply. Only overlapping dates from the same station are combined. 2021 and 2026 are partial records.</p>
+    <p className="indicator-explanation">{t("hotDryDesc")}</p>
+    <p className="indicator-assumption">{t("hotDryMethodology")}</p>
   </section>;
 }

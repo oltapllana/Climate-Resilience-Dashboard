@@ -12,27 +12,27 @@ const PARTIAL = "#aab8bf";
 const formatTemperature = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
 const formatCount = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
 
-function DailyTooltip({ active, payload }) {
+function DailyTooltip({ active, payload, t }) {
   if (!active || !payload?.length || payload[0].payload.dailyMinimum == null) return null;
   const row = payload[0].payload;
   return (
     <div className="indicator-tooltip">
       <strong>{row.date}</strong>
-      <span>Daily minimum: {formatTemperature(row.dailyMinimum)} °C</span>
-      <span>{row.qualifying ? "Qualifying tropical night" : "Not qualifying"}</span>
+      <span>{t("dailyMinimumShort")}: {formatTemperature(row.dailyMinimum)} °C</span>
+      <span>{row.qualifying ? t("qualifyingTropicalNight") : t("notQualifying")}</span>
     </div>
   );
 }
 
-function AnnualTooltip({ active, payload }) {
+function AnnualTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
     <div className="indicator-tooltip">
       <strong>{row.year}</strong>
-      <span>{row.count} tropical {row.count === 1 ? "night" : "nights"}</span>
-      <span>Coverage: {row.availableStart} – {row.availableEnd}</span>
-      <span>{row.isPartial ? "Partial record" : "Full calendar-year coverage"}</span>
+      <span>{row.count} {row.count === 1 ? t("tropicalNight") : t("tropicalNights")}</span>
+      <span>{t("coverage")}: {row.availableStart} – {row.availableEnd}</span>
+      <span>{row.isPartial ? t("partialRecord") : t("fullCalendarYearCoverage")}</span>
       <span>{row.monthlyCounts.map((month) => `${month.month.slice(5)}: ${month.count}`).join(" · ")}</span>
     </div>
   );
@@ -61,7 +61,7 @@ function withMissingGapMarkers(daily) {
   return chart;
 }
 
-export default function TropicalNightsIndicator({ measurement }) {
+export default function TropicalNightsIndicator({ measurement, t }) {
   const result = useMemo(() => calculateTropicalNights(measurement?.hourly), [measurement]);
   const chartData = useMemo(() => withMissingGapMarkers(result.dailyMinimumSeries), [result.dailyMinimumSeries]);
   if (!result.dailyMinimumSeries.length) return null;
@@ -75,15 +75,15 @@ export default function TropicalNightsIndicator({ measurement }) {
       <div className="indicator-grid">
         <div className="indicator-panel">
           <div className="indicator-heading">
-            <h2>Tropical nights</h2>
-            <p>Observed daily minimum temperature across the full record.</p>
+            <h2>{t("tropicalNightsTitle")}</h2>
+            <p>{t("tropicalNightsDesc")}</p>
           </div>
           <ResponsiveContainer width="100%" height={360}>
             <LineChart data={chartData} margin={{ top: 25, right: 22, left: 42, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" />
               <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} />
-              <YAxis width={62} tick={{ fontSize: 12 }} tickFormatter={formatTemperature} label={{ value: "Daily minimum (°C)", angle: -90, position: "insideLeft", offset: -10 }} />
-              <Tooltip content={<DailyTooltip />} />
+              <YAxis width={62} tick={{ fontSize: 12 }} tickFormatter={formatTemperature} label={{ value: t("dailyMinimumShort"), angle: -90, position: "insideLeft", offset: -10 }} />
+              <Tooltip content={<DailyTooltip t={t} />} />
               <ReferenceLine y={20} stroke="#17242b" strokeDasharray="6 4" label={{ value: "20°C", position: "insideTopRight", fill: "#17242b", fontSize: 11, fontWeight: 700 }} />
               {warmest.date && <ReferenceLine x={warmest.date} stroke={WARM} strokeDasharray="4 4" label={{ value: `${warmest.date} · ${formatTemperature(warmest.temperature)}°C`, position: "top", fill: WARM, fontSize: 10, fontWeight: 700 }} />}
               <Line type="monotone" dataKey="dailyMinimum" stroke={GREEN} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
@@ -94,31 +94,31 @@ export default function TropicalNightsIndicator({ measurement }) {
 
         <div className="indicator-panel">
           <div className="indicator-heading">
-            <h2>Annual count</h2>
-            <p>Calendar dates with an observed daily minimum strictly above 20°C.</p>
+            <h2>{t("tropicalNightsAnnualTitle")}</h2>
+            <p>{t("tropicalNightsAnnualDesc")}</p>
           </div>
           <ResponsiveContainer width="100%" height={360}>
             <BarChart data={result.annualCounts.map((row) => ({ ...row, yearLabel: `${row.year}${row.isPartial ? "*" : ""}` }))} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
               <XAxis dataKey="yearLabel" />
-              <YAxis width={64} allowDecimals={false} domain={[0, maxAnnual + 1]} label={{ value: "Count of nights", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} />
-              <Tooltip content={<AnnualTooltip />} />
+              <YAxis width={64} allowDecimals={false} domain={[0, maxAnnual + 1]} label={{ value: t("tropicalNightsAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} />
+              <Tooltip content={<AnnualTooltip t={t} />} />
               <Bar dataKey="count" minPointSize={(value) => (value ? 0 : 3)} radius={[4, 4, 0, 0]}>
                 {result.annualCounts.map((row) => <Cell key={row.year} fill={row.isPartial ? PARTIAL : GREEN} />)}
                 <LabelList content={<ValueLabel />} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <p className="indicator-assumption">* Partly observed year — not comparable with a full calendar year.</p>
+          <p className="indicator-assumption">* {t("partialYearExcluded")}</p>
         </div>
       </div>
 
-      <p className="indicator-explanation">A tropical night occurs when the observed daily minimum temperature remains strictly above 20°C.</p>
+      <p className="indicator-explanation">{t("tropicalNightsAnnualDesc")}</p>
       <p className="indicator-assumption">
-        Daily minima use available hourly observations; missing temperature hours and days are not filled or interpolated. Annual bars are shown for readability while monthly counts remain available. {partialYears ? `${partialYears} are partial records. ` : ""}This is a single-station result; the short record is insufficient for a confident trend.
+        {t("tropicalNightsAssumption")} {partialYears ? `${partialYears} ${t("partialRecord").toLowerCase()}.` : ""}
       </p>
       <p className="indicator-assumption">
-        Coverage: {result.firstObservationDate} – {result.lastObservationDate}. Total: {result.totalCount}. Warmest night: {warmest.date} ({formatTemperature(warmest.temperature)} °C).
+        {t("coverage")}: {result.firstObservationDate} – {result.lastObservationDate}. {t("total")}: {result.totalCount}. {t("warmestNight")}: {warmest.date} ({formatTemperature(warmest.temperature)} °C).
       </p>
     </section>
   );

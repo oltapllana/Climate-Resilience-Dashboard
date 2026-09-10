@@ -12,17 +12,17 @@ function heatColor(value, maximum) {
   return BLUE[Math.min(BLUE.length - 1, Math.max(1, Math.ceil(value / maximum * (BLUE.length - 1))))];
 }
 
-function AnnualTooltip({ active, payload }) {
+function AnnualTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
-  return <div className="indicator-tooltip"><strong>{row.year}{row.isPartial ? "*" : ""}</strong><span>Annual total: {row.annualTotal}</span><span>Available: {row.availableStart} – {row.availableEnd}</span><span>{row.isPartial ? "Partial year" : "Full year"}</span></div>;
+  return <div className="indicator-tooltip"><strong>{row.year}{row.isPartial ? "*" : ""}</strong><span>{t("annualTotal")}: {row.annualTotal}</span><span>{t("available")}: {row.availableStart} – {row.availableEnd}</span><span>{row.isPartial ? t("partialYear") : t("fullYear")}</span></div>;
 }
 
 function ValueLabel({ x, y, width, height, value }) {
   return <text x={x + width + 7} y={y + height / 2 + 4} fill="#17242b" fontSize="11" fontWeight="700">{value}</text>;
 }
 
-function Heatmap({ yearly }) {
+function Heatmap({ yearly, t }) {
   const [tip, setTip] = useState(null);
   const maximum = Math.max(0, ...yearly.flatMap((row) => row.monthlyCounts.filter((value) => value != null)));
   const left = 62;
@@ -32,8 +32,8 @@ function Heatmap({ yearly }) {
   const width = left + cellWidth * 12 + 10;
   const height = top + cellHeight * yearly.length + 36;
   return <div style={{ position: "relative", overflowX: "auto" }} onMouseLeave={() => setTip(null)}>
-    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", minWidth: 570, height: 350, display: "block" }} role="img" aria-label="Monthly freeze-thaw cycle heatmap">
-      {MONTHS.map((month, index) => <text key={month} x={left + index * cellWidth + cellWidth / 2} y="21" textAnchor="middle" fill="#52646d" fontSize="11">{month}</text>)}
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", minWidth: 570, height: 350, display: "block" }} role="img" aria-label={t("freezeThawTitle")}>
+      {MONTHS.map((month, index) => <text key={month} x={left + index * cellWidth + cellWidth / 2} y="21" textAnchor="middle" fill="#52646d" fontSize="11">{t("months")[index]}</text>)}
       {yearly.map((row, rowIndex) => <g key={row.year}>
         <text x={left - 8} y={top + rowIndex * cellHeight + 23} textAnchor="end" fill="#42545d" fontSize="12" fontWeight={row.isPartial ? 700 : 400}>{row.year}{row.isPartial ? "*" : ""}</text>
         {row.months.map((month, column) => {
@@ -48,22 +48,22 @@ function Heatmap({ yearly }) {
         })}
       </g>)}
     </svg>
-    {tip && <div className="indicator-tooltip" style={{ position: "absolute", left: tip.x, top: tip.y, zIndex: 2, pointerEvents: "none" }}><strong>{tip.row.year} {MONTHS[tip.month.month - 1]}</strong><span>{tip.month.available ? `Qualifying days: ${tip.month.count}` : "Outside available record"}</span><span>{tip.month.available ? (tip.month.isPartial ? "Partial month coverage" : "Covered month") : "Unavailable"}</span><span>{threshold}</span></div>}
+    {tip && <div className="indicator-tooltip" style={{ position: "absolute", left: tip.x, top: tip.y, zIndex: 2, pointerEvents: "none" }}><strong>{tip.row.year} {t("months")[tip.month.month - 1]}</strong><span>{tip.month.available ? `${t("qualifyingDays")}: ${tip.month.count}` : t("outsideAvailableRecord")}</span><span>{tip.month.available ? (tip.month.isPartial ? t("partialMonthCoverage") : t("coveredMonth")) : t("unavailable")}</span><span>{t("freezeThawDesc")}</span></div>}
   </div>;
 }
 
-export default function FreezeThawCyclesIndicator({ measurement }) {
+export default function FreezeThawCyclesIndicator({ measurement, t }) {
   const result = useMemo(() => calculateFreezeThawCycles(measurement?.hourly), [measurement]);
   if (!result.yearly.length) return null;
   return <section className="card landslide-indicator">
     <div className="indicator-grid">
-      <div className="indicator-panel"><div className="indicator-heading"><h2>Freeze–thaw cycles</h2><p>Days with daily minimum below −2.2°C and daily maximum above 0°C, aggregated by calendar month.</p></div><Heatmap yearly={result.yearly} /><p className="indicator-assumption">Darker blue indicates more cycles; dashed blank cells are outside the available record. * Partial year</p></div>
-      <div className="indicator-panel"><div className="indicator-heading"><h2>Annual total</h2><p>Calendar-year sum of the available monthly counts.</p></div>
-        <ResponsiveContainer width="100%" height={360}><BarChart data={result.yearly} layout="vertical" margin={{ top: 16, right: 42, left: 18, bottom: 42 }}><CartesianGrid stroke="#dce5ea" horizontal={false} /><XAxis type="number" allowDecimals={false} label={{ value: "Freeze-thaw days per year", position: "insideBottom", offset: -24, style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><YAxis type="category" dataKey="year" width={54} tickFormatter={(value) => `${value}${result.yearly.find((row) => row.year === value)?.isPartial ? "*" : ""}`} /><Tooltip content={<AnnualTooltip />} /><Bar dataKey="annualTotal" name="Freeze–thaw days" radius={[0, 3, 3, 0]}>{result.yearly.map((row) => <Cell key={row.year} fill={row.isPartial ? "#8999a2" : "#397f99"} />)}<LabelList dataKey="annualTotal" content={<ValueLabel />} /></Bar></BarChart></ResponsiveContainer>
-        <p className="indicator-assumption">Blue = full year; gray = partial year. * Partial year</p>
+      <div className="indicator-panel"><div className="indicator-heading"><h2>{t("freezeThawTitle")}</h2><p>{t("freezeThawDesc")}</p></div><Heatmap yearly={result.yearly} t={t} /><p className="indicator-assumption">{t("freezeThawHeatmapNote")}</p></div>
+      <div className="indicator-panel"><div className="indicator-heading"><h2>{t("freezeThawAnnualTitle")}</h2><p>{t("freezeThawAnnualDesc")}</p></div>
+        <ResponsiveContainer width="100%" height={360}><BarChart data={result.yearly} layout="vertical" margin={{ top: 16, right: 42, left: 18, bottom: 42 }}><CartesianGrid stroke="#dce5ea" horizontal={false} /><XAxis type="number" allowDecimals={false} label={{ value: t("freezeThawAxis"), position: "insideBottom", offset: -24, style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><YAxis type="category" dataKey="year" width={54} tickFormatter={(value) => `${value}${result.yearly.find((row) => row.year === value)?.isPartial ? "*" : ""}`} /><Tooltip content={<AnnualTooltip t={t} />} /><Bar dataKey="annualTotal" name={t("freezeThawAxis")} radius={[0, 3, 3, 0]}>{result.yearly.map((row) => <Cell key={row.year} fill={row.isPartial ? "#8999a2" : "#397f99"} />)}<LabelList dataKey="annualTotal" content={<ValueLabel />} /></Bar></BarChart></ResponsiveContainer>
+        <p className="indicator-assumption">{t("freezeThawYearNote")}</p>
       </div>
     </div>
-    <p className="indicator-explanation">A freeze–thaw day occurs when temperature falls below −2.2°C and rises above 0°C within the same calendar day.</p>
-    <p className="indicator-assumption">Daily extrema use available hourly observations; missing temperature hours and days are not filled or interpolated. Results use calendar years rather than winter seasons. 2021 and 2026 are partial records. This is a single-station result.</p>
+    <p className="indicator-explanation">{t("freezeThawExplanation")}</p>
+    <p className="indicator-assumption">{t("freezeThawMethodology")}</p>
   </section>;
 }

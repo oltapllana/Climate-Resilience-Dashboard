@@ -7,16 +7,16 @@ const HIGHLIGHT = "#e8a33d";
 
 const formatSpeed = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
-function DirectionTooltip({ active, payload }) {
+function DirectionTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   if (row.meanSpeed == null) return null;
   return (
     <div className="indicator-tooltip">
       <strong>{row.direction}</strong>
-      <span>Mean speed: {formatSpeed(row.meanSpeed)} m/s</span>
-      <span>Max speed: {formatSpeed(row.maxSpeed)} m/s</span>
-      <span>Share of observations: {row.share}%</span>
+      <span>{t("meanSpeed")}: {formatSpeed(row.meanSpeed)} m/s</span>
+      <span>{t("maxSpeed")}: {formatSpeed(row.maxSpeed)} m/s</span>
+      <span>{t("shareOfObservations")}: {row.share}%</span>
     </div>
   );
 }
@@ -65,7 +65,7 @@ export default function WindByDirection({ directionMeasurement, speedMeasurement
             tickFormatter={formatSpeed}
             label={{ value: t("meanSpeedAxis"), angle: -90, position: "insideLeft", offset: -12 }}
           />
-          <Tooltip content={<DirectionTooltip />} />
+          <Tooltip content={<DirectionTooltip t={t} />} />
           <Bar dataKey="meanSpeed" radius={[4, 4, 0, 0]}>
             {result.directions.map((row) => (
               <Cell key={row.direction} fill={strongest && row.direction === strongest.direction ? HIGHLIGHT : BLUE} />

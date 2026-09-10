@@ -32,27 +32,27 @@ function tidyAxisValue(value) {
   return rounded.replace(/\.0$/, "");
 }
 
-function DailyTooltip({ active, payload }) {
+function DailyTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
     <div className="indicator-tooltip">
       <strong>{row.date}</strong>
-      <span>Daily max: {fmt(row.dailyMax)} °C</span>
-      <span>{row.dailyMax >= 30 ? "Hot-day threshold reached" : ""}</span>
+      <span>{t("dailyMaximumShort")}: {fmt(row.dailyMax)} °C</span>
+      <span>{row.dailyMax >= 30 ? t("hotDayThresholdReached") : ""}</span>
     </div>
   );
 }
 
-function AnnualTooltip({ active, payload }) {
+function AnnualTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   const series = payload[0].dataKey === "days30" ? "≥30°C" : "≥40°C";
   return (
     <div className="indicator-tooltip">
       <strong>{row.year}</strong>
-      <span>{series}: {payload[0].value} days</span>
-      {row.isPartial ? <span>Partial year</span> : null}
+      <span>{series}: {payload[0].value} {t("days")}</span>
+      {row.isPartial ? <span>{t("partialYear")}</span> : null}
     </div>
   );
 }
@@ -112,8 +112,8 @@ export default function HotDaysIndicator({ measurement, t }) {
           <div className="indicator-grid">
             <div className="indicator-panel">
               <div className="indicator-heading">
-                <h2>Daily maximum temperature</h2>
-                <p>This indicator counts calendar days when the observed daily maximum temperature reached at least 30°C or 40°C.</p>
+                <h2>{t("hotDaysTitle")}</h2>
+                <p>{t("hotDaysDesc")}</p>
               </div>
               <ResponsiveContainer width="100%" height={360}>
                 <LineChart data={dailyData} margin={{ top: 14, right: 22, left: 44, bottom: 28 }}>
@@ -126,9 +126,9 @@ export default function HotDaysIndicator({ measurement, t }) {
                     width={60}
                     tick={{ fontSize: 12 }}
                     tickFormatter={tidyAxisValue}
-                    label={{ value: "Daily maximum temperature (°C)", angle: -90, position: "insideLeft", offset: -12 }}
+                    label={{ value: t("hotDaysAxis"), angle: -90, position: "insideLeft", offset: -12 }}
                   />
-                  <Tooltip content={<DailyTooltip />} />
+                  <Tooltip content={<DailyTooltip t={t} />} />
                   <ReferenceLine y={30} stroke="#17242b" strokeDasharray="6 4" label={{ value: "30°C", position: "insideTopRight", fill: "#17242b", fontSize: 11, fontWeight: 600 }} />
                   <ReferenceLine y={40} stroke="#17242b" strokeDasharray="8 5" label={{ value: "40°C", position: "insideTopLeft", fill: "#17242b", fontSize: 11, fontWeight: 600 }} />
                   {recordMax.date && (
@@ -142,8 +142,8 @@ export default function HotDaysIndicator({ measurement, t }) {
 
             <div className="indicator-panel">
               <div className="indicator-heading">
-                <h2>Annual hot-day count</h2>
-                <p>Grouped bars show counts for days with daily maxima at or above 30°C and 40°C.</p>
+                <h2>{t("hotDaysAnnualTitle")}</h2>
+                <p>{t("hotDaysAnnualDesc")}</p>
               </div>
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={yearlyData.map((row) => ({ ...row, threshold30: row.days30, threshold40: row.days40 }))} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
@@ -157,9 +157,9 @@ export default function HotDaysIndicator({ measurement, t }) {
                   <YAxis
                     allowDecimals={false}
                     domain={[0, Math.max(1, ...yearlyData.map((row) => Math.max(row.days30, row.days40, 1)))]}
-                    label={{ value: "Count of days", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }}
+                    label={{ value: t("countOfDaysAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }}
                   />
-                  <Tooltip content={<AnnualTooltip />} />
+                  <Tooltip content={<AnnualTooltip t={t} />} />
                   <Legend
                     verticalAlign="top"
                     height={28}
@@ -186,12 +186,10 @@ export default function HotDaysIndicator({ measurement, t }) {
             </div>
           </div>
 
-          <p className="indicator-explanation">This indicator counts calendar days when the observed daily maximum temperature reached at least 30°C or 40°C.</p>
+          <p className="indicator-explanation">{t("hotDaysDesc")}</p>
+          <p className="indicator-assumption">{t("hotDaysAssumption")}</p>
           <p className="indicator-assumption">
-            Daily maxima use available hourly observations; missing hours or days are not treated as 0°C. Years marked with an asterisk are partial records and are not comparable with complete years. This is a single-station record.
-          </p>
-          <p className="indicator-assumption">
-            Record maximum: {fmt(recordMax.temperature, 1)} °C on {recordMax.date}.
+            {t("recordMaximum")}: {fmt(recordMax.temperature, 1)} °C {t("onDate")} {recordMax.date}.
           </p>
         </>
       )}

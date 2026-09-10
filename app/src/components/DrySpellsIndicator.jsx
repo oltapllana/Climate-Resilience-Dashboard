@@ -26,19 +26,19 @@ function seasonOffset(date) {
   return Math.round((Date.UTC(year, Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) - Date.UTC(year, 3, 1)) / 86400000);
 }
 
-function seasonTickLabel(offset) {
+function seasonTickLabel(offset, t) {
   const date = new Date(Date.UTC(2024, 3, 1 + offset));
-  return `${date.toLocaleString("en", { month: "short", timeZone: "UTC" })} ${date.getUTCDate()}`;
+  return `${t("months")[date.getUTCMonth()]} ${date.getUTCDate()}`;
 }
 
-function RunTooltip({ run, x, y }) {
+function RunTooltip({ run, x, y, t }) {
   if (!run) return null;
   return (
     <div className="indicator-tooltip" style={{ position: "absolute", left: x + 10, top: y + 10, pointerEvents: "none", zIndex: 2 }}>
       <strong>{run.year}</strong>
-      <span>Start: {run.startDate}</span>
-      <span>End: {run.endDate}</span>
-      <span>Length: {run.length} days</span>
+      <span>{t("start")}: {run.startDate}</span>
+      <span>{t("end")}: {run.endDate}</span>
+      <span>{t("duration")}: {run.length} {t("days")}</span>
       <span>{run.classification}</span>
     </div>
   );
@@ -46,11 +46,11 @@ function RunTooltip({ run, x, y }) {
 
 // The runs chart is drawn by hand, so it never picked up a Recharts legend and
 // the reader was left to guess what the amber and red blocks meant.
-function RunsLegend() {
+function RunsLegend({ t }) {
   const items = [
-    { color: "#dce5ea", label: "April–September season" },
-    { color: AMBER, label: "Dry run of 5–6 days" },
-    { color: RED, label: "Dry run of 7 days or more" },
+    { color: "#dce5ea", label: t("aprilSeptemberSeason") },
+    { color: AMBER, label: t("dryRunShort") },
+    { color: RED, label: t("dryRunLong") },
   ];
   return (
     <div className="swatch-legend">
@@ -64,7 +64,7 @@ function RunsLegend() {
   );
 }
 
-function SeasonalRunsChart({ yearly }) {
+function SeasonalRunsChart({ yearly, t }) {
   const [tooltip, setTooltip] = useState(null);
   const height = 76 + yearly.length * 42;
   const left = 96;
@@ -72,8 +72,8 @@ function SeasonalRunsChart({ yearly }) {
   const scale = width / SEASON_DAYS;
   return (
     <div style={{ position: "relative", width: "100%" }} onMouseLeave={() => setTooltip(null)}>
-      <RunsLegend />
-      <svg viewBox={`0 0 620 ${height + 12}`} role="img" aria-label="Dry-spell runs from April through September" style={{ display: "block", width: "100%", height: 360 }}>
+      <RunsLegend t={t} />
+      <svg viewBox={`0 0 620 ${height + 12}`} role="img" aria-label={t("drySpellsAria")} style={{ display: "block", width: "100%", height: 360 }}>
         {MONTHS.map(([month, offset]) => {
           const x = left + offset * scale;
           return (
@@ -87,11 +87,11 @@ function SeasonalRunsChart({ yearly }) {
           return (
             <g key={offset}>
               <line x1={x} x2={x} y1={height - 31} y2={height - 24} stroke="#8999a2" />
-              <text x={x} y={height - 8} textAnchor="middle" fill="#5f7079" fontSize="9">{seasonTickLabel(offset)}</text>
+              <text x={x} y={height - 8} textAnchor="middle" fill="#5f7079" fontSize="9">{seasonTickLabel(offset, t)}</text>
             </g>
           );
         })}
-        <text x={left + width / 2} y={height + 8} textAnchor="middle" fill="#5f7079" fontSize="10">Calendar day of April–September season</text>
+        <text x={left + width / 2} y={height + 8} textAnchor="middle" fill="#5f7079" fontSize="10">{t("calendarDaySeason")}</text>
         {yearly.map((row, rowIndex) => {
           const y = 40 + rowIndex * 42;
           return (
@@ -121,14 +121,14 @@ function SeasonalRunsChart({ yearly }) {
               })}
               {row.isPartial && (
                 <text x={left} y={y + 22} fill="#5f7079" fontSize="9.5">
-                  covered {row.availableStart?.slice(5)} – {row.availableEnd?.slice(5)}
+                  {t("covered")}: {row.availableStart?.slice(5)} – {row.availableEnd?.slice(5)}
                 </text>
               )}
             </g>
           );
         })}
       </svg>
-      <RunTooltip {...tooltip} />
+      <RunTooltip {...tooltip} t={t} />
     </div>
   );
 }
@@ -137,22 +137,22 @@ function BarLabel({ x, y, width, value }) {
   return <text x={x + width / 2} y={y - 7} textAnchor="middle" fill="#17242b" fontSize="11" fontWeight="700">{value}</text>;
 }
 
-function AnnualTooltip({ active, payload }) {
+function AnnualTooltip({ active, payload, t }) {
   if (!active || !payload?.length) return null;
   const item = payload[0];
   const row = item.payload;
   return (
     <div className="indicator-tooltip">
-      <strong>{row.year}{row.isPartial ? " (partial)" : ""}</strong>
-      <span>Threshold: {item.dataKey === "daysAtLeast5" ? "≥5-day runs" : "≥7-day runs"}</span>
-      <span>Qualifying days: {item.value}</span>
-      <span>Available season: {row.availableSeasonalDays} days</span>
-      <span>{row.isPartial ? "Partial record" : "Full Apr–Sep record"}</span>
+      <strong>{row.year}{row.isPartial ? ` (${t("partialRecord")})` : ""}</strong>
+      <span>{t("thresholdUsed")}: {item.dataKey === "daysAtLeast5" ? "≥5" : "≥7"}</span>
+      <span>{t("qualifyingDays")}: {item.value}</span>
+      <span>{t("availableSeason")}: {row.availableSeasonalDays} {t("days")}</span>
+      <span>{row.isPartial ? t("partialRecord") : t("fullAprSepRecord")}</span>
     </div>
   );
 }
 
-export default function DrySpellsIndicator({ measurement }) {
+export default function DrySpellsIndicator({ measurement, t }) {
   const result = useMemo(() => calculateDrySpells(measurement?.hourly), [measurement]);
   if (!result.yearly.length) return null;
   const completeYearly = result.yearly.filter((row) => !row.isPartial);
@@ -162,30 +162,30 @@ export default function DrySpellsIndicator({ measurement }) {
       <div className="indicator-grid">
         <div className="indicator-panel">
           <div className="indicator-heading">
-            <h2>Dry spells (5-day / 7-day)</h2>
-            <p>Qualifying consecutive dry-day runs during April–September.</p>
+            <h2>{t("drySpellsTitle")}</h2>
+            <p>{t("drySpellsDesc")}</p>
           </div>
-          <SeasonalRunsChart yearly={result.yearly} />
-          <p className="indicator-assumption">Each block spans the days of one run, so its width along the April–September axis is the length of that dry spell; hover a block for its exact dates and length.</p>
-          <p className="indicator-assumption">* Partly observed season — not comparable with a full April–September record.</p>
+          <SeasonalRunsChart yearly={result.yearly} t={t} />
+          <p className="indicator-assumption">{t("drySpellsChartNote")}</p>
+          <p className="indicator-assumption">{t("drySpellsPartialNote")}</p>
         </div>
 
         <div className="indicator-panel">
           <div className="indicator-heading">
-            <h2>Annual dry-spell day count</h2>
-            <p>Days in ≥7-day runs are also included in the ≥5-day total.</p>
+            <h2>{t("drySpellsAnnualTitle")}</h2>
+            <p>{t("drySpellsAnnualDesc")}</p>
           </div>
           <ResponsiveContainer width="100%" height={360}>
             <BarChart data={completeYearly} margin={{ top: 34, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
               <XAxis dataKey="year" />
-              <YAxis width={64} allowDecimals={false} label={yAxisLabel("Qualifying dry days")} />
-              <Tooltip content={<AnnualTooltip />} />
+              <YAxis width={64} allowDecimals={false} label={yAxisLabel(t("drySpellsAxis"))} />
+              <Tooltip content={<AnnualTooltip t={t} />} />
               <Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} />
-              <Bar dataKey="daysAtLeast5" name="Days in ≥5-day runs" fill={AMBER} radius={[3, 3, 0, 0]}>
+              <Bar dataKey="daysAtLeast5" name={t("dryRunFiveLegend")} fill={AMBER} radius={[3, 3, 0, 0]}>
                 <LabelList content={<BarLabel />} />
               </Bar>
-              <Bar dataKey="daysAtLeast7" name="Days in ≥7-day runs (included in ≥5)" fill={RED} radius={[3, 3, 0, 0]}>
+              <Bar dataKey="daysAtLeast7" name={t("dryRunSevenLegend")} fill={RED} radius={[3, 3, 0, 0]}>
                 <LabelList content={<BarLabel />} />
               </Bar>
             </BarChart>
@@ -193,8 +193,8 @@ export default function DrySpellsIndicator({ measurement }) {
         </div>
       </div>
 
-      <p className="indicator-explanation">A day is classified as dry when its daily precipitation total is below 1 mm. Annual values count all days belonging to consecutive dry runs of at least 5 or 7 days during April–September.</p>
-      <p className="indicator-assumption">The calculation uses the per-day &lt;1 mm interpretation, and the ≥7-day total is included within the ≥5-day total. Missing rainfall hours are reconstructed as zero under the existing project assumption. 2021 begins on 6 April. 2026 has only partial April coverage and is not comparable with complete years.</p>
+      <p className="indicator-explanation">{t("drySpellsExplanation")}</p>
+      <p className="indicator-assumption">{t("drySpellsAssumption")} {t("drySpellsCoverageNote")}</p>
     </section>
   );
 }

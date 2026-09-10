@@ -28,22 +28,25 @@ function fmt(v, digits = 2) {
   return v == null ? "-" : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
-function measurementAxis(unit) {
-  if (unit === "°C") return "Temperature (°C)";
-  if (unit === "%") return "Humidity (%)";
-  if (unit === "mm/h") return "Rainfall Intensity (mm/h)";
-  if (unit === "mm") return "Rainfall (mm)";
-  if (unit === "m") return "Water Level (m)";
-  if (unit === "hPa") return "Pressure (hPa)";
-  if (unit === "W/m²") return "Solar Radiation (W/m²)";
-  if (unit === "m/s") return "Wind Speed (m/s)";
-  if (unit === "°") return "Wind Direction (°)";
-  return unit ? `Value (${unit})` : "Value";
+function measurementAxis(unit, t) {
+  const key = {
+    "°C": "measurementAxisTemperature",
+    "%": "measurementAxisHumidity",
+    "mm/h": "measurementAxisRainIntensity",
+    mm: "measurementAxisRainfall",
+    m: "measurementAxisWaterLevel",
+    hPa: "measurementAxisPressure",
+    "W/m²": "measurementAxisSolar",
+    "m/s": "measurementAxisWindSpeed",
+    "°": "measurementAxisWindDirection",
+  }[unit];
+  const label = key ? t(key) : t("measurementAxisValue");
+  return unit && !key ? `${label} (${unit})` : label;
 }
 
-function yLabel(unit) {
+function yLabel(unit, t) {
   return {
-    value: measurementAxis(unit),
+    value: measurementAxis(unit, t),
     angle: -90,
     position: "insideLeft",
     offset: 8,
@@ -150,7 +153,7 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
             ticks={scale.ticks}
             tickFormatter={tickFormat}
             allowDataOverflow
-            label={yLabel(unit)}
+            label={yLabel(unit, t)}
           />
           <Tooltip
             formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]}
@@ -213,7 +216,7 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
             ticks={scale.ticks}
             tickFormatter={tickFormat}
             allowDataOverflow
-            label={yLabel(unit)}
+            label={yLabel(unit, t)}
           />
           <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
           <Legend verticalAlign="top" height={26} wrapperStyle={legendStyle} />
@@ -285,7 +288,7 @@ export function AnomaliesChart({ series, t, unit }) {
           ticks={scale.ticks}
           tickFormatter={(v) => formatForAxis(v, scale.decimals)}
           allowDataOverflow
-          label={yLabel(unit)}
+          label={yLabel(unit, t)}
         />
         <Tooltip formatter={(v) => [`${v > 0 ? "+" : ""}${fmt(v)} ${unit}`, v >= 0 ? t("anomalyAbove") : t("anomalyBelow")]} />
         <Legend

@@ -3,11 +3,11 @@ import { processWindRiskHeatmap } from "../lib/windRose";
 
 export function WindRiskHeatmap({ speedData, t }) {
   if (!speedData) {
-    return <div className="text-gray-500">{t?.("noData") || "No data available"}</div>;
+    return <div className="text-gray-500">{t("noData")}</div>;
   }
 
   const data = processWindRiskHeatmap(speedData);
-  if (!data) return <div className="text-gray-500">{t?.("noData") || "No data available"}</div>;
+  if (!data) return <div className="text-gray-500">{t("noData")}</div>;
 
   const { heatmapData, months, highWindThreshold } = data;
 
@@ -33,7 +33,7 @@ export function WindRiskHeatmap({ speedData, t }) {
       <div style={{display: "flex", alignItems: "center" , justifyContent: "center",fontWeight: "600", fontSize: "14px", color: "#000610"}}>
 
         <p style={{ margin: 0, fontSize: "11px", color: "#000610" }}>
-          {t?.("windRiskDescription") || `Përqindja e orëve me shpejtësi ≥ ${highWindThreshold} m/s / Percentage of hours with wind speed ≥ ${highWindThreshold} m/s`}
+          {t("windRiskDescription")}
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export function WindRiskHeatmap({ speedData, t }) {
             fill="#475569"
             transform={`rotate(-90 15 ${hourLabelHeight + (months.length * cellSize) / 2})`}
           >
-            {t?.("month") || "Month"}
+            {t("month")}
           </text>
 
           {/* Hour labels */}
@@ -145,7 +145,7 @@ export function WindRiskHeatmap({ speedData, t }) {
             fontWeight="600"
             fill="#475569"
           >
-            {t?.("hourOfDay") || "Hour of Day"}
+            {t("hourOfDay")}
           </text>
         </svg>
       </div>
@@ -178,10 +178,10 @@ export function WindRiskHeatmap({ speedData, t }) {
 
       <div style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid #e5e7eb", fontSize: "9px", color: "#9ca3af" }}>
         <p style={{ margin: 0, marginBottom: "4px" }}>
-          {t?.("dataSource") || "Source: direct monitoring data"}
+          {t("dataSource")}
         </p>
         <p style={{ margin: 0 }}>
-          {t?.("wmoStandard") || "WMO standard for meteorological data representation (WMO-No. 8, Guide to Meteorological Instruments and Methods of Observation, 2018 Ed.)"}
+          {t("wmoStandard")}
         </p>
       </div>
     </div>

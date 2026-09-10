@@ -7,11 +7,11 @@ const GRID = "#e2e8f0";
 
 export function WindRose({ directionData, speedData, t }) {
   if (!directionData || !speedData) {
-    return <div className="text-gray-500">{t?.("noData") || "No data available"}</div>;
+    return <div className="text-gray-500">{t("noData")}</div>;
   }
 
   const data = processWindData(directionData, speedData);
-  if (!data) return <div className="text-gray-500">{t?.("noData") || "No data available"}</div>;
+  if (!data) return <div className="text-gray-500">{t("noData")}</div>;
 
   const { windRose, stats, directions, directionStats, directionMeanSpeeds } = data;
   const centerX = 200;
@@ -72,10 +72,10 @@ export function WindRose({ directionData, speedData, t }) {
         <div className="wind-rose-stats">
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{stats.dateRange}</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>Mean wind speed: {stats.meanSpeed} m/s</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>Max wind speed: {stats.maxSpeed} m/s</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>Calm (&lt;0.5 m/s): {stats.calmPercentage}%</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>Total records: {stats.totalRecords > 999 ? (stats.totalRecords / 1000).toFixed(2) + 'K' : stats.totalRecords.toLocaleString()}</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("meanWindSpeed")}: {stats.meanSpeed} m/s</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("maxWindSpeed")}: {stats.maxSpeed} m/s</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("calmWind")} (&lt;0.5 m/s): {stats.calmPercentage}%</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("totalRecords")}: {stats.totalRecords > 999 ? (stats.totalRecords / 1000).toFixed(2) + 'K' : stats.totalRecords.toLocaleString()}</p>
         </div>
       </div>
 
@@ -127,8 +127,8 @@ export function WindRose({ directionData, speedData, t }) {
                   {parseFloat(percentage).toFixed(1)}%
                 </div>
                 <div style={{ borderTop: "1px solid #4b5563", paddingTop: "8px", fontSize: "12px", color: "#cbd5e0" }}>
-                  <div>Records: {speedRangeCount}</div>
-                  <div>Direction avg: {directionMeanSpeed} m/s</div>
+                  <div>{t("totalRecords")}: {speedRangeCount}</div>
+                  <div>{t("directionAverage")}: {directionMeanSpeed} m/s</div>
                 </div>
               </div>
             );
@@ -254,7 +254,7 @@ export function WindRose({ directionData, speedData, t }) {
 
         {/* Legend */}
         <div className="wind-rose-legend" style={{ flexShrink: 0, paddingTop: "8px" }}>
-          <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", margin: 0 }}>{t?.("windSpeed") || "Wind speed"}</h4>
+          <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", margin: 0 }}>{t("windSpeed")}</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {SPEED_RANGES.map((range, idx) => (
               <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -273,7 +273,7 @@ export function WindRose({ directionData, speedData, t }) {
             <div style={{ paddingTop: "12px", borderTop: "1px solid #e5e7eb" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
                 <div style={{ width: "20px", height: "14px", backgroundColor: "transparent", border: "2px dashed #cbd5e0", borderRadius: "2px" }} />
-                <span style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280" }}>Calm (&lt;0.5)</span>
+                <span style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280" }}>{t("calmWind")} (&lt;0.5)</span>
               </div>
             </div>
           </div>
@@ -283,9 +283,9 @@ export function WindRose({ directionData, speedData, t }) {
       {/* Footer note */}
       <div style={{ paddingTop: "24px", borderTop: "1px solid #e5e7eb", textAlign: "center" }}>
         <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
-          {t?.("windRoseNote") || "Frequency is shown as percentage of total observations"}
+          {t("windRoseNote")}
           {" "}
-          {(t?.("windRoseRingNote") || "Rings are drawn every {step} % of all observations.").replace("{step}", +ringStep.toFixed(1))}
+          {t("windRoseRingNote").replace("{step}", +ringStep.toFixed(1))}
         </p>
       </div>
     </div>
