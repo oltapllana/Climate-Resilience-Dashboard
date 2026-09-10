@@ -699,7 +699,7 @@ export const STRINGS = {
     hydro: "Hidrologjike",
     meteo: "Meteorologjike",
     overview: "Përmbledhje",
-    climatology: "Klimatologjia mujore",
+    climatology: "Nivelet mesatare mujore",
     climatologyRainfall: "Sasia mujore e reshjeve",
     climatologyLevel: "Nivelet mesatare mujore",
     climatologyDesc: "Profili mesatar mujor përgjatë gjithë viteve të regjistrimit",
