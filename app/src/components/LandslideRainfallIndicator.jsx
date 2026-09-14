@@ -1,3 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
+import { CHART_PALETTE, REFERENCE_DASH, SERIES_DASHES } from "../lib/chartPalette.js";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -9,7 +12,6 @@ import {
   Line,
   LineChart,
   ReferenceArea,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -17,18 +19,19 @@ import {
 import {
   calculateLandslideRainfallIndicator,
 } from "../lib/landslideRainfall.js";
+import { axisScale } from "../lib/chartAxis.js";
 import { ChartEmptyState, topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
-const RED = "#c63a2b";
+const RED = CHART_PALETTE.severity.extreme;
 const PARTIAL = "#7b8a95";
 // One hue per year rather than six shades of the same grey-blue: the review
 // could not separate the curves from each other or from the legend swatches.
 const MUTED = ["#3f7fb0", "#4c9a6a", "#9d7bc4", "#c98a2e", "#5aa9a2", "#a8577c"];
 
-function fmt(value) {
+function fmt(t, value) {
   return value == null
     ? "—"
-    : Number(value).toLocaleString(undefined, { maximumFractionDigits: 3 });
+    : t.number(Number(value), { maximumFractionDigits: 3 });
 }
 
 function IndicatorTooltip({ active, payload, label, t }) {
@@ -40,9 +43,9 @@ function IndicatorTooltip({ active, payload, label, t }) {
   return (
     <div className="indicator-tooltip">
       <strong>{series.name}</strong>
-      <span>{t("landslideDuration")}: {label} {t("days")}</span>
-      <span>{t("landslideMaximum")}: {fmt(series.value)} mm/h</span>
-      <span>{t("landslideThreshold")}: {fmt(row.threshold)} mm/h</span>
+      <span>{t("landslideDuration")}: {t("dayCount", { count: label })}</span>
+      <span>{t("landslideMaximum")}: {fmt(t, series.value)} mm/h</span>
+      <span>{t("landslideThreshold")}: {fmt(t, row.threshold)} mm/h</span>
       <span className={exceeded ? "critical-text" : ""}>
         {exceeded ? t("landslideExceeded") : t("landslideNotExceeded")}
       </span>
@@ -125,12 +128,13 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
   const noCriticalDays = yearlyRows.length > 0 && yearlyRows.every((row) => !row.criticalDays);
   const coveredYears = yearlyRows.length;
   const hasPartialYear = yearlyRows.some((row) => row.isPartial);
+  const criticalDaysScale = axisScale(yearlyRows.map((row) => row.criticalDays), { unit: "days", includeZero: true });
   const thresholdAudit = state.status === "ready" ? state.result.thresholdAudit : null;
   const auditText = thresholdAudit?.closestRatio == null
     ? null
     : t(thresholdAudit.triggered ? "landslideThresholdTriggered" : "landslideThresholdSilent")
-        .replace("{days}", thresholdAudit.criticalDays)
-        .replace("{years}", thresholdAudit.yearsTriggered)
+        .replace("{days}", t("dayCount", { count: thresholdAudit.criticalDays }))
+        .replace("{years}", t("yearCount", { count: thresholdAudit.yearsTriggered }))
         .replace("{duration}", thresholdAudit.closestDuration)
         .replace("{ratio}", Math.round(thresholdAudit.closestRatio * 100));
 
@@ -154,7 +158,7 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                 <h2>{t("landslideTitle")}</h2>
                 <p>{t("landslideSubtitle")}</p>
               </div>
-              <ResponsiveContainer width="100%" height={360}>
+              <ChartFrame t={t} rows={chartData} columns={[{key:"duration",label:"Duration (days)"},{key:"threshold",label:"Threshold (mm/h)"}, ...state.result.yearly.flatMap(year => [{key:`year_${year.year}`,label:`${year.year} (mm/h)`},{key:`partial_${year.year}`,label:`${year.year} partial`,value:()=>year.isPartial}])]} indicator="landslide-rainfall-indicator-1" width="100%" height={360}>
                 <LineChart data={chartData} margin={{ top: 14, right: 22, left: 24, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" />
                   {chartData.map((row) => (
@@ -181,27 +185,41 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                       stroke="none"
                     />
                   ))}
-                  <XAxis
+                  <XAxis tickFormatter={(value) => t.number(value)}
                     dataKey="duration"
                     type="number"
                     domain={[0.8, 5.2]}
                     ticks={[1, 2, 3, 4, 5]}
                     label={xAxisLabel(t("landslideXAxis"), -12)}
                   />
-                  <YAxis
+                  <YAxis tickFormatter={(value) => t.number(value)}
                     scale="log"
                     domain={domain}
                     allowDataOverflow
                     label={yAxisLabel(t("landslideYAxis"))}
                   />
                   <Tooltip content={<IndicatorTooltip t={t} />} />
-                  <Legend {...topLegendProps} height={44} />
+                  <Legend
+                    {...topLegendProps}
+                    height={58}
+                    payload={[
+                      { value: t("landslideSafeBand"), type: "rect", color: "#dfeee8", id: "safe-band" },
+                      { value: t("landslideCriticalBand"), type: "rect", color: "#f5dfdc", id: "critical-band" },
+                      { value: t("landslideThreshold"), type: "plainline", payload: { strokeDasharray: REFERENCE_DASH }, color: CHART_PALETTE.reference, id: "threshold" },
+                      ...state.result.yearly.map((year, index) => ({
+                        value: `${year.year}${year.isPartial ? "*" : ""}`,
+                        type: "plainline", payload: { strokeDasharray: SERIES_DASHES[index % SERIES_DASHES.length] },
+                        color: year.isPartial ? PARTIAL : year.exceeded ? RED : MUTED[index % MUTED.length],
+                        id: `year-${year.year}`,
+                      })),
+                    ]}
+                  />
                   <Line
                     dataKey="threshold"
                     name={t("landslideThreshold")}
-                    stroke="#17242b"
+                    stroke={CHART_PALETTE.reference}
                     strokeWidth={2.5}
-                    strokeDasharray="8 5"
+                    strokeDasharray={REFERENCE_DASH}
                     dot={false}
                     isAnimationActive={false}
                   />
@@ -211,6 +229,7 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                       dataKey={`year_${year.year}`}
                       name={`${year.year}${year.isPartial ? "*" : ""}${year.exceeded ? ` (${t("landslideExceeded")})` : ""}`}
                       stroke={year.isPartial ? PARTIAL : year.exceeded ? RED : MUTED[index % MUTED.length]}
+                      strokeDasharray={SERIES_DASHES[index % SERIES_DASHES.length]}
                       strokeWidth={year.exceeded ? 3 : 1.8}
                       strokeOpacity={year.exceeded ? 1 : 0.72}
                       dot={{ r: year.exceeded ? 4 : 3 }}
@@ -219,7 +238,7 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                     />
                   ))}
                 </LineChart>
-              </ResponsiveContainer>
+              </ChartFrame>
             </div>
 
             <div className="indicator-panel">
@@ -234,20 +253,21 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
               {noCriticalDays ? (
                 <ChartEmptyState
                   title={t("noQualifyingEvents")}
-                  detail={t("landslideNoCriticalDetail").replace("{years}", coveredYears)}
+                  detail={t("landslideNoCriticalDetail").replace("{years}", t("yearCount", { count: coveredYears }))}
                 />
               ) : (
-                <ResponsiveContainer width="100%" height={360}>
+                <ChartFrame t={t} rows={state.result.yearly} columns={[{"key":"year","label":"Year"},{"key":"criticalDays","label":"Critical days"},{"key":"isPartial","label":"Partial year"},{"key":"availableStart","label":"Coverage start"},{"key":"availableEnd","label":"Coverage end"}]} indicator="landslide-rainfall-indicator-2" width="100%" height={360}>
                   <BarChart data={state.result.yearly} margin={{ top: 30, right: 18, left: 24, bottom: 28 }}>
                     <CartesianGrid stroke="#dce5ea" vertical={false} />
                     <XAxis
                       dataKey="year"
                       tickFormatter={(year) => `${year}${state.result.yearly.find((row) => row.year === year)?.isPartial ? "*" : ""}`}
                     />
-                    <YAxis
+                    <YAxis tickFormatter={(value) => t.number(value)}
                       width={64}
                       allowDecimals={false}
-                      domain={[0, (max) => Math.max(1, max + 1)]}
+                      domain={criticalDaysScale.domain}
+                      ticks={criticalDaysScale.ticks}
                       label={yAxisLabel(t("landslideBarYAxis"))}
                     />
                     <Tooltip content={<DaysTooltip t={t} />} />
@@ -265,7 +285,7 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                       <LabelList dataKey="criticalDays" position="top" fontWeight={700} fill="#17242b" />
                     </Bar>
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartFrame>
               )}
               {hasPartialYear && (
                 <p className="indicator-assumption">{t("landslidePartialYearNote")}</p>
@@ -278,11 +298,14 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
               reader cannot judge an exceedance without knowing which published
               curve it came from and what it does not claim, so both are stated
               on the chart itself. */}
-          <p className="indicator-assumption">{t("landslideThresholdSource")}</p>
-          <p className="indicator-assumption">{t("landslideThresholdCaveat")}</p>
-          <p className="indicator-assumption">
-            {t("landslideMethodologyNote")}
-          </p>
+          <p className="indicator-assumption">{t("landslideZeroFillWarning")}</p>
+          <Methodology t={t}>
+            <p className="indicator-assumption">{t("landslideThresholdSource")}</p>
+            <p className="indicator-assumption">{t("landslideThresholdCaveat")}</p>
+            <p className="indicator-assumption">
+              {t("landslideMethodologyNote")}
+            </p>
+          </Methodology>
         </>
       )}
     </section>

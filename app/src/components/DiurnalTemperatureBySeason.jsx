@@ -1,5 +1,7 @@
+import { SERIES_DASHES } from "../lib/chartPalette.js";
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDiurnalTemperature } from "../lib/diurnalTemperature.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
@@ -9,7 +11,7 @@ import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 // visible rather than hidden behind a mean.
 const ANNUAL = "#5b6b78";
 
-const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+const format = (t, value) => t.number(Number(value), { maximumFractionDigits: 1 });
 const formatHour = (hour) => `${String(hour).padStart(2, "0")}:00`;
 
 export default function DiurnalTemperatureBySeason({ measurement, t }) {
@@ -52,12 +54,12 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
     return (
       <div className="indicator-tooltip">
         <strong>{formatHour(row.hour)}</strong>
-        {result.seasons.map((season) => (
+        {result.seasons.map((season, index) => (
           <span key={season.season}>
-            {t(season.season)}: {row[season.season] == null ? "—" : `${format(row[season.season])} °C ± ${format(row[`${season.season}_spread`])}`}
+            {t(season.season)}: {row[season.season] == null ? "—" : `${format(t, row[season.season])} °C ± ${format(t, row[`${season.season}_spread`])}`}
           </span>
         ))}
-        <span>{t("annualMean")}: {row.annual == null ? "—" : `${format(row.annual)} °C`}</span>
+        <span>{t("annualMean")}: {row.annual == null ? "—" : `${format(t, row.annual)} °C`}</span>
       </div>
     );
   }
@@ -71,10 +73,10 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
       <p className="indicator-callout">
         {t("diurnalAmplitude")}: {result.seasons
           .filter((season) => season.amplitude != null)
-          .map((season) => `${t(season.season)} ${format(season.amplitude)} °C`)
+          .map((season) => `${t(season.season)} ${format(t, season.amplitude)} °C`)
           .join(" · ")}
       </p>
-      <ResponsiveContainer width="100%" height={380}>
+      <ChartFrame t={t} rows={data} columns={[{key:"hour",label:"Hour"},{key:"annual",label:"Annual mean (°C)"},...result.seasons.flatMap(s=>[{key:s.season,label:`${s.season} mean (°C)`},{key:`${s.season}_spread`,label:`${s.season} standard deviation (°C)`}])]} indicator="diurnal-temperature-by-season-1" width="100%" height={380}>
         <ComposedChart data={data} margin={{ top: 20, right: 26, left: 46, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <XAxis
@@ -94,7 +96,7 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
             domain={scale.domain}
             ticks={scale.ticks}
             allowDataOverflow
-            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals, t.locale)}
             label={yAxisLabel(t("temperatureAxis"))}
           />
           <Tooltip content={<ProfileTooltip />} />
@@ -102,7 +104,7 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
             verticalAlign="top"
             height={26}
             payload={[
-              ...result.seasons.map((season) => ({ value: t(season.season), type: "line", color: season.color })),
+              ...result.seasons.map((season, index) => ({ value: t(season.season), type: "plainline", payload: { strokeDasharray: SERIES_DASHES[index % SERIES_DASHES.length] }, color: season.color })),
               { value: t("annualMean"), type: "line", color: ANNUAL },
             ]}
           />
@@ -112,11 +114,11 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
             <Area key={`${season.season}-band`} dataKey={`${season.season}_band`} stackId={season.season} stroke="none" fill={season.color} fillOpacity={0.15} isAnimationActive={false} />,
           ])}
           <Line type="monotone" dataKey="annual" stroke={ANNUAL} strokeWidth={1.8} strokeDasharray="6 4" dot={false} connectNulls isAnimationActive={false} />
-          {result.seasons.map((season) => (
+          {result.seasons.map((season, index) => (
             <Line
               key={season.season}
               type="monotone"
-              dataKey={season.season}
+              strokeDasharray={SERIES_DASHES[index % SERIES_DASHES.length]} dataKey={season.season}
               stroke={season.color}
               strokeWidth={2.4}
               dot={{ r: 2.5, fill: season.color }}
@@ -125,10 +127,10 @@ export default function DiurnalTemperatureBySeason({ measurement, t }) {
             />
           ))}
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{t("diurnalTempExplanation")}</p>
       <p className="indicator-assumption">
-        {t("diurnalTempAssumption").replace("{years}", result.years.join(", ")).replace("{n}", result.count.toLocaleString())}
+        {t("diurnalTempAssumption").replace("{years}", result.years.join(", ")).replace("{n}", t.number(result.count, { maximumFractionDigits: 3 }))}
       </p>
     </section>
   );

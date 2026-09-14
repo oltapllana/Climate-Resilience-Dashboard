@@ -1,7 +1,8 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
 import {
   Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ReferenceLine,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Tooltip, XAxis, YAxis,
 } from "recharts";
 import { calculateTropicalNights } from "../lib/tropicalNights.js";
 import { yAxisLabel } from "./chartLabels.jsx";
@@ -10,8 +11,8 @@ const GREEN = "#2f7d32";
 const WARM = "#d8653b";
 const PARTIAL = "#aab8bf";
 
-const formatTemperature = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
-const formatCount = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const formatTemperature = (t, value) => t.number(Number(value), { maximumFractionDigits: 1 });
+const formatCount = (t, value) => t.number(Number(value), { maximumFractionDigits: 0 });
 
 function DailyTooltip({ active, payload, t }) {
   if (!active || !payload?.length || payload[0].payload.dailyMinimum == null) return null;
@@ -19,7 +20,7 @@ function DailyTooltip({ active, payload, t }) {
   return (
     <div className="indicator-tooltip">
       <strong>{row.date}</strong>
-      <span>{t("dailyMinimumShort")}: {formatTemperature(row.dailyMinimum)} °C</span>
+      <span>{t("dailyMinimumShort")}: {formatTemperature(t, row.dailyMinimum)} °C</span>
       <span>{row.qualifying ? t("qualifyingTropicalNight") : t("notQualifying")}</span>
     </div>
   );
@@ -44,8 +45,8 @@ function QualifyingDot({ cx, cy, payload }) {
   return <circle cx={cx} cy={cy} r={4} fill={WARM} stroke="#fff" strokeWidth={1.4} />;
 }
 
-function ValueLabel({ x, y, width, value }) {
-  return <text x={x + width / 2} y={y - 7} textAnchor="middle" fill="#17242b" fontSize="11" fontWeight="700">{formatCount(value)}</text>;
+function ValueLabel({ t, x, y, width, value }) {
+  return <text x={x + width / 2} y={y - 7} textAnchor="middle" fill="#17242b" fontSize="11" fontWeight="700">{formatCount(t, value)}</text>;
 }
 
 function withMissingGapMarkers(daily) {
@@ -79,18 +80,18 @@ export default function TropicalNightsIndicator({ measurement, t }) {
             <h2>{t("tropicalNightsTitle")}</h2>
             <p>{t("tropicalNightsDesc")}</p>
           </div>
-          <ResponsiveContainer width="100%" height={360}>
+          <ChartFrame t={t} rows={chartData} columns={[{"key":"date","label":"Date"},{"key":"dailyMinimum","label":"Minimum (°C)"}]} indicator="tropical-nights-indicator-1" width="100%" height={360}>
             <LineChart data={chartData} margin={{ top: 25, right: 22, left: 42, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" />
               <XAxis dataKey="date" minTickGap={48} tick={{ fontSize: 10 }} />
-              <YAxis width={62} tick={{ fontSize: 12 }} tickFormatter={formatTemperature} label={yAxisLabel(t("dailyMinimumShort"))} />
+              <YAxis width={62} tick={{ fontSize: 12 }} tickFormatter={formatTemperature.bind(null, t)} label={yAxisLabel(t("dailyMinimumShort"))} />
               <Tooltip content={<DailyTooltip t={t} />} />
               <ReferenceLine y={20} stroke="#17242b" strokeDasharray="6 4" label={{ value: "20°C", position: "insideTopRight", fill: "#17242b", fontSize: 11, fontWeight: 700 }} />
-              {warmest.date && <ReferenceLine x={warmest.date} stroke={WARM} strokeDasharray="4 4" label={{ value: `${warmest.date} · ${formatTemperature(warmest.temperature)}°C`, position: "top", fill: WARM, fontSize: 10, fontWeight: 700 }} />}
+              {warmest.date && <ReferenceLine x={warmest.date} stroke={WARM} strokeDasharray="4 4" label={{ value: `${warmest.date} · ${formatTemperature(t, warmest.temperature)}°C`, position: "top", fill: WARM, fontSize: 10, fontWeight: 700 }} />}
               <Line type="monotone" dataKey="dailyMinimum" stroke={GREEN} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
               <Line type="monotone" dataKey="dailyMinimum" stroke="transparent" strokeWidth={0} dot={<QualifyingDot />} connectNulls={false} isAnimationActive={false} />
             </LineChart>
-          </ResponsiveContainer>
+          </ChartFrame>
         </div>
 
         <div className="indicator-panel">
@@ -98,18 +99,18 @@ export default function TropicalNightsIndicator({ measurement, t }) {
             <h2>{t("tropicalNightsAnnualTitle")}</h2>
             <p>{t("tropicalNightsAnnualDesc")}</p>
           </div>
-          <ResponsiveContainer width="100%" height={360}>
+          <ChartFrame t={t} rows={result.annualCounts.map((row) => ({ ...row, yearLabel: `${row.year}${row.isPartial ? "*" : ""}` }))} columns={[{"key":"year","label":"Year"},{"key":"count","label":"Tropical nights"},{"key":"isPartial","label":"Partial year"}]} indicator="tropical-nights-indicator-2" width="100%" height={360}>
             <BarChart data={result.annualCounts.map((row) => ({ ...row, yearLabel: `${row.year}${row.isPartial ? "*" : ""}` }))} margin={{ top: 30, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
               <XAxis dataKey="yearLabel" />
-              <YAxis width={64} allowDecimals={false} domain={[0, maxAnnual + 1]} label={{ value: t("tropicalNightsAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} />
+              <YAxis tickFormatter={(value) => t.number(value)} width={64} allowDecimals={false} domain={[0, maxAnnual + 1]} label={{ value: t("tropicalNightsAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} />
               <Tooltip content={<AnnualTooltip t={t} />} />
               <Bar dataKey="count" minPointSize={(value) => (value ? 0 : 3)} radius={[4, 4, 0, 0]}>
                 {result.annualCounts.map((row) => <Cell key={row.year} fill={row.isPartial ? PARTIAL : GREEN} />)}
-                <LabelList content={<ValueLabel />} />
+                <LabelList content={<ValueLabel t={t} />} />
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartFrame>
           <p className="indicator-assumption">* {t("partialYearExcluded")}</p>
         </div>
       </div>
@@ -119,7 +120,7 @@ export default function TropicalNightsIndicator({ measurement, t }) {
         {t("tropicalNightsAssumption")} {partialYears ? `${partialYears} ${t("partialRecord").toLowerCase()}.` : ""}
       </p>
       <p className="indicator-assumption">
-        {t("coverage")}: {result.firstObservationDate} – {result.lastObservationDate}. {t("total")}: {result.totalCount}. {t("warmestNight")}: {warmest.date} ({formatTemperature(warmest.temperature)} °C).
+        {t("coverage")}: {result.firstObservationDate} – {result.lastObservationDate}. {t("total")}: {result.totalCount}. {t("warmestNight")}: {warmest.date} ({formatTemperature(t, warmest.temperature)} °C).
       </p>
     </section>
   );

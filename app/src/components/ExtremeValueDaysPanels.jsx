@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 import { DEFAULT_EXTREME_DAY_COUNT, calculateExtremeValueDays } from "../lib/extremeValueDays.js";
 
 // Rrezatimi 3 — the brightest and the dullest days, side by side.
@@ -11,7 +12,7 @@ export default function ExtremeValueDaysPanels({
   title, description, axisLabel, highTitle, lowTitle, explanation, assumption, digits = 0, t,
 }) {
   const result = useMemo(() => calculateExtremeValueDays(measurement?.daily, { count }), [measurement, count]);
-  const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { maximumFractionDigits: digits });
   const formatDate = (date) =>
     `${date.slice(8, 10)} ${t("months")[Number(date.slice(5, 7)) - 1]} ${date.slice(0, 4)}`;
 
@@ -54,10 +55,10 @@ export default function ExtremeValueDaysPanels({
           return (
             <div className="indicator-panel" key={panel.key}>
               <h3 className="panel-title" style={{ color: panel.color }}>{panel.heading}</h3>
-              <ResponsiveContainer width="100%" height={Math.max(300, data.length * 24 + 80)}>
+              <ChartFrame t={t} rows={data} columns={[{key:"date",label:"Date"},{key:"value",label:"Value"},{key:"unit",label:"Unit",value:()=>unit}]} indicator={`extreme-days-${panel.key}`} width="100%" height={Math.max(300, data.length * 24 + 80)}>
                 <BarChart data={data} layout="vertical" margin={{ top: 6, right: 86, left: 74, bottom: 34 }}>
                   <CartesianGrid stroke="#eef2f6" horizontal={false} />
-                  <XAxis
+                  <XAxis tickFormatter={(value) => t.number(value)}
                     type="number"
                     domain={[0, Math.ceil(longest * 1.02)]}
                     tick={{ fontSize: 10 }}
@@ -76,7 +77,7 @@ export default function ExtremeValueDaysPanels({
                     <LabelList content={<ValueLabel />} />
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartFrame>
             </div>
           );
         })}
@@ -84,7 +85,7 @@ export default function ExtremeValueDaysPanels({
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("coverage")}: {result.firstDate} – {result.lastDate} ({result.observedDays.toLocaleString()} {t("observedDays").toLowerCase()}).
+        {t("coverage")}: {result.firstDate} – {result.lastDate} ({t("observedDayCount", { count: result.observedDays })}).
       </p>
     </section>
   );

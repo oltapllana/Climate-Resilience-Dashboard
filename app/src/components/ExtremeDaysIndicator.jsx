@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { DEFAULT_EXTREME_COUNT, calculateExtremeDays } from "../lib/extremeDays.js";
 import { yAxisLabel } from "./chartLabels.jsx";
 
@@ -8,7 +9,7 @@ import { yAxisLabel } from "./chartLabels.jsx";
 const COLD = "#1f77b4";
 const HEAT = "#d62728";
 
-const formatTemp = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const formatTemp = (t, value) => t.number(Number(value), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const asDayMonthYear = (date) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)}`;
 
 export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTREME_COUNT, t }) {
@@ -34,7 +35,7 @@ export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTR
         fontSize="10"
         fontWeight="600"
       >
-        {formatTemp(value)}°C
+        {formatTemp(t, value)}°C
       </text>
     );
   }
@@ -45,7 +46,7 @@ export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTR
     return (
       <div className="indicator-tooltip">
         <strong>{row.label}</strong>
-        <span>{row.type === "cold" ? t("dailyMinimumShort") : t("dailyMaximumShort")}: {formatTemp(row.value)} °C</span>
+        <span>{row.type === "cold" ? t("dailyMinimumShort") : t("dailyMaximumShort")}: {formatTemp(t, row.value)} °C</span>
         <span>{row.type === "cold" ? t("coldestDaysLegend") : t("hottestDaysLegend")}</span>
       </div>
     );
@@ -57,7 +58,7 @@ export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTR
         <h2>{t("extremeDaysTitle").replace(/\{n\}/g, count)}</h2>
         <p>{t("extremeDaysDesc")}</p>
       </div>
-      <ResponsiveContainer width="100%" height={400}>
+      <ChartFrame t={t} rows={data} columns={[{key:"date",label:"Date"},{key:"type",label:"Category"},{"key":"value","label":"Temperature (°C)"}]} indicator="extreme-days-indicator-1" width="100%" height={400}>
         <BarChart data={data} margin={{ top: 26, right: 24, left: 46, bottom: 42 }}>
           <CartesianGrid stroke="#e6ecf0" vertical={false} />
           <XAxis
@@ -67,7 +68,7 @@ export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTR
             tickMargin={8}
             label={{ value: t("date"), position: "insideBottom", offset: -22, fontSize: 12, fontWeight: 600 }}
           />
-          <YAxis
+          <YAxis tickFormatter={(value) => t.number(value)}
             width={68}
             domain={domain}
             tick={{ fontSize: 11 }}
@@ -90,11 +91,11 @@ export default function ExtremeDaysIndicator({ measurement, count = DEFAULT_EXTR
             <LabelList content={<ValueLabel />} />
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{t("extremeDaysExplanation")}</p>
       <p className="indicator-assumption">
         {t("extremeDaysAssumption")
-          .replace("{days}", result.observedDays.toLocaleString())
+          .replace("{days}", t("observedDayCount", { count: result.observedDays }))
           .replace("{start}", result.firstDate)
           .replace("{end}", result.lastDate)}
       </p>

@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
+import { useId } from "react";
 import {
-  ResponsiveContainer,
   ComposedChart,
   LineChart,
   BarChart,
@@ -13,32 +14,34 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
-import { effectiveClimatology } from "../lib/climatology.js";
+import { effectiveClimatology, monthlyAnomalies } from "../lib/climatology.js";
 import { COMPASS_TICKS, axisScale, circularMeanDeg, compassLabel, formatForAxis } from "../lib/chartAxis.js";
 import { EdgeLabel } from "./chartLabels.jsx";
 
+import { CHART_PALETTE, REFERENCE_DASH } from "../lib/chartPalette.js";
+
 const GREEN = "#4a9d4a";
 const GREEN_DARK = "#2f7d32";
-const BLUE = "#2b7fc4";
+const BLUE = CHART_PALETTE.rainfall;
 const RED = "#d6453d";
 const AXIS = "#475569";
 const GRID = "#edf2f7";
 
-function fmt(v, digits = 2) {
-  return v == null ? "-" : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits });
+function fmt(t, v, digits = 2) {
+  return v == null ? "-" : t.number(Number(v), { maximumFractionDigits: digits });
 }
 
 function measurementAxis(unit, t) {
   const key = {
-    "°C": "measurementAxisTemperature",
+    "Â°C": "measurementAxisTemperature",
     "%": "measurementAxisHumidity",
     "mm/h": "measurementAxisRainIntensity",
     mm: "measurementAxisRainfall",
     m: "measurementAxisWaterLevel",
     hPa: "measurementAxisPressure",
-    "W/m²": "measurementAxisSolar",
+    "W/mÂ²": "measurementAxisSolar",
     "m/s": "measurementAxisWindSpeed",
-    "°": "measurementAxisWindDirection",
+    "Â°": "measurementAxisWindDirection",
   }[unit];
   const label = key ? t(key) : t("measurementAxisValue");
   return unit && !key ? `${label} (${unit})` : label;
@@ -76,14 +79,14 @@ function mean(values) {
 }
 
 // The ETL vector-averages wind direction; the chart layer did not, so the line
-// marked "Mean: 166°" on the direction panels was an ordinary average of
-// bearings — the average of 1° and 359° computed as 180°, the opposite way.
+// marked "Mean: 166Â°" on the direction panels was an ordinary average of
+// bearings â€” the average of 1Â° and 359Â° computed as 180Â°, the opposite way.
 function seriesMean(values, circular) {
   return circular ? circularMeanDeg(values) : mean(values);
 }
 
 // A bearing axis always spans the full circle and is read in compass points, so
-// that a month averaging 2° and a month averaging 358° both read as north
+// that a month averaging 2Â° and a month averaging 358Â° both read as north
 // instead of landing at opposite ends of the axis.
 const COMPASS_SCALE = { domain: [0, 360], ticks: COMPASS_TICKS, decimals: 0 };
 
@@ -91,19 +94,19 @@ function scaleFor(values, options) {
   return options.circular ? COMPASS_SCALE : axisScale(values, options);
 }
 
-function tickFor(scale, circular) {
-  return circular ? compassLabel : (value) => formatForAxis(value, scale.decimals);
+function tickFor(t, scale, circular) {
+  return circular ? compassLabel : (value) => formatForAxis(value, scale.decimals, t.locale);
 }
 
 // Dashed horizontal line marking the average of the plotted values. Plain
 // function (not a component) so Recharts receives a real ReferenceLine child.
-function meanLine(value, t, unit, decimals = 2, format = formatForAxis) {
+function meanLine(value, t, unit, decimals = 2, format = (v, d) => formatForAxis(v, d, t.locale)) {
   if (value == null) return null;
   return (
     <ReferenceLine
       y={value}
-      stroke="#64748b"
-      strokeDasharray="6 4"
+      stroke={CHART_PALETTE.reference}
+      strokeDasharray={REFERENCE_DASH}
       strokeWidth={1.2}
       // "insideTopRight" let Recharts draw the text past the plot edge, and
       // every panel in the review lost the end of its own number.
@@ -125,31 +128,37 @@ function AxisNote({ show, t }) {
 }
 
 export function ClimatologyChart({ series, t, unit, isSum }) {
+  const estimatedPattern = useId().replaceAll(":", "");
   // effectiveClimatology fills months the record only covers partially with a
-  // pro-rated estimate (flagged est) — drawn as lighter bars
+  // pro-rated estimate (flagged est) â€” drawn as lighter bars
   const data = effectiveClimatology(series).map((c) => ({
     month: t("months")[c.month - 1],
     v: c.v,
     est: !!c.est,
+    available: c.available,
   }));
 
-  // A bar of a monthly *total* has to grow from zero — its length is the
+  // A bar of a monthly *total* has to grow from zero â€” its length is the
   // quantity. A bar of a monthly *mean* that sits at 930 hPa does not: framed
   // from zero, twelve months of pressure or humidity look identical.
   const circular = !!series.circular;
   const scale = scaleFor(data.map((d) => d.v), { unit, includeZero: isSum, circular });
   const truncated = !circular && scale.domain[0] > 0;
-  const tickFormat = tickFor(scale, circular);
+  const tickFormat = tickFor(t, scale, circular);
 
   return (
     <>
-      <ResponsiveContainer width="100%" height={250}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"month","label":"Month"},{"key":"v","label":"Value"},{"key":"est","label":"Estimated"},{"key":"available","label":"Available"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="monthly-climatology" width="100%" height={250}>
         {/* A bar cannot carry a bearing: a month averaging north sits at 0,
             which draws as no bar at all. Direction gets markers on a compass
             axis instead, and the rose above is the chart that reads properly. */}
         <ComposedChart data={data} margin={chartMargin}>
+          <defs><pattern id={estimatedPattern} width="7" height="7" patternUnits="userSpaceOnUse">
+            <rect width="7" height="7" fill={unit === "mm" || unit === "mm/h" ? BLUE : GREEN_DARK} />
+            <path d="M-1 1L1 -1M0 7L7 0M6 8L8 6" stroke="white" strokeWidth="2" />
+          </pattern></defs>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-          <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={edgePadding} label={xLabel(t("month"))} />
+          <XAxis dataKey="month" interval={0} tickFormatter={label => `${data.find(row => row.month === label)?.available ? "" : "× "}${label}`} tick={{ fontSize: 12 }} padding={edgePadding} label={xLabel(t("month"))} />
           <YAxis
             tick={{ fontSize: 12 }}
             width={58}
@@ -160,7 +169,8 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
             label={yLabel(unit, t)}
           />
           <Tooltip
-            formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]}
+            filterNull={false}
+            formatter={(v) => [v == null ? t("chartMissingValue") : `${fmt(t, v)} ${unit}`, isSum ? t("total") : t("mean")]}
             labelFormatter={(label, payload) =>
               payload?.[0]?.payload?.est ? `${label} ${t("estMonthNote")}` : label
             }
@@ -180,11 +190,11 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
             <Bar
               dataKey="v"
               name={isSum ? t("monthlyTotalLegend") : t("monthlyValueLegend")}
-              fill={GREEN}
+              fill={unit === "mm" || unit === "mm/h" ? CHART_PALETTE.rainfall : GREEN}
               radius={[4, 4, 0, 0]}
             >
               {data.map((d, i) => (
-                <Cell key={i} fillOpacity={d.est ? 0.45 : 1} />
+                <Cell key={i} fill={d.est ? `url(#${estimatedPattern})` : undefined} />
               ))}
             </Bar>
           )}
@@ -193,7 +203,9 @@ export function ClimatologyChart({ series, t, unit, isSum }) {
               rather than behind it */}
           {meanLine(seriesMean(data.map((d) => d.v), circular), t, unit, scale.decimals, circular ? compassLabel : undefined)}
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
+      {data.some(row => !row.available) && <p className="chart-axis-note">{t("missingMonthNote")}</p>}
+      {data.some((row) => row.est) && <p className="chart-axis-note">{t("estimatedBarsNote")}</p>}
       <AxisNote show={truncated} t={t} />
       {circular && <p className="chart-axis-note">{t("directionRoseHint")} {t("circularMeanNote")}</p>}
     </>
@@ -205,11 +217,11 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
   const circular = !!series.circular;
   const scale = scaleFor(data.map((d) => d.v), { unit, includeZero: isSum, circular });
   const truncated = !circular && scale.domain[0] > 0;
-  const tickFormat = tickFor(scale, circular);
+  const tickFormat = tickFor(t, scale, circular);
 
   return (
     <>
-      <ResponsiveContainer width="100%" height={250}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"m","label":"Month"},{"key":"v","label":"Value"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="monthly-evolution" width="100%" height={250}>
         <LineChart data={data} margin={chartMargin}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
           <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} padding={edgePadding} label={xLabel(t("month"))} />
@@ -222,13 +234,13 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
             allowDataOverflow
             label={yLabel(unit, t)}
           />
-          <Tooltip formatter={(v) => [`${fmt(v)} ${unit}`, isSum ? t("total") : t("mean")]} />
+          <Tooltip formatter={(v) => [`${fmt(t, v)} ${unit}`, isSum ? t("total") : t("mean")]} />
           <Legend verticalAlign="top" height={26} wrapperStyle={legendStyle} />
           <Line
             type="monotone"
             dataKey="v"
             name={isSum ? t("monthlyTotalLegend") : t("monthlyValueLegend")}
-            stroke={color}
+            stroke={unit === "mm" || unit === "mm/h" ? CHART_PALETTE.rainfall : color}
             strokeWidth={2.8}
             dot={false}
             activeDot={{ r: 4 }}
@@ -238,7 +250,7 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
               rather than behind it */}
           {meanLine(seriesMean(data.map((d) => d.v), circular), t, unit, scale.decimals, circular ? compassLabel : undefined)}
         </LineChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <AxisNote show={truncated} t={t} />
       {circular && <p className="chart-axis-note">{t("circularMeanNote")}</p>}
     </>
@@ -246,19 +258,10 @@ export function EvolutionChart({ series, t, unit, isSum, color = BLUE }) {
 }
 
 export function AnomaliesChart({ series, t, unit }) {
-  const clim = {};
-  (series.climatology || []).forEach((c) => (clim[c.month] = c.v));
-  // a bearing 10° off a 350° normal is +20°, not -340°
-  const wrap = (d) => ((d + 540) % 360) - 180;
-  const data = (series.monthly || []).map((m) => {
-    const month = Number(m.m.slice(5, 7));
-    const base = clim[month];
-    if (base == null || m.v == null) return { m: m.m, anom: null };
-    const d = series.circular ? wrap(m.v - base) : m.v - base;
-    // a partly observed month has a partly observed total: its "anomaly" would
-    // just measure how much of the month the sensor was running
-    return { m: m.m, anom: m.partial ? null : +d.toFixed(3) };
-  });
+  const data = monthlyAnomalies(series);
+  if (!data.some(row => row.available)) {
+    return <p className="chart-axis-note">{t("anomaliesRequiresYears").replace("{n}", 2)}</p>;
+  }
 
   // An anomaly is a signed departure, so the axis has to be free to go negative
   // whatever the unit is, and it reads honestly only when the two directions
@@ -271,7 +274,7 @@ export function AnomaliesChart({ series, t, unit }) {
   const observed = data.filter((d) => d.anom != null);
   const strongestUp = observed.reduce((best, d) => (best == null || d.anom > best.anom ? d : best), null);
   const strongestDown = observed.reduce((best, d) => (best == null || d.anom < best.anom ? d : best), null);
-  const signed = (value) => `${value > 0 ? "+" : ""}${formatForAxis(value, scale.decimals)} ${unit}`;
+  const signed = (value) => `${value > 0 ? "+" : ""}${formatForAxis(value, scale.decimals, t.locale)} ${unit}`;
   // "2026-02" is a key, not a date a reader says out loud
   const monthName = (key) => {
     const index = Number(String(key).slice(5, 7)) - 1;
@@ -281,7 +284,7 @@ export function AnomaliesChart({ series, t, unit }) {
 
   return (
     <>
-    <ResponsiveContainer width="100%" height={250}>
+    <ChartFrame t={t} rows={data} columns={[{"key":"m","label":"Month"},{"key":"anom","label":"Anomaly"},{"key":"available","label":"Available"},{"key":"referenceYears","label":"Reference years"},{"key":"partial","label":"Partial month"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="monthly-anomalies" width="100%" height={250}>
       <BarChart data={data} margin={chartMargin}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
         <XAxis dataKey="m" tick={{ fontSize: 11 }} minTickGap={28} padding={edgePadding} label={xLabel(t("month"))} />
@@ -290,11 +293,11 @@ export function AnomaliesChart({ series, t, unit }) {
           width={58}
           domain={scale.domain}
           ticks={scale.ticks}
-          tickFormatter={(v) => formatForAxis(v, scale.decimals)}
+          tickFormatter={(v) => formatForAxis(v, scale.decimals, t.locale)}
           allowDataOverflow
           label={yLabel(unit, t)}
         />
-        <Tooltip formatter={(v) => [`${v > 0 ? "+" : ""}${fmt(v)} ${unit}`, v >= 0 ? t("anomalyAbove") : t("anomalyBelow")]} />
+        <Tooltip formatter={(v) => [`${v > 0 ? "+" : ""}${fmt(t, v)} ${unit}`, v >= 0 ? t("anomalyAbove") : t("anomalyBelow")]} />
         <Legend
           verticalAlign="top"
           height={26}
@@ -315,7 +318,8 @@ export function AnomaliesChart({ series, t, unit }) {
             rather than behind it */}
         {meanLine(mean(data.map((d) => d.anom)), t, unit, scale.decimals)}
       </BarChart>
-    </ResponsiveContainer>
+    </ChartFrame>
+      {data.some(row => !row.available) && <p className="chart-axis-note">{t("anomaliesRequiresYears").replace("{n}", 2)}</p>}
       {strongestUp && strongestDown && (
         <p className="chart-axis-note">
           {t("largestAnomalies")
@@ -354,11 +358,11 @@ export function WindRoseChart({ series, t, color = GREEN_DARK }) {
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ChartFrame t={t} rows={data} columns={[{"key":"name","label":"Speed category"},{"key":"value","label":"Days"}]} indicator="wind-speed-distribution" width="100%" height={250}>
       <BarChart data={data} margin={chartMargin}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 12 }} width={58} />
+        <YAxis tickFormatter={(value) => t.number(value)} tick={{ fontSize: 12 }} width={58} />
         <Tooltip formatter={(v) => [`${v} days`, "Count"]} />
         <Bar dataKey="value" fill={color}>
           {data.map((entry, index) => (
@@ -366,6 +370,6 @@ export function WindRoseChart({ series, t, color = GREEN_DARK }) {
           ))}
         </Bar>
       </BarChart>
-    </ResponsiveContainer>
+    </ChartFrame>
   );
 }

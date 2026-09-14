@@ -1,3 +1,5 @@
+import { formatNumber } from "./locale.js";
+
 // Shared y-axis framing.
 //
 // Recharts defaults a numeric axis to [0, max]. For a series that lives far
@@ -168,12 +170,12 @@ export function axisScale(values, options = {}) {
  * near-zero case spelled out: an anomaly mean of -0.004 printed as "-0" reads
  * as a negative zero, which is not a thing.
  */
-export function formatForAxis(value, decimals) {
+export function formatForAxis(value, decimals, locale = "en") {
   if (value == null || !Number.isFinite(Number(value))) return "-";
   const n = Number(value);
   const rounded = +n.toFixed(decimals);
   if (rounded === 0 && n !== 0) return `≈0`;
-  return rounded.toLocaleString(undefined, {
+  return formatNumber(rounded, locale, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });

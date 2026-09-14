@@ -4,7 +4,7 @@
   --green-light: #eaf5ea;
   --blue: #2b7fc4;
   --ink: #1f2937;
-  --muted: #6b7280;
+  --muted: #556170;
   --line: #e5e7eb;
   --bg: #f4f7f4;
   --card: #ffffff;
@@ -76,10 +76,10 @@ header.masthead {
 }
 .charts-area { margin-top: 18px; }
 
-/* configuration panel — capped to the map height, scrolls internally */
+/* The station list participates in page scrolling at every viewport width. */
 .config-panel .card {
   display: flex; flex-direction: column; gap: 4px;
-  max-height: var(--top-h); overflow-y: auto;
+  max-height: none; overflow: visible;
 }
 .cfg-block { padding: 12px 0; border-top: 1px solid var(--line); }
 .cfg-block:first-of-type { border-top: 0; padding-top: 6px; }
@@ -221,6 +221,23 @@ header.masthead {
   font-size: 12.5px;
   line-height: 1.45;
 }
+
+.chart-methodology {
+  margin-top: 12px;
+  border-top: 1px solid #dce5ea;
+  padding-top: 8px;
+}
+.chart-methodology summary {
+  cursor: pointer;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.chart-methodology summary:focus-visible {
+  outline: 2px solid #2b7fc4;
+  outline-offset: 3px;
+}
 /* A callout that reports a limitation of the record rather than a headline
    number, so it reads as a caveat instead of a result. */
 .indicator-callout--warn {
@@ -331,6 +348,20 @@ header.masthead {
   border: 0; background: transparent; cursor: pointer; text-align: left; font: inherit;
   padding: 5px 6px;
 }
+.station-fieldset { border: 0; margin: 0; min-width: 0; }
+.station-pick { min-width: 0; }
+.station-pick .nm { overflow-wrap: anywhere; }
+.station-pick input { flex-shrink: 0; accent-color: var(--green-dark); }
+.station-pick:focus-within { outline: 2px solid var(--green-dark); outline-offset: 2px; border-radius: 6px; }
+.station-map-icon { border: 2px solid white; border-radius: 50%; box-shadow: 0 0 0 1px #475569; background: var(--green); }
+.station-map-icon.hydro { background: var(--blue); }
+.station-map-icon.active { outline: 3px solid #17242b; outline-offset: 2px; }
+.station-map-icon:focus-visible { outline: 3px solid #17242b; outline-offset: 4px; }
+.institutional-footer { margin-top: 26px; padding: 18px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.institutional-footer dl { display: flex; flex-wrap: wrap; gap: 14px 32px; margin: 0; }
+.institutional-footer dt { font-weight: 700; color: var(--ink); }
+.institutional-footer dd { margin: 3px 0 0; }
+.institutional-footer a { color: var(--green-dark); text-decoration: underline; }
 .station-item .nm { font-weight: 600; }
 .station-item .meta { color: var(--muted); font-size: 12px; }
 .remove-btn {
@@ -415,3 +446,32 @@ footer.foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align
 
 .section-title { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; flex-wrap: wrap; }
 .section-title h2 { margin: 0; }
+
+/* F review: labelled chart actions, keyboard focus and readable controls. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.chart-frame { min-width: 0; width: 100%; }
+.chart-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin: 8px 0; }
+.chart-actions button { min-height: 44px; padding: 7px 12px; border: 1px solid #526273; border-radius: 5px; background: white; color: #263747; font: inherit; cursor: pointer; }
+.chart-actions button:disabled { cursor: default; opacity: .65; }
+.chart-viewport { width: 100%; min-width: 0; }
+.chart-data { margin: 8px 0 16px; }
+.chart-data summary { cursor: pointer; padding: 10px 4px; color: #334155; }
+.chart-table-scroll { overflow-x: auto; max-width: 100%; }
+.chart-data table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.chart-data td, .chart-data th { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
+.chart-data caption { text-align: left; font-weight: 600; padding: 6px 0; }
+.chart-frame--custom .chart-viewport { overflow-x: auto; }
+.custom-chart-content { min-width: 0; }
+.custom-chart-content [data-export-legend-item] { max-width: 100%; overflow-wrap: anywhere; }
+.chart-frame--custom .chart-data { overflow-wrap: anywhere; }
+.chart-frame--custom .chart-viewport:focus-visible { outline-offset: -3px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 3px solid #17242b; outline-offset: 3px; }
+.lang-toggle button.active, .seg button.active, .import-btn, .auth-btn:hover { background: var(--green-dark); color: white; }
+.lang-toggle button, .seg button, .auth-btn, .remove-btn { min-height: 44px; }
+.lang-toggle button:focus-visible { outline-offset: -4px; }
+.lang-toggle button.active:focus-visible { outline-color: white; }
+.recharts-legend-item-text { color: #334155 !important; }
+.badge.hydro { color: #155b8c; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}

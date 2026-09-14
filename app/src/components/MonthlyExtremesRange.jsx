@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceDot, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyExtremes } from "../lib/monthlyExtremes.js";
 import { DotLabel, anchorForPosition, topLegendProps, xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 
@@ -12,7 +13,7 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
   const result = useMemo(() => calculateMonthlyExtremes(measurement?.daily), [measurement]);
   if (!result.monthly.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const data = result.monthly.map((row) => ({ ...row, base: row.min, band: row.range }));
   const { absoluteMax, absoluteMin, widest } = result;
 
@@ -65,7 +66,7 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
       <p className="indicator-callout">
         {t("absoluteMaximum")}: <strong>{format(absoluteMax.value)} {unit}</strong> ({absoluteMax.date}) · {t("absoluteMinimum")}: <strong>{format(absoluteMin.value)} {unit}</strong> ({absoluteMin.date}) · {t("widestMonth")}: {widest.month} ({format(widest.range)} {unit})
       </p>
-      <ResponsiveContainer width="100%" height={420}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"month","label":"Month"},{"key":"min","label":"Minimum"},{"key":"max","label":"Maximum"},{key:"minDate",label:"Minimum date"},{key:"maxDate",label:"Maximum date"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="monthly-extremes-range-1" width="100%" height={420}>
         <ComposedChart data={data} margin={{ top: 34, right: 30, left: 52, bottom: 46 }}>
           <CartesianGrid stroke="#eef2f6" />
           <XAxis
@@ -82,7 +83,7 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
             domain={domain}
             allowDataOverflow
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toFixed(0)}
+            tickFormatter={(value) => t.number(Number(value), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             label={yAxisLabel(axisLabel, 4)}
           />
           <Tooltip content={<RangeTooltip />} />
@@ -97,7 +98,7 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
           <Area dataKey="base" stackId="range" stroke="none" fill="transparent" isAnimationActive={false} />
           <Area dataKey="band" stackId="range" stroke="none" fill={BAND} fillOpacity={0.75} isAnimationActive={false} />
           <Line type="linear" dataKey="max" stroke={MAX_LINE} strokeWidth={1.5} dot={{ r: 2.2, fill: MAX_LINE, strokeWidth: 0 }} isAnimationActive={false} />
-          <Line type="linear" dataKey="min" stroke={MIN_LINE} strokeWidth={1.5} dot={{ r: 2.2, fill: MIN_LINE, strokeWidth: 0 }} isAnimationActive={false} />
+          <Line type="linear" dataKey="min" strokeDasharray="6 3" stroke={MIN_LINE} strokeWidth={1.5} dot={{ r: 2.2, fill: MIN_LINE, strokeWidth: 0 }} isAnimationActive={false} />
           <ReferenceDot x={absoluteMax.month} y={absoluteMax.value} r={4} fill={MAX_LINE} stroke="#fff" strokeWidth={1.2} isFront>
             <Label
               content={<DotLabel text={`${t("absoluteMaximum")}: ${format(absoluteMax.value)} ${unit}`} anchor={maxAnchor} place="top" fill={MAX_LINE} />}
@@ -110,11 +111,11 @@ export default function MonthlyExtremesRange({ measurement, unit, title, descrip
             />
           </ReferenceDot>
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("coverage")}: {result.firstDate} – {result.lastDate} ({result.observedDays.toLocaleString()} {t("observedDays").toLowerCase()}).
+        {t("coverage")}: {result.firstDate} – {result.lastDate} ({t("observedDayCount", { count: result.observedDays })}).
       </p>
     </section>
   );

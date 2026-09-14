@@ -1,13 +1,13 @@
-# Podujevë Climate Resilience Dashboard
+# Podujeva Climate Resilience Dashboard
 
 An interactive dashboard for the hydro-meteorological monitoring network of the
 **Llap basin (Podujevë, Kosovo)**, inspired by
 [rezilientaclimatica.adrvest.ro](https://rezilientaclimatica.adrvest.ro/en/dashboard/).
 
-On landing it shows a map of Kosovo focused on **Podujevë** with every monitoring
-station; selecting a station opens its charts (monthly climatology, historical
-evolution, monthly anomalies, daily detail). UI available in **English** and
-**Albanian (Shqip)**.
+On startup it shows the Podujeva-area map and loads saved stations when Supabase
+is configured. Otherwise the station list starts empty; import observations to
+populate it. Selecting a station opens its available charts. The UI is available
+in **English** and **Albanian (Shqip)**.
 
 ## Project layout
 
@@ -29,6 +29,7 @@ python etl/build_data.py
 
 This writes `app/public/data/stations.json` and one `<station>.json` per station
 (daily + monthly + monthly-climatology aggregates, plus summary stats).
+These are optional ETL outputs; the current App does not load them at startup.
 
 ## 2. Run the dashboard
 
@@ -105,13 +106,21 @@ visible, shows fallback settlement labels from station metadata, logs a clear
 
 ## Import your own Excel (e.g. Prishtina)
 
-Click **⬆ Import Excel** in the header and choose an `.xlsx` / `.xls` / `.txt`
+Click **⬆ Import Excel** in the station panel and choose an `.xlsx` / `.xls` / `.txt`
 file in either of the dataset's raw formats (the `Llap` header-block format or
 the `Shajkoc` `Station | Datee | CorrValue` format). It is parsed **entirely in
 the browser** ([app/src/lib/importExcel.js](app/src/lib/importExcel.js)),
-aggregated the same way as the built-in data, and added as a selectable station
-(placed at Prishtina by default — edit the coords in the import call if needed).
-Nothing is uploaded anywhere.
+aggregated and added as a selectable station. Known stations use catalogue
+coordinates; unknown station names may be sent to Nominatim for geocoding, with
+the Podujeva centre as fallback.
+
+Without Supabase configuration, imported observations remain in browser memory
+for the current session. With `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+configured, imports require sign-in and the parsed station data, including
+measurements, is saved to Supabase. The original workbook file is not uploaded.
+Saved stations are loaded on startup; removal also requests deletion from
+Supabase. Access is subject to the database policies. Map tiles and geocoding
+use external services independently of observation persistence.
 
 ## Notes for the course project
 

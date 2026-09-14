@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateExceedanceDays } from "../lib/exceedanceDays.js";
 import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 
@@ -16,7 +17,7 @@ export default function ExceedanceDaysChart({
   const result = useMemo(() => calculateExceedanceDays(measurement?.daily), [measurement]);
   if (result.years.length < 2) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const data = result.years.map((row) => ({ ...row, share: +row.share.toFixed(1) }));
   const hasComplete = data.some((row) => !row.partial);
   const hasPartial = data.some((row) => row.partial);
@@ -42,7 +43,7 @@ export default function ExceedanceDaysChart({
         <strong>{row.year}{row.partial ? ` · ${t("partialYear")}` : ""}</strong>
         {row.first && <span>{t("observedWindow")}: {row.first} – {row.last}</span>}
         <span>{t("exceedingDays")}: {row.exceedingDays} / {row.monitoredDays}</span>
-        <span>{t("shareOfMonitoredDays")}: {row.share.toFixed(1)} %</span>
+        <span>{t("shareOfMonitoredDays")}: {t.number(row.share, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</span>
       </div>
     );
   }
@@ -63,14 +64,14 @@ export default function ExceedanceDaysChart({
       {!hasComplete && (
         <p className="indicator-callout indicator-callout--warn">{t("noCompleteYearNote")}</p>
       )}
-      <ResponsiveContainer width="100%" height={340}>
+      <ChartFrame t={t} rows={data} columns={[{key:"year",label:"Year"},{key:"share",label:"Exceedance (%)"},{key:"monitoredDays",label:"Monitored days"},{key:"exceedingDays",label:"Exceeding days"},{key:"partial",label:"Partial year"},{key:"threshold",label:`Threshold (${unit})`,value:()=>result.threshold}]} indicator="exceedance-days-chart-1" width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 30, right: 30, left: 48, bottom: 34 }}>
           <CartesianGrid stroke="#eef2f6" vertical={false} />
           <XAxis dataKey="year" tick={{ fontSize: 12 }} />
           <YAxis
             width={66}
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => `${value} %`}
+            tickFormatter={(value) => `${t.number(value)} %`}
             label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<ExceedanceTooltip />} cursor={{ fill: "#f1f5f9" }} />
@@ -91,11 +92,11 @@ export default function ExceedanceDaysChart({
             {data.map((row) => (
               <Cell key={row.year} fill={row.partial ? PARTIAL : COMPLETE} />
             ))}
-            <LabelList dataKey="share" position="top" formatter={(value) => `${value} %`} fontSize={12} fontWeight={700} fill="#334155" />
+            <LabelList dataKey="share" position="top" formatter={(value) => `${t.number(value)} %`} fontSize={12} fontWeight={700} fill="#334155" />
             <LabelList dataKey="monitoredDays" content={<MonitoredDaysLabel />} />
           </Bar>
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">

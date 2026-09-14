@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyTemperature } from "../lib/monthlyTemperature.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
@@ -13,7 +14,7 @@ const MIN = "#2b7fc4";
 const MAX_BAND = "#f2cdb6";
 const MIN_BAND = "#c3dcee";
 
-const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+const format = (t, value) => t.number(Number(value), { maximumFractionDigits: 1 });
 
 export default function MonthlyTemperatureExtremes({ measurement, t }) {
   const result = useMemo(() => calculateMonthlyTemperature(measurement?.hourly), [measurement]);
@@ -47,10 +48,10 @@ export default function MonthlyTemperatureExtremes({ measurement, t }) {
     if (row.meanMax == null) return null;
     return (
       <div className="indicator-tooltip">
-        <strong>{row.label} · {row.yearCount} {row.yearCount === 1 ? t("yearSingular") : t("yearPlural")}</strong>
-        <span>{t("meanMaxTemp")}: {format(row.meanMax)} °C ({format(row.maxLow)} – {format(row.maxHigh)})</span>
-        <span>{t("meanMinTemp")}: {format(row.meanMin)} °C ({format(row.minLow)} – {format(row.minHigh)})</span>
-        <span>{t("absoluteRange")}: {format(row.absoluteMin)} – {format(row.absoluteMax)} °C</span>
+        <strong>{row.label} · {t("yearCount", { count: row.yearCount })}</strong>
+        <span>{t("meanMaxTemp")}: {format(t, row.meanMax)} °C ({format(t, row.maxLow)} – {format(t, row.maxHigh)})</span>
+        <span>{t("meanMinTemp")}: {format(t, row.meanMin)} °C ({format(t, row.minLow)} – {format(t, row.minHigh)})</span>
+        <span>{t("absoluteRange")}: {format(t, row.absoluteMin)} – {format(t, row.absoluteMax)} °C</span>
         <span>{row.years.join(", ")}</span>
       </div>
     );
@@ -64,10 +65,10 @@ export default function MonthlyTemperatureExtremes({ measurement, t }) {
       </div>
       {hottest && coldest && (
         <p className="indicator-callout">
-          {t("warmestMonthMean")}: <strong>{hottest.label}</strong> ({format(hottest.meanMax)} °C) · {t("coldestMonthMean")}: <strong>{coldest.label}</strong> ({format(coldest.meanMin)} °C)
+          {t("warmestMonthMean")}: <strong>{hottest.label}</strong> ({format(t, hottest.meanMax)} °C) · {t("coldestMonthMean")}: <strong>{coldest.label}</strong> ({format(t, coldest.meanMin)} °C)
         </p>
       )}
-      <ResponsiveContainer width="100%" height={360}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"label","label":"Month"},{"key":"meanMax","label":"Mean maximum (°C)"},{"key":"meanMin","label":"Mean minimum (°C)"},{"key":"maxLow","label":"Lowest maximum (°C)"},{"key":"maxHigh","label":"Highest maximum (°C)"},{"key":"minLow","label":"Lowest minimum (°C)"},{"key":"minHigh","label":"Highest minimum (°C)"}]} indicator="monthly-temperature-extremes-1" width="100%" height={360}>
         <ComposedChart data={data} margin={{ top: 20, right: 24, left: 46, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <XAxis dataKey="label" tick={{ fontSize: 12 }} />
@@ -81,7 +82,7 @@ export default function MonthlyTemperatureExtremes({ measurement, t }) {
             domain={scale.domain}
             ticks={scale.ticks}
             allowDataOverflow
-            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals, t.locale)}
             label={yAxisLabel(t("temperatureAxis"))}
           />
           <Tooltip content={<MonthTooltip />} />
@@ -100,9 +101,9 @@ export default function MonthlyTemperatureExtremes({ measurement, t }) {
           <Area dataKey="minLowBase" stackId="minRange" stroke="none" fill="transparent" isAnimationActive={false} />
           <Area dataKey="minBand" stackId="minRange" stroke="none" fill={MIN_BAND} fillOpacity={0.75} isAnimationActive={false} />
           <Line type="monotone" dataKey="meanMax" stroke={MAX} strokeWidth={2.6} dot={{ r: 3, fill: MAX }} connectNulls isAnimationActive={false} />
-          <Line type="monotone" dataKey="meanMin" stroke={MIN} strokeWidth={2.6} dot={{ r: 3, fill: MIN }} connectNulls isAnimationActive={false} />
+          <Line type="monotone" dataKey="meanMin" strokeDasharray="6 3" stroke={MIN} strokeWidth={2.6} dot={{ r: 3, fill: MIN }} connectNulls isAnimationActive={false} />
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{t("monthlyExtremesExplanation")}</p>
       <p className="indicator-assumption">{t("monthlyExtremesAssumption")}</p>
     </section>

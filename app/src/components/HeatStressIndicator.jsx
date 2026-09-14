@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { HEAT_STRESS_BANDS, HEAT_WAVE_MIN_DAYS, HEAT_WAVE_THRESHOLD_C, calculateHeatStress } from "../lib/heatStress.js";
 import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 
@@ -7,16 +8,16 @@ import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
 // for the classes to be visually distinguishable, so each gets its own colour
 // and the classes are exclusive, making the stack total the year's stress days.
 // The low-value counterpart lives in ExtremeDaysIndicator (Temperatura 5).
-const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const format = (t, value) => t.number(Number(value), { maximumFractionDigits: 0 });
 
 // A year with no stress days at all still gets its number printed on the
 // baseline. Without it 2026 appeared on the axis with nothing above it, which
 // reads as a year the chart failed to draw rather than a year that was calm.
-function CountLabel({ x, y, width, value }) {
+function CountLabel({ t, x, y, width, value }) {
   if (value == null || x == null || y == null) return null;
   return (
     <text x={x + width / 2} y={y - 7} textAnchor="middle" fill={value ? "#17242b" : "#7c8b96"} fontSize="11" fontWeight="700">
-      {format(value)}
+      {format(t, value)}
     </text>
   );
 }
@@ -37,8 +38,8 @@ export default function HeatStressIndicator({ measurement, t }) {
       <div className="indicator-tooltip">
         <strong>{row.year}{row.isPartial ? ` (${t("partialYear")})` : ""}</strong>
         {HEAT_STRESS_BANDS.map((band) => <span key={band.id}>{band.label}: {row[band.id]}</span>)}
-        <span>{t("heatWaves")}: {row.heatWaveCount} ({row.heatWaveDays} {t("days")})</span>
-        <span>{t("warmestDay")}: {row.warmestDay.date} ({row.warmestDay.max} °C)</span>
+        <span>{t("heatWaves")}: {row.heatWaveCount} ({t("dayCount", { count: row.heatWaveDays })})</span>
+        <span>{t("warmestDay")}: {row.warmestDay.date} ({t.number(row.warmestDay.max)} °C)</span>
         <span>{t("observedDays")}: {row.observedDays}</span>
       </div>
     );
@@ -50,7 +51,7 @@ export default function HeatStressIndicator({ measurement, t }) {
         <h2>{t("heatStressTitle")}</h2>
         <p>{t("heatStressDesc")}</p>
       </div>
-      <ResponsiveContainer width="100%" height={360}>
+      <ChartFrame t={t} rows={result.yearly} columns={[{key:"year",label:"Year"},...HEAT_STRESS_BANDS.map(b=>({key:b.id,label:b.label})),{key:"isPartial",label:"Partial year"}]} indicator="heat-stress-indicator-1" width="100%" height={360}>
         <BarChart data={result.yearly} margin={{ top: 30, right: 24, left: 46, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" vertical={false} />
           <XAxis dataKey="year" tick={{ fontSize: 12 }} tickFormatter={yearLabel} />
@@ -64,17 +65,17 @@ export default function HeatStressIndicator({ measurement, t }) {
             /* the >46 °C class is one or two days in a hundred: without a floor
                on the segment height it is thinner than the bar's own outline */
             <Bar key={band.id} dataKey={band.id} stackId="heat" fill={band.color} minPointSize={(value) => (value ? 3 : 0)} radius={index === HEAT_STRESS_BANDS.length - 1 ? [4, 4, 0, 0] : undefined}>
-              {index === HEAT_STRESS_BANDS.length - 1 && <LabelList dataKey="heatStressTotal" content={<CountLabel />} />}
+              {index === HEAT_STRESS_BANDS.length - 1 && <LabelList dataKey="heatStressTotal" content={<CountLabel t={t} />} />}
             </Bar>
           ))}
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-assumption">{t("partialYearExcluded")}</p>
 
       {result.heatWaves.length > 0 && (
         <p className="indicator-callout">
           {t("heatWaveSummary")
-            .replace("{n}", result.heatWaves.length)
+            .replace("{events}", t("heatWaveCount", { count: result.heatWaves.length }))
             .replace("{days}", HEAT_WAVE_MIN_DAYS)
             .replace("{threshold}", HEAT_WAVE_THRESHOLD_C)}
           {" "}
@@ -82,7 +83,7 @@ export default function HeatStressIndicator({ measurement, t }) {
             .slice()
             .sort((a, b) => b.length - a.length)
             .slice(0, 3)
-            .map((wave) => `${wave.startDate} → ${wave.endDate} (${wave.length} ${t("days")}, ${wave.peak} °C)`)
+            .map((wave) => `${wave.startDate} → ${wave.endDate} (${t("dayCount", { count: wave.length })}, ${t.number(wave.peak)} °C)`)
             .join(" · ")}
         </p>
       )}

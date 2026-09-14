@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import {
   COLD_PERIOD_MIN_DAYS, COLD_PERIOD_THRESHOLD_C,
   HEAT_WAVE_MIN_DAYS, HEAT_WAVE_THRESHOLD_C,
@@ -13,7 +14,7 @@ import {
 const HEAT = "#d62728";
 const COLD = "#1f77b4";
 
-const formatTemp = (value) => `${value > 0 ? "+" : ""}${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
+const formatTemp = (t, value) => `${value > 0 ? "+" : ""}${t.number(Number(value), { maximumFractionDigits: 1 })}`;
 const asDayMonthYear = (date) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)}`;
 
 export const MAX_EPISODES_PER_TYPE = 6;
@@ -54,7 +55,7 @@ export default function HeatColdEpisodes({ measurement, t }) {
     if (!row) return null;
     return (
       <text x={x + width + 8} y={y + height / 2 + 4} fill="#17242b" fontSize="10.5" fontWeight="600">
-        {row.length} {t("days")} · {t("peakShort")}: {formatTemp(row.peak)}°C
+        {t("dayCount", { count: row.length })} · {t("peakShort")}: {formatTemp(t, row.peak)}°C
       </text>
     );
   }
@@ -66,8 +67,8 @@ export default function HeatColdEpisodes({ measurement, t }) {
       <div className="indicator-tooltip">
         <strong>{row.title}</strong>
         <span>{row.range}</span>
-        <span>{t("duration")}: {row.length} {t("days")}</span>
-        <span>{t("peakShort")}: {formatTemp(row.peak)} °C</span>
+        <span>{t("duration")}: {t("dayCount", { count: row.length })}</span>
+        <span>{t("peakShort")}: {formatTemp(t, row.peak)} °C</span>
       </div>
     );
   }
@@ -87,10 +88,10 @@ export default function HeatColdEpisodes({ measurement, t }) {
           .replace("{coldDays}", COLD_PERIOD_MIN_DAYS)
           .replace("{coldThreshold}", COLD_PERIOD_THRESHOLD_C)}
       </p>
-      <ResponsiveContainer width="100%" height={Math.max(320, data.length * 42 + 90)}>
+      <ChartFrame t={t} rows={data} columns={[{key:"title",label:"Episode"},{key:"startDate",label:"Start date"},{key:"endDate",label:"End date"},{key:"length",label:"Days"},{key:"peak",label:"Peak (°C)"}]} indicator="heat-cold-episodes-1" width="100%" height={Math.max(320, data.length * 42 + 90)}>
         <BarChart data={data} layout="vertical" margin={{ top: 10, right: 150, left: 152, bottom: 34 }}>
           <CartesianGrid stroke="#dce5ea" horizontal={false} />
-          <XAxis
+          <XAxis tickFormatter={(value) => t.number(value)}
             type="number"
             domain={[0, Math.ceil(longest * 1.05)]}
             tick={{ fontSize: 11 }}
@@ -121,12 +122,12 @@ export default function HeatColdEpisodes({ measurement, t }) {
             <LabelList content={<BarLabel />} />
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{t("episodesExplanation")}</p>
       <p className="indicator-assumption">
         {t("episodesAssumption")
-          .replace("{heat}", result.heatWaves.length)
-          .replace("{cold}", result.coldPeriods.length)}
+          .replace("{heat}", t("heatWaveCount", { count: result.heatWaves.length }))
+          .replace("{cold}", t("coldPeriodCount", { count: result.coldPeriods.length }))}
         {hiddenCount > 0 && ` ${t("episodesTruncated").replace("{shown}", MAX_EPISODES_PER_TYPE).replace("{hidden}", hiddenCount)}`}
       </p>
     </section>

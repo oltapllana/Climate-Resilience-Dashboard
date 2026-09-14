@@ -1,5 +1,7 @@
+import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyTemperature } from "../lib/monthlyTemperature.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
@@ -9,7 +11,7 @@ import { xAxisLabel, yAxisLabel } from "./chartLabels.jsx";
 const MEAN = "#2b7fc4";
 const TREND = "#c63a2b";
 
-const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+const format = (t, value) => t.number(Number(value), { maximumFractionDigits: 1 });
 
 export default function MonthlyTemperatureTrend({ measurement, t }) {
   const result = useMemo(() => calculateMonthlyTemperature(measurement?.hourly), [measurement]);
@@ -40,7 +42,7 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
   );
 
   const { slopePerYear, r2, interval } = result.trend;
-  const signed = (value) => `${value > 0 ? "+" : ""}${format(value)}`;
+  const signed = (value) => `${value > 0 ? "+" : ""}${format(t, value)}`;
   const warmest = result.warmestMonth;
   const coldest = result.coldestMonth;
 
@@ -50,8 +52,8 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
     return (
       <div className="indicator-tooltip">
         <strong>{row.month}{row.complete ? "" : ` · ${t("partialMonth")}`}</strong>
-        <span>{t("mean")}: {format(row.mean)} °C</span>
-        <span>{t("max")}: {format(row.absoluteMax)} °C · {t("min")}: {format(row.absoluteMin)} °C</span>
+        <span>{t("mean")}: {format(t, row.mean)} °C</span>
+        <span>{t("max")}: {format(t, row.absoluteMax)} °C · {t("min")}: {format(t, row.absoluteMin)} °C</span>
         <span>{t("observedDays")}: {row.observedDays}</span>
       </div>
     );
@@ -73,12 +75,12 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
               {/* R² stays on show — it is the number a reader is likely to ask
                   for — but after the interval, which is what actually answers
                   whether there is a trend here at all. */}
-              {r2 != null && <> · R² = {r2}</>}
+              {r2 != null && <> · R² = {t.number(r2)}</>}
               {" · "}{t("basedOnCompleteMonths").replace("{n}", result.completeMonthCount)}
             </>}
-        {warmest && coldest && <> · {t("warmest")}: {warmest.month} ({format(warmest.mean)} °C) · {t("coldest")}: {coldest.month} ({format(coldest.mean)} °C)</>}
+        {warmest && coldest && <> · {t("warmest")}: {warmest.month} ({format(t, warmest.mean)} °C) · {t("coldest")}: {coldest.month} ({format(t, coldest.mean)} °C)</>}
       </p>
-      <ResponsiveContainer width="100%" height={360}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"month","label":"Month"},{"key":"mean","label":"Mean (°C)"},{"key":"absoluteMin","label":"Minimum (°C)"},{"key":"absoluteMax","label":"Maximum (°C)"},{"key":"trend","label":"Fitted trend (°C)"},{"key":"complete","label":"Complete month"},{"key":"observedDays","label":"Observed days"}]} indicator="monthly-temperature-trend-1" width="100%" height={360}>
         <ComposedChart data={data} margin={{ top: 20, right: 24, left: 46, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <XAxis dataKey="month" minTickGap={36} tick={{ fontSize: 10 }} />
@@ -92,7 +94,7 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
             domain={scale.domain}
             ticks={scale.ticks}
             allowDataOverflow
-            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals, t.locale)}
             label={yAxisLabel(t("temperatureAxis"))}
           />
           <Tooltip content={<MonthTooltip />} />
@@ -117,32 +119,34 @@ export default function MonthlyTemperatureTrend({ measurement, t }) {
           <Line type="monotone" dataKey="mean" stroke={MEAN} strokeWidth={2.4} dot={{ r: 2.5, fill: MEAN }} isAnimationActive={false} />
           <Line type="monotone" dataKey="trend" stroke={TREND} strokeWidth={2.2} strokeDasharray="7 5" dot={false} connectNulls isAnimationActive={false} />
         </ComposedChart>
-      </ResponsiveContainer>
-      <p className="indicator-explanation">{t("monthlyTempTrendExplanation")}</p>
+      </ChartFrame>
       <p className="indicator-assumption">{t("monthlyTempTrendAssumption")}</p>
-      {/* R² is the wrong statistic to leave a reader alone with here: it answers
-          how much scatter the line accounts for, not whether the slope is
-          separable from zero, and on a short record the two come apart. When
-          the interval straddles zero that is the finding, and it is said in
-          those words rather than left as a number to interpret unaided. */}
-      {interval && !interval.separableFromZero ? (
-        <p className="indicator-assumption">
-          {t("trendIntervalCaution")
-            .replace("{low}", signed(interval.low))
-            .replace("{high}", signed(interval.high))
-            .replace("{slope}", signed(slopePerYear))
-            .replace("{r2}", r2 ?? "—")
-            .replace("{pct}", r2 == null ? "—" : Math.round(r2 * 100))
-            .replace("{n}", interval.observations)
-            .replace("{eff}", interval.effectiveN)}
-        </p>
-      ) : (
-        r2 != null && r2 < 0.2 && (
+      <Methodology t={t}>
+        <p className="indicator-explanation">{t("monthlyTempTrendExplanation")}</p>
+        {/* R² is the wrong statistic to leave a reader alone with here: it answers
+            how much scatter the line accounts for, not whether the slope is
+            separable from zero, and on a short record the two come apart. When
+            the interval straddles zero that is the finding, and it is said in
+            those words rather than left as a number to interpret unaided. */}
+        {interval && !interval.separableFromZero ? (
           <p className="indicator-assumption">
-            {t("weakTrendCaution").replace("{r2}", r2).replace("{pct}", Math.round(r2 * 100))}
+            {t("trendIntervalCaution")
+              .replace("{low}", signed(interval.low))
+              .replace("{high}", signed(interval.high))
+              .replace("{slope}", signed(slopePerYear))
+              .replace("{r2}", t.number(r2))
+              .replace("{pct}", r2 == null ? "—" : Math.round(r2 * 100))
+              .replace("{n}", interval.observations)
+              .replace("{eff}", t.number(interval.effectiveN))}
           </p>
-        )
-      )}
+        ) : (
+          r2 != null && r2 < 0.2 && (
+            <p className="indicator-assumption">
+              {t("weakTrendCaution").replace("{r2}", t.number(r2)).replace("{pct}", Math.round(r2 * 100))}
+            </p>
+          )
+        )}
+      </Methodology>
       <p className="indicator-assumption">{t("coverage")}: {result.firstDate} – {result.lastDate}.</p>
     </section>
   );

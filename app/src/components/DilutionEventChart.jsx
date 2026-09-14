@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceDot, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDilutionEvent } from "../lib/dilutionEvent.js";
 import { dayTicks } from "../lib/seriesUtils.js";
 import { yAxisLabel } from "./chartLabels.jsx";
@@ -25,7 +26,7 @@ export default function DilutionEventChart({
   );
   if (result.series.length < 2) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const formatTime = (time) => new Date(time).toLocaleDateString(undefined, { day: "2-digit", month: "short" });
 
   function DilutionTooltip({ active, payload }) {
@@ -35,7 +36,7 @@ export default function DilutionEventChart({
       <div className="indicator-tooltip">
         <strong>{row.key.replace("T", " ")}</strong>
         {row.value != null && <span>{seriesLabel}: {format(row.value)} {unit}</span>}
-        {row.level != null && <span>{levelLabel}: {Number(row.level).toFixed(2)} {levelUnit}</span>}
+        {row.level != null && <span>{levelLabel}: {t.number(Number(row.level), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {levelUnit}</span>}
       </div>
     );
   }
@@ -47,11 +48,11 @@ export default function DilutionEventChart({
         <p>{description}</p>
       </div>
       <p className="indicator-callout">
-        {t("floodPeak")}: <strong>{Number(result.peak.value).toFixed(2)} {levelUnit}</strong> ({result.peak.key.replace("T", " ")})
+        {t("floodPeak")}: <strong>{t.number(Number(result.peak.value), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {levelUnit}</strong> ({result.peak.key.replace("T", " ")})
         {" · "}
         {t("dilutionMinimum")}: <strong>{format(result.minimum.value)} {unit}</strong> ({result.minimum.key.replace("T", " ")})
       </p>
-      <ResponsiveContainer width="100%" height={360}>
+      <ChartFrame t={t} rows={result.series} columns={[{key:"time",label:"Time"},{key:"level",label:`Water level (${levelUnit})`},{key:"value",label:"Value"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="dilution-event-chart-1" width="100%" height={360}>
         <ComposedChart data={result.series} margin={{ top: 26, right: 60, left: 52, bottom: 30 }}>
           <CartesianGrid stroke="#eef2f6" />
           <XAxis
@@ -69,7 +70,7 @@ export default function DilutionEventChart({
             width={72}
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits })}
+            tickFormatter={(value) => t.number(Number(value), { maximumFractionDigits: digits })}
             label={yAxisLabel(axisLabel)}
           />
           <YAxis
@@ -78,7 +79,7 @@ export default function DilutionEventChart({
             width={58}
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toFixed(1)}
+            tickFormatter={(value) => t.number(Number(value), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
             label={{ value: levelAxisLabel, angle: 90, position: "insideRight", offset: -6 }}
           />
           <Tooltip content={<DilutionTooltip />} />
@@ -92,10 +93,10 @@ export default function DilutionEventChart({
             <Label value={`${t("dilutionMinimum")}: ${format(result.minimum.value)} ${unit}`} position="bottom" offset={12} fill={QUALITY} fontSize={11} fontWeight={700} />
           </ReferenceDot>
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
-      <p className="indicator-assumption">{t("eventWindowNote").replace("{days}", windowDays)}</p>
+      <p className="indicator-assumption">{t("eventWindowNote", { days: t("dayCount", { count: windowDays }) })}</p>
     </section>
   );
 }

@@ -1,5 +1,6 @@
-import { MapContainer, TileLayer, CircleMarker, Tooltip, GeoJSON, Marker, useMap } from "react-leaflet";
-import { divIcon, geoJSON } from "leaflet";
+import { createInitialViewController } from "../lib/mapViewPolicy.js";
+import { MapContainer, TileLayer, CircleMarker, Tooltip, Popup, GeoJSON, Marker, useMap } from "react-leaflet";
+import { divIcon } from "leaflet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildSettlementBoundaryIndex,
@@ -28,56 +29,40 @@ const CITY_HALO_STYLE = {
   fillColor: "#0f766e",
   fillOpacity: 0.12,
 };
-const STATION_STYLE = {
-  color: "#fff",
-  weight: 2,
-  fillOpacity: 0.85,
-};
 
 function FlyToStation({ station }) {
   const map = useMap();
-  const hasSeenInitialSelection = useRef(false);
-  const lat = station?.displayLat ?? station?.lat;
-  const lon = station?.displayLon ?? station?.lon;
+  const previousId = useRef(null);
   useEffect(() => {
-    // The dashboard automatically selects its first station while loading.
-    // Keep the complete municipality visible for that initial selection; only
-    // zoom after the user chooses another station.
-    if (!hasSeenInitialSelection.current && Number.isFinite(lat) && Number.isFinite(lon)) {
-      hasSeenInitialSelection.current = true;
-      return;
-    }
-
-    // fly only when the selected station has coordinates; while it is still
-    // being located stay put instead of snapping back to the default view
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      map.flyTo([lat, lon], 12, { duration: 0.7 });
-    }
-  }, [station?.id, lat, lon, map]);
+    if (!station || previousId.current === station.id) return;
+    const initial = previousId.current == null;
+    previousId.current = station.id;
+    const lat = station.displayLat ?? station.lat;
+    const lon = station.displayLon ?? station.lon;
+    // Loading settlement geometry or switching language is not a new selection.
+    if (!initial && Number.isFinite(lat) && Number.isFinite(lon)) map.flyTo([lat, lon], 12, { duration: 0.7, animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches });
+  }, [station, map]);
   return null;
 }
 
-function FitStudyArea({ boundary }) {
+function FitStudyArea({ boundary, stations, boundaryReady, selectedId }) {
   const map = useMap();
-  const hasFitted = useRef(false);
-
+  const controller = useRef(createInitialViewController());
+  const previousSelection = useRef(null);
   useEffect(() => {
-    if (!boundary || hasFitted.current) return;
-
-    try {
-      const bounds = geoJSON(boundary).getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, {
-          padding: [24, 24],
-          animate: false,
-        });
-        hasFitted.current = true;
-      }
-    } catch {
-      // Retain the MapContainer fallback view if boundary data is malformed.
-    }
-  }, [boundary, map]);
-
+    const container = map.getContainer();
+    const interact = () => controller.current.interact();
+    const events = ["pointerdown", "wheel", "keydown"];
+    events.forEach(event => container.addEventListener(event, interact, { capture: true, passive: true }));
+    return () => events.forEach(event => container.removeEventListener(event, interact, true));
+  }, [map]);
+  useEffect(() => {
+    if (previousSelection.current != null && selectedId !== previousSelection.current) controller.current.interact();
+    previousSelection.current = selectedId;
+  }, [selectedId]);
+  useEffect(() => {
+    controller.current.fit(map, boundary, stations, boundaryReady);
+  }, [map, boundary, stations, boundaryReady]);
   return null;
 }
 
@@ -96,43 +81,6 @@ function ResizeHandler() {
     };
   }, [map]);
   return null;
-}
-
-function createLabelIcon(label, className) {
-  return divIcon({
-    html: `<div class="${className}">${label}</div>`,
-    className: "map-label-icon",
-    iconSize: [90, 24],
-    iconAnchor: [45, 12],
-  });
-}
-
-function buildFallbackSettlementLabels(unmatchedStations) {
-  const groups = new Map();
-
-  unmatchedStations.forEach((station) => {
-    const label = station.settlement || station.name;
-    if (!label || !Number.isFinite(station?.lat) || !Number.isFinite(station?.lon)) return;
-
-    const key = `${station.municipality || ""}:${label}`.toLowerCase();
-    const existing = groups.get(key);
-    if (existing) {
-      existing.count += 1;
-      existing.lat = (existing.lat * (existing.count - 1) + station.lat) / existing.count;
-      existing.lon = (existing.lon * (existing.count - 1) + station.lon) / existing.count;
-      return;
-    }
-
-    groups.set(key, {
-      key,
-      label,
-      lat: station.lat,
-      lon: station.lon,
-      count: 1,
-    });
-  });
-
-  return Array.from(groups.values());
 }
 
 function ringArea(ring) {
@@ -229,19 +177,6 @@ function getFeatureInteriorPoint(feature) {
   return best ? { lat: best.lat, lon: best.lon } : null;
 }
 
-function getFeatureBoundsCenter(feature) {
-  try {
-    const bounds = geoJSON(feature).getBounds();
-    if (bounds.isValid()) {
-      const center = bounds.getCenter();
-      return { lat: center.lat, lon: center.lng };
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 function buildStationDisplayPositions(matchedSettlements) {
   const positions = new Map();
 
@@ -261,23 +196,9 @@ function buildStationDisplayPositions(matchedSettlements) {
   return positions;
 }
 
-function buildMatchedSettlementLabels(matchedSettlements) {
-  return matchedSettlements
-    .map((settlement) => {
-      const center = getFeatureBoundsCenter(settlement.feature);
-      if (!center) return null;
-      return {
-        key: settlement.key,
-        label: settlement.label,
-        lat: center.lat,
-        lon: center.lon,
-      };
-    })
-    .filter(Boolean);
-}
-
 export default function MapView({ stations, selectedId, onSelect, t, lang }) {
   const [studyAreaBoundary, setStudyAreaBoundary] = useState(null);
+  const [boundaryReady, setBoundaryReady] = useState(false);
   const [settlementBoundaries, setSettlementBoundaries] = useState(null);
   const [settlementBoundaryStatus, setSettlementBoundaryStatus] = useState("loading");
 
@@ -289,11 +210,6 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
     () => matchStationsToSettlementBoundaries(stations, settlementBoundaryIndex),
     [stations, settlementBoundaryIndex]
   );
-  const matchedSettlementLabels = useMemo(
-    () => buildMatchedSettlementLabels(matchedSettlements),
-    [matchedSettlements]
-  );
-  const fallbackSettlements = useMemo(() => buildFallbackSettlementLabels(unmatched), [unmatched]);
   const stationDisplayPositions = useMemo(
     () => buildStationDisplayPositions(matchedSettlements),
     [matchedSettlements]
@@ -314,9 +230,10 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}podujeve-boundary.geojson`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setStudyAreaBoundary)
-      .catch(() => setStudyAreaBoundary(null));
+      .catch(() => setStudyAreaBoundary(null))
+      .finally(() => setBoundaryReady(true));
   }, []);
 
   useEffect(() => {
@@ -333,7 +250,7 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
         setSettlementBoundaries(null);
         setSettlementBoundaryStatus("missing");
         console.warn(
-          "[GIS warning] Real village/settlement borders require public/settlements-kosovo.geojson. The map will keep station markers visible and show fallback labels, but it will not draw invented settlement polygons.",
+          "[GIS warning] Real village/settlement borders require public/settlements-kosovo.geojson. The map will keep named station markers available, but it will not draw invented settlement polygons.",
           err
         );
       });
@@ -380,13 +297,13 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
       <div className="map-head">
         <h2>{t("stations")}</h2>
       </div>
-      <MapContainer center={STUDY_AREA_CENTER} zoom={11} scrollWheelZoom={true}>
+      <MapContainer center={STUDY_AREA_CENTER} zoom={11} zoomSnap={0.25} scrollWheelZoom={true}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <ResizeHandler />
-        <FitStudyArea boundary={studyAreaBoundary} />
+        <FitStudyArea boundary={studyAreaBoundary} stations={displayStations} boundaryReady={boundaryReady} selectedId={selectedId} />
         {studyAreaBoundary && (
           <GeoJSON
             data={studyAreaBoundary}
@@ -399,36 +316,22 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
             style={SETTLEMENT_STYLE}
           />
         )}
-        {matchedSettlementLabels.map((settlement) => (
-          <Marker
-            key={settlement.key}
-            position={[settlement.lat, settlement.lon]}
-            icon={createLabelIcon(settlement.label, "map-label settlement")}
-          />
-        ))}
         <CircleMarker
           center={PODUJEVE_CITY}
           radius={18}
           pathOptions={CITY_HALO_STYLE}
         />
-        <Marker
-          position={PODUJEVE_CITY}
-          icon={createLabelIcon(t("city"), "map-label city")}
-        />
         <FlyToStation station={displayStations.find((s) => s.id === selectedId)} />
         {displayStations.map((s) => {
           const active = s.id === selectedId;
-          const color = s.type === "hydro" ? "#2b7fc4" : "#4a9d4a";
+          const name = lang === "sq" ? s.name_sq : s.name_en;
+          const size = active ? 22 : 16;
           return (
-            <CircleMarker
-              key={s.id}
-              center={[s.displayLat, s.displayLon]}
-              radius={active ? 11 : 8}
-              pathOptions={{
-                ...STATION_STYLE,
-                fillColor: color,
-                fillOpacity: active ? 1 : 0.85,
-              }}
+            <Marker
+              key={s.id + ":" + lang}
+              position={[s.displayLat, s.displayLon]}
+              title={name} alt={name} keyboard={true}
+              icon={divIcon({ html: "", className: `station-map-icon ${s.type === "hydro" ? "hydro" : "meteo"} ${active ? "active" : ""}`, iconSize: [size, size], iconAnchor: [size / 2, size / 2] })}
               eventHandlers={{ click: () => onSelect(s.id) }}
             >
               <Tooltip direction="top" offset={[0, -6]}>
@@ -436,21 +339,14 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
                 <br />
                 {s.measCount} {t("measurements")}
               </Tooltip>
-            </CircleMarker>
+              <Popup><strong>{name}</strong><br />{s.measCount} {t("measurements")}</Popup>
+            </Marker>
           );
         })}
-        {fallbackSettlements.map((settlement) => (
-          <Marker
-            key={settlement.key}
-            position={[settlement.lat, settlement.lon]}
-            icon={createLabelIcon(settlement.label, "map-label village")}
-          />
-        ))}
       </MapContainer>
       <div className="map-legend">
         <span><i className="legend-swatch boundary" /> {t("legendMunicipality")}</span>
         <span><i className="legend-swatch city" /> {t("legendSettlements")}</span>
-        <span><i className="legend-swatch village" /> {t("legendFallbackLabels")}</span>
         <span><i className="legend-swatch station" /> {t("legendStations")}</span>
       </div>
     </div>

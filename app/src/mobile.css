@@ -1,5 +1,10 @@
 /* Phone-only enhancement layer. The desktop stylesheet remains untouched. */
 @media screen and (max-width: 700px) {
+  .chart-viewport { overflow-x: auto; padding: 4px; }
+  .chart-viewport > .recharts-responsive-container { min-width: 560px !important; }
+  .monthly-rainfall-indicator .chart-viewport > .recharts-responsive-container { min-width: 0 !important; }
+}
+@media screen and (max-width: 700px) {
   :root { --top-h: 420px; }
 
   html, body { overflow-x: hidden; }
@@ -98,4 +103,10 @@
   .chart-card > .recharts-responsive-container,
   .landslide-indicator > .recharts-responsive-container,
   .indicator-panel > .recharts-responsive-container { min-width: 520px !important; }
+}
+
+/* This chart uses angled month labels and an external axis title, so it can
+   fit the phone viewport without the general chart scrolling workaround. */
+@media screen and (max-width: 700px) {
+  .monthly-rainfall-indicator > .recharts-responsive-container { min-width: 0 !important; }
 }

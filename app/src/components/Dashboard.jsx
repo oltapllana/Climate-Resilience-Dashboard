@@ -1,4 +1,5 @@
 import { ClimatologyChart, EvolutionChart, AnomaliesChart } from "./Charts.jsx";
+import { orderedMeasurementIds } from "../lib/measurementOrder.js";
 import { WindRose } from "./WindRose.jsx";
 import { WindRiskHeatmap } from "./WindRiskHeatmap.jsx";
 import LandslideRainfallIndicator from "./LandslideRainfallIndicator.jsx";
@@ -71,11 +72,11 @@ function StatCards({ stats, unit, isSum, circular, t }) {
   // its overall value is a vector mean — label it as the prevailing direction
   const cards = circular
     ? [
-        { k: t("records"), v: stats.count.toLocaleString() },
+        { k: t("records"), v: t.number(stats.count, { maximumFractionDigits: 3 }) },
         { k: t("prevailingDir"), v: stats.overall, u: unit },
       ]
     : [
-        { k: t("records"), v: stats.count.toLocaleString() },
+        { k: t("records"), v: t.number(stats.count, { maximumFractionDigits: 3 }) },
         { k: isSum ? t("total") : t("mean"), v: stats.overall, u: unit },
         { k: t("min"), v: stats.min, u: unit },
         { k: t("max"), v: stats.max, u: unit },
@@ -85,7 +86,7 @@ function StatCards({ stats, unit, isSum, circular, t }) {
       {cards.map((c) => (
         <div className="stat" key={c.k}>
           <div className="k">{c.k}</div>
-          <div className="v">{c.v}</div>
+          <div className="v">{typeof c.v === "number" ? t.number(c.v) : c.v}</div>
           <div className="u">{c.u || ""}</div>
         </div>
       ))}
@@ -103,12 +104,7 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
   }
 
   const name = lang === "sq" ? data.name_sq : data.name_en;
-  // chips sorted alphabetically by their label in the active language
-  const measIds = Object.keys(data.measurements).filter((id) => !HIDDEN_MEAS.has(id)).sort((a, b) => {
-    const la = lang === "sq" ? data.measurements[a].label_sq : data.measurements[a].label_en;
-    const lb = lang === "sq" ? data.measurements[b].label_sq : data.measurements[b].label_en;
-    return la.localeCompare(lb, lang);
-  });
+  const measIds = orderedMeasurementIds(data.measurements, HIDDEN_MEAS);
   const activeMeasId = measIds.includes(measId) ? measId : measIds[0];
   const m = data.measurements[activeMeasId];
   if (!m) {
@@ -121,6 +117,7 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
   const measurementName = lang === "sq" ? m.label_sq : m.label_en;
   const isSum = m.kind === "sum";
   const unit = m.unit;
+  const measurementYears = new Set((m.monthly || []).map((row) => String(row.m).slice(0, 4)).filter(Boolean));
   const accent = data.type === "hydro" ? "#2b7fc4" : "#2f7d32";
   // Depth comes from the rain gauge where the station has one, and only falls
   // back to the intensity series where it does not — see selectRainfallDepthSource.
@@ -168,7 +165,7 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
               {measIds.map((id) => {
                 const mm = data.measurements[id];
                 return (
-                  <button key={id} className={id === measId ? "active" : ""} onClick={() => setMeasId(id)}>
+                  <button key={id} aria-pressed={id === activeMeasId} className={id === measId ? "active" : ""} onClick={() => setMeasId(id)}>
                     {lang === "sq" ? mm.label_sq : mm.label_en}
                   </button>
                 );
@@ -577,10 +574,12 @@ export default function Dashboard({ data, measId, setMeasId, lang, t }) {
           </div>
         )}
 
-        <div className="card chart-card">
-          <h2>{t("evolution")}</h2>
-          <EvolutionChart series={m} t={t} unit={unit} isSum={isSum} color={accent} />
-        </div>
+        {!isRainMeas && measurementYears.size >= 2 && (
+          <div className="card chart-card">
+            <h2>{t("evolution")}</h2>
+            <EvolutionChart series={m} t={t} unit={unit} isSum={isSum} color={accent} />
+          </div>
+        )}
 
         <div className="card chart-card">
           <h2>{t("anomalies")}</h2>

@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, ComposedChart, Label, Legend, Line, ReferenceArea, ReferenceDot, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDurationCurve } from "../lib/durationCurve.js";
 import { yAxisLabel } from "./chartLabels.jsx";
 
@@ -19,7 +20,7 @@ export default function DurationCurve({
   const result = useMemo(() => calculateDurationCurve(measurement?.daily, { markers }), [measurement, markers]);
   if (!result.grid.length || !result.periods.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const [highMarker, lowMarker] = result.markers;
   // a log axis cannot show a zero or negative reading; those series are drawn
   // linearly rather than silently dropping the rows
@@ -30,7 +31,7 @@ export default function DurationCurve({
     if (!active || !payload?.length) return null;
     return (
       <div className="indicator-tooltip">
-        <strong>{Number(label).toFixed(1)} % {t("ofTimeExceeded")}</strong>
+        <strong>{t.number(Number(label), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} % {t("ofTimeExceeded")}</strong>
         {result.periods.map((period) => {
           const value = payload.find((item) => item.dataKey === period.id)?.value;
           return value == null ? null : <span key={period.id}>{period.label}: {format(value)} {unit}</span>;
@@ -46,19 +47,19 @@ export default function DurationCurve({
         <p>{description}</p>
       </div>
       <p className="indicator-callout">
-        {markerLabels.high}: <strong>{format(highMarker.value)} {unit}</strong> ({highMarker.percent} %)
+        {markerLabels.high}: <strong>{format(highMarker.value)} {unit}</strong> ({t.number(highMarker.percent)} %)
         {" · "}
-        {markerLabels.low}: <strong>{format(lowMarker.value)} {unit}</strong> ({lowMarker.percent} %)
+        {markerLabels.low}: <strong>{format(lowMarker.value)} {unit}</strong> ({t.number(lowMarker.percent)} %)
         {" · "}
         {t("medianValue")}: {format(result.median)} {unit}
       </p>
-      <ResponsiveContainer width="100%" height={380}>
+      <ChartFrame t={t} rows={result.grid} columns={[{key:"x",label:"Exceedance (%)"},...result.periods.map(p=>({key:p.id,label:p.label})),{key:"unit",label:"Unit",value:()=>unit}]} indicator="duration-curve-1" width="100%" height={380}>
         <ComposedChart data={result.grid} margin={{ top: 26, right: 34, left: 56, bottom: 40 }}>
           <CartesianGrid stroke="#eef2f6" />
           {shadeLowWater && (
             <ReferenceArea x1={90} x2={100} fill={LOW_MARK} fillOpacity={0.07} stroke="none" ifOverflow="hidden" />
           )}
-          <XAxis
+          <XAxis tickFormatter={(value) => t.number(value)}
             dataKey="x"
             type="number"
             domain={[0, 100]}
@@ -71,7 +72,7 @@ export default function DurationCurve({
             scale={useLog ? "log" : "linear"}
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits })}
+            tickFormatter={(value) => t.number(Number(value), { maximumFractionDigits: digits })}
             label={yAxisLabel(useLog ? `${axisLabel} — ${t("logScale")}` : axisLabel)}
           />
           <Tooltip content={<CurveTooltip />} />
@@ -81,7 +82,7 @@ export default function DurationCurve({
           {result.periods.map((period) => (
             <Line
               key={period.id}
-              dataKey={period.id}
+              strokeDasharray={period.id === "early" ? "8 4" : undefined} dataKey={period.id}
               name={period.label}
               stroke={period.id === "early" ? EARLY : RECENT}
               strokeWidth={period.id === "early" ? 2 : 2.6}
@@ -97,11 +98,11 @@ export default function DurationCurve({
             <Label value={`${markerLabels.low}: ${format(lowMarker.value)} ${unit}`} position="left" offset={10} fill={LOW_MARK} fontSize={11} fontWeight={700} />
           </ReferenceDot>
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("coverage")}: {result.start} – {result.end}. {result.periods.map((period) => `${period.label}: ${period.days.toLocaleString()} ${t("days")}`).join(" · ")}.
+        {t("coverage")}: {result.start} – {result.end}. {result.periods.map((period) => `${period.label}: ${t("dayCount", { count: period.days })}`).join(" · ")}.
         {logScale && !positive ? ` ${t("logScaleUnavailable")}` : ""}
       </p>
     </section>

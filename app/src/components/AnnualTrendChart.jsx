@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateAnnualTrend } from "../lib/annualTrend.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { yAxisLabel } from "./chartLabels.jsx";
@@ -26,7 +27,7 @@ export default function AnnualTrendChart({
   const result = useMemo(() => calculateAnnualTrend(measurement?.daily), [measurement]);
   if (result.years.length < 2) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   // recharts draws a bar from the axis baseline, so a min–max bar is carried as
   // a transparent pad up to the minimum plus the range above it
   // The mean marker is drawn for every year, but only complete years are joined
@@ -45,7 +46,7 @@ export default function AnnualTrendChart({
   const hasPartialYear = result.years.some((row) => row.partial);
   const slope = result.trend?.slope ?? null;
   const formatSlope = (value) =>
-    `${value > 0 ? "+" : ""}${value.toLocaleString(undefined, { maximumFractionDigits: slopeDigits })} ${unit}/${t("yearsShort")}`;
+    `${value > 0 ? "+" : ""}${t.number(value, { maximumFractionDigits: slopeDigits })} ${unit}/${t("yearsShort")}`;
 
   function TrendTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
@@ -78,9 +79,9 @@ export default function AnnualTrendChart({
           ? t("trendUnavailable")
           : `${t("linearTrend")}: ${formatSlope(slope)}`}
         {" · "}
-        {t("completeYearsCount").replace("{n}", result.completeYears)}
+        {t("completeYearsCount", { count: result.completeYears })}
       </p>
-      <ResponsiveContainer width="100%" height={360}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"year","label":"Year"},{"key":"min","label":"Minimum"},{"key":"max","label":"Maximum"},{"key":"mean","label":"Mean"},{"key":"fit","label":"Fitted trend"},{"key":"partial","label":"Partial year"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="annual-trend-chart-1" width="100%" height={360}>
         <ComposedChart data={data} margin={{ top: 26, right: 30, left: 52, bottom: 30 }}>
           <CartesianGrid stroke="#eef2f6" />
           <XAxis dataKey="year" tick={{ fontSize: 12 }} />
@@ -90,7 +91,7 @@ export default function AnnualTrendChart({
             ticks={scale.ticks}
             allowDataOverflow
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals, t.locale)}
             label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<TrendTooltip />} />
@@ -149,7 +150,7 @@ export default function AnnualTrendChart({
             />
           )}
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">

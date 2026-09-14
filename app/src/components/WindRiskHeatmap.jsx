@@ -1,7 +1,11 @@
+import { contrastingText } from "../lib/chartPalette.js";
+import { windRiskRows, windRiskColumns } from "../lib/customChartData.js";
+import ChartFrame from "./ChartFrame.jsx";
 import React from "react";
 import { processWindRiskHeatmap } from "../lib/windRose";
 
 export function WindRiskHeatmap({ speedData, t }) {
+  const [hoveredCell, setHoveredCell] = React.useState(null);
   if (!speedData) {
     return <div className="text-gray-500">{t("noData")}</div>;
   }
@@ -13,6 +17,7 @@ export function WindRiskHeatmap({ speedData, t }) {
 
   // Color scale: blue (low) → red (high) - matching reference image
   const getColor = (percentage) => {
+    if (percentage == null) return "#f1f5f9";
     const value = parseFloat(percentage);
     if (value <= 0) return "#0466cc";
     if (value < 5) return "#4da6ff";
@@ -26,19 +31,18 @@ export function WindRiskHeatmap({ speedData, t }) {
   const labelWidth = 45;
   const hourLabelHeight = 35;
 
-  const [hoveredCell, setHoveredCell] = React.useState(null);
 
   return (
-    <div style={{ width: "100%", backgroundColor: "#ffffff", borderRadius: "8px", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)"}}>
+    <ChartFrame custom description={t("windRiskDescription")} t={t} rows={windRiskRows(data)} columns={windRiskColumns} indicator="wind-risk-heatmap" title={t("windRiskHeatmap")}><div style={{ width: "100%", backgroundColor: "#ffffff", borderRadius: "8px", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)"}}>
       <div style={{display: "flex", alignItems: "center" , justifyContent: "center",fontWeight: "600", fontSize: "14px", color: "#000610"}}>
 
-        <p style={{ margin: 0, fontSize: "11px", color: "#000610" }}>
+        <p data-export-caption style={{ margin: 0, fontSize: "11px", color: "#000610" }}>
           {t("windRiskDescription")}
         </p>
       </div>
 
       <div style={{ overflowX: "auto", position: "relative" }}>
-        <svg
+        <svg role="img" aria-label={t("windRiskDescription")}
           viewBox={`0 0 ${labelWidth + 24 * cellSize + 60} ${hourLabelHeight + months.length * cellSize + 80}`}
           preserveAspectRatio="xMidYMid meet"
           style={{
@@ -90,11 +94,12 @@ export function WindRiskHeatmap({ speedData, t }) {
                 fontWeight="500"
                 fill="#475569"
               >
-                {month}
+                {t("months")[monthIdx]}
               </text>
 
               {Array.from({ length: 24 }).map((_, hour) => {
                 const percentage = parseFloat(heatmapData[month][hour]);
+                const observed = data.observations[month][hour].count > 0;
                 const color = getColor(heatmapData[month][hour]);
                 const cellKey = `${month}-${hour}`;
                 const isHovered = hoveredCell === cellKey;
@@ -110,13 +115,15 @@ export function WindRiskHeatmap({ speedData, t }) {
                       stroke="#fff"
                       strokeWidth={isHovered ? "2" : "1"}
                       style={{ cursor: "pointer", transition: "all 0.15s" }}
-                      opacity={isHovered ? 1 : 0.9}
+                      opacity={1}
+                      strokeDasharray={observed ? undefined : "3 2"}
                       onMouseEnter={() => setHoveredCell(cellKey)}
                       onMouseLeave={() => setHoveredCell(null)}
                     />
-                    {isHovered && (
+                    <text x={labelWidth + hour * cellSize + cellSize / 2} y={hourLabelHeight + monthIdx * cellSize + 18} textAnchor="middle" fontSize="8" fill={contrastingText(color)} pointerEvents="none">{observed ? t.number(percentage, { maximumFractionDigits: 1 }) : "×"}</text>
+                    {(
                       <title>
-                        {month} {hour.toString().padStart(2, '0')}:00 - {percentage.toFixed(2)}%
+                        {`${t("months")[monthIdx]} ${hour.toString().padStart(2, '0')}:00 — ${observed ? `${t.number(percentage, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : t("chartStatusMissing")}`}
                       </title>
                     )}
                   </g>
@@ -161,8 +168,8 @@ export function WindRiskHeatmap({ speedData, t }) {
             { label: "15-20%", color: "#ff9933" },
             { label: "> 20%", color: "#cc0000" },
           ].map((item, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <div
+            <div key={idx} data-export-legend-item style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <div data-export-swatch
                 style={{
                   width: "12px",
                   height: "12px",
@@ -176,7 +183,8 @@ export function WindRiskHeatmap({ speedData, t }) {
         </div>
       </div>
 
-      <div style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid #e5e7eb", fontSize: "9px", color: "#9ca3af" }}>
+      <p className="chart-axis-note" data-export-caption>× {t("chartStatusMissing")}</p>
+      <div style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid #e5e7eb", fontSize: "9px", color: "#556170" }}>
         <p style={{ margin: 0, marginBottom: "4px" }}>
           {t("dataSource")}
         </p>
@@ -184,6 +192,6 @@ export function WindRiskHeatmap({ speedData, t }) {
           {t("wmoStandard")}
         </p>
       </div>
-    </div>
+    </div></ChartFrame>
   );
 }
