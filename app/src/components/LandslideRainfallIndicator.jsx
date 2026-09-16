@@ -28,6 +28,25 @@ const PARTIAL = "#7b8a95";
 // could not separate the curves from each other or from the legend swatches.
 const MUTED = ["#3f7fb0", "#4c9a6a", "#9d7bc4", "#c98a2e", "#5aa9a2", "#a8577c"];
 
+function SeriesMarker({ cx, cy, stroke, shapeIndex = 0 }) {
+  if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null;
+  const color = stroke || CHART_PALETTE.reference;
+  switch (shapeIndex % 6) {
+    case 1:
+      return <rect x={cx - 4} y={cy - 4} width="8" height="8" fill="white" stroke={color} strokeWidth="2" />;
+    case 2:
+      return <polygon points={`${cx},${cy - 5} ${cx + 5},${cy} ${cx},${cy + 5} ${cx - 5},${cy}`} fill="white" stroke={color} strokeWidth="2" />;
+    case 3:
+      return <polygon points={`${cx},${cy - 5} ${cx + 5},${cy + 4} ${cx - 5},${cy + 4}`} fill="white" stroke={color} strokeWidth="2" />;
+    case 4:
+      return <path d={`M${cx - 5},${cy}H${cx + 5}M${cx},${cy - 5}V${cy + 5}`} fill="none" stroke={color} strokeWidth="2.4" />;
+    case 5:
+      return <path d={`M${cx - 4},${cy - 4}L${cx + 4},${cy + 4}M${cx + 4},${cy - 4}L${cx - 4},${cy + 4}`} fill="none" stroke={color} strokeWidth="2.4" />;
+    default:
+      return <circle cx={cx} cy={cy} r="4" fill="white" stroke={color} strokeWidth="2" />;
+  }
+}
+
 function fmt(t, value) {
   return value == null
     ? "—"
@@ -232,7 +251,8 @@ export default function LandslideRainfallIndicator({ measurement, t }) {
                       strokeDasharray={SERIES_DASHES[index % SERIES_DASHES.length]}
                       strokeWidth={year.exceeded ? 3 : 1.8}
                       strokeOpacity={year.exceeded ? 1 : 0.72}
-                      dot={{ r: year.exceeded ? 4 : 3 }}
+                      dot={<SeriesMarker shapeIndex={index} />}
+                      activeDot={<SeriesMarker shapeIndex={index} />}
                       connectNulls
                       isAnimationActive={false}
                     />

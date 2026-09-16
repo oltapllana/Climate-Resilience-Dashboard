@@ -1,5 +1,6 @@
 import { compoundTimelineRows, compoundTimelineColumns } from "../lib/customChartData.js";
 import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateHotDaysInDrySpells } from "../lib/hotDaysInDrySpells.js";
@@ -108,7 +109,9 @@ export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, tempe
         <p className="indicator-assumption" data-export-caption>{t("hotDryShareNote")}</p>
       </div>
     </div>
-    <p className="indicator-explanation">{t("hotDryDesc")}</p>
-    <p className="indicator-assumption">{t("hotDryMethodology")}</p>
+    <Methodology t={t}>
+      <p className="indicator-explanation">{t("hotDryDesc")}</p>
+      <p className="indicator-assumption">{t("hotDryMethodology")}</p>
+    </Methodology>
   </section>;
 }

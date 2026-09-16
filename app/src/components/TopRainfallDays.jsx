@@ -1,4 +1,5 @@
 import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { CHART_PALETTE, REFERENCE_DASH } from "../lib/chartPalette.js";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
@@ -115,8 +116,10 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
           </Bar>
         </BarChart>
       </ChartFrame>
-      <p className="indicator-explanation">{t("topRainDaysExplanation")}</p>
-      <p className="indicator-assumption">{t("topRainDaysAssumption")}</p>
+      <Methodology t={t}>
+        <p className="indicator-explanation">{t("topRainDaysExplanation")}</p>
+        <p className="indicator-assumption">{t("topRainDaysAssumption")}</p>
+      </Methodology>
       <p className="indicator-assumption">
         {t("coverage")}: {result.daily[0].date} – {result.daily.at(-1).date}.
       </p>

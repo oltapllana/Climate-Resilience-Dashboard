@@ -1,6 +1,7 @@
 import { contrastingText } from "../lib/chartPalette.js";
 import { matrixRows, matrixColumns } from "../lib/customChartData.js";
 import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateSnowfall } from "../lib/snowfall.js";
@@ -69,7 +70,9 @@ export default function SnowfallIndicator({ stationId, rainfallMeasurement, temp
         <p className="indicator-assumption">{t("snowfallYearNote")}</p>
       </div>
     </div>
-    <p className="indicator-explanation">{t("snowfallDesc")}</p>
-    <p className="indicator-assumption">{t("snowfallMethodology")}</p>
+    <Methodology t={t}>
+      <p className="indicator-explanation">{t("snowfallDesc")}</p>
+      <p className="indicator-assumption">{t("snowfallMethodology")}</p>
+    </Methodology>
   </section>;
 }

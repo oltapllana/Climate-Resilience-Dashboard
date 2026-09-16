@@ -12,6 +12,7 @@ import { supabaseEnabled } from "./lib/supabase.js";
 import { useAuth } from "./lib/useAuth.js";
 import AuthBar from "./components/AuthBar.jsx";
 import InstitutionalFooter from "./components/InstitutionalFooter.jsx";
+import { displayObservationTimestamp, latestObservationTimestamp } from "./lib/footerMetadata.js";
 
 // Podujevë municipality center: fallback when a station name cannot be geocoded
 const FALLBACK = { lat: 42.911, lon: 21.193 };
@@ -36,6 +37,7 @@ export default function App() {
   const canUpload = !supabaseEnabled || Boolean(session);
 
   const t = useMemo(() => makeT(lang), [lang]);
+  const latestObservation = useMemo(() => latestObservationTimestamp(imported), [imported]);
   useEffect(() => { updateDocumentTitle(t); }, [t]);
 
   // load previously saved (user-imported) stations from Supabase on startup.
@@ -250,6 +252,11 @@ export default function App() {
           <div className="title">
             <h1>{t("appTitle")}</h1>
             <p>{t("appSubtitle")}</p>
+            <p className="header-updated">
+              {t("headerLastUpdated")}: {latestObservation
+                ? <time dateTime={latestObservation}>{displayObservationTimestamp(latestObservation)}</time>
+                : t("headerNoObservations")}
+            </p>
           </div>
           <div className="header-right">
             <AuthBar session={session} t={t} />

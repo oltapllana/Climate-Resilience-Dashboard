@@ -40,6 +40,8 @@ header.masthead {
 }
 .masthead .title h1 { margin: 0; font-size: 22px; color: var(--green-dark); }
 .masthead .title p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.masthead .title .header-updated { margin-top: 7px; color: var(--ink); font-size: 12px; }
+.header-updated time { font-weight: 700; color: var(--green-dark); }
 
 .lang-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: #fff; }
 .lang-toggle button {
@@ -357,11 +359,21 @@ header.masthead {
 .station-map-icon.hydro { background: var(--blue); }
 .station-map-icon.active { outline: 3px solid #17242b; outline-offset: 2px; }
 .station-map-icon:focus-visible { outline: 3px solid #17242b; outline-offset: 4px; }
-.institutional-footer { margin-top: 26px; padding: 18px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-.institutional-footer dl { display: flex; flex-wrap: wrap; gap: 14px 32px; margin: 0; }
+.institutional-footer { margin-top: 26px; padding: 22px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.footer-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.footer-brand img { flex: 0 0 auto; border-radius: 9px; }
+.footer-brand div { display: grid; gap: 2px; }
+.footer-brand strong { color: var(--ink); font-size: 14px; }
+.footer-brand span { color: var(--muted); }
+.institutional-footer dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 28px; margin: 0; }
 .institutional-footer dt { font-weight: 700; color: var(--ink); }
 .institutional-footer dd { margin: 3px 0 0; }
 .institutional-footer a { color: var(--green-dark); text-decoration: underline; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.footer-disclosures { display: grid; gap: 8px; margin-top: 14px; }
+.footer-disclosures details { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 8px 11px; }
+.footer-disclosures summary { color: var(--ink); font-weight: 700; cursor: pointer; }
+.footer-disclosures p { margin: 8px 0 2px; line-height: 1.55; }
 .station-item .nm { font-weight: 600; }
 .station-item .meta { color: var(--muted); font-size: 12px; }
 .remove-btn {

@@ -1,6 +1,7 @@
 import { contrastingText } from "../lib/chartPalette.js";
 import { matrixRows, matrixColumns } from "../lib/customChartData.js";
 import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateHeavySnowfall } from "../lib/heavySnowfall.js";
@@ -61,7 +62,9 @@ export default function HeavySnowfallIndicator({ stationId, rainfallMeasurement,
         <p className="indicator-assumption">{t("snowfallYearNote")}</p>
       </div>
     </div>
-    <p className="indicator-explanation">{t("heavySnowDesc")}</p>
-    <p className="indicator-assumption">{t("heavySnowMethodology")}</p>
+    <Methodology t={t}>
+      <p className="indicator-explanation">{t("heavySnowDesc")}</p>
+      <p className="indicator-assumption">{t("heavySnowMethodology")}</p>
+    </Methodology>
   </section>;
 }

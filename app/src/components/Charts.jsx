@@ -273,7 +273,11 @@ export function AnomaliesChart({ series, t, unit }) {
   // most conspicuous thing on the pressure panel and nothing said what it was.
   const observed = data.filter((d) => d.anom != null);
   const strongestUp = observed.reduce((best, d) => (best == null || d.anom > best.anom ? d : best), null);
-  const strongestDown = observed.reduce((best, d) => (best == null || d.anom < best.anom ? d : best), null);
+  // Never name one month twice. Equal anomalies used to make both reductions
+  // select the first row, producing captions such as "Jul 2025, Jul 2025".
+  const strongestDown = observed
+    .filter((d) => d !== strongestUp)
+    .reduce((best, d) => (best == null || d.anom < best.anom ? d : best), null);
   const signed = (value) => `${value > 0 ? "+" : ""}${formatForAxis(value, scale.decimals, t.locale)} ${unit}`;
   // "2026-02" is a key, not a date a reader says out loud
   const monthName = (key) => {

@@ -84,6 +84,12 @@ test('F3: anomaly eligibility follows each month, retaining genuine zero anomali
   const {frames}=await render('Charts',{series,t:makeT('sq'),unit:'mm'},'AnomaliesChart');
   assert.deepEqual(frames[0].rows.map(r=>r.anom),[0,0,null]);
 });
+test('F3: tied anomalies name two distinct observations in the summary', async () => {
+  const series={monthly:[{m:'2024-01',v:8},{m:'2025-01',v:8}],climatology:[{month:1,v:8}]};
+  const {html}=await render('Charts',{series,t:makeT('en'),unit:'mm'},'AnomaliesChart');
+  assert.equal((html.match(/Jan 2024/g)??[]).length,1);
+  assert.equal((html.match(/Jan 2025/g)??[]).length,1);
+});
 test('F3: supported repeated months retain the existing departure formula', async () => {
   const series={monthly:[{m:'2024-01',v:4},{m:'2025-01',v:8},{m:'2024-02',v:10},{m:'2025-02',v:14}],climatology:[{month:1,v:6},{month:2,v:12}]};
   const {frames}=await render('Charts',{series,t:makeT('en'),unit:'mm'},'AnomaliesChart');

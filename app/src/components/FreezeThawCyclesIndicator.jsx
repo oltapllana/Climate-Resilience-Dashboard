@@ -1,6 +1,7 @@
 import { contrastingText } from "../lib/chartPalette.js";
 import { matrixRows, matrixColumns } from "../lib/customChartData.js";
 import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateFreezeThawCycles } from "../lib/freezeThawCycles.js";
@@ -66,7 +67,9 @@ export default function FreezeThawCyclesIndicator({ measurement, t }) {
         <p className="indicator-assumption">{t("freezeThawYearNote")}</p>
       </div>
     </div>
-    <p className="indicator-explanation">{t("freezeThawExplanation")}</p>
-    <p className="indicator-assumption">{t("freezeThawMethodology")}</p>
+    <Methodology t={t}>
+      <p className="indicator-explanation">{t("freezeThawExplanation")}</p>
+      <p className="indicator-assumption">{t("freezeThawMethodology")}</p>
+    </Methodology>
   </section>;
 }

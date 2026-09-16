@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { buildSync } from "esbuild";
 import { csvText, exportFilename } from "./chartExport.js";
 import { makeT } from "../i18n.js";
-import { updateDocumentTitle, documentMetadata } from "./locale.js";
+import { updateDocumentTitle, documentMetadata, PUBLIC_URL, SOCIAL_IMAGE_URL } from "./locale.js";
 import { SERIES_DASHES } from "./chartPalette.js";
 
 function component(name) {
@@ -60,16 +60,39 @@ test("runtime EN → SQ → EN updates metadata and html language without duplic
     assert.equal(metas.get('og:title').content,t('appTitle'));
     assert.equal(metas.get('og:description').content,t('metaDescription'));
     assert.equal(metas.get('og:locale').content,lang==='sq'?'sq_AL':'en_GB');
-    assert.equal(metas.size,7);
+    assert.equal(metas.get('og:url').content,PUBLIC_URL);
+    assert.equal(metas.get('og:image').content,SOCIAL_IMAGE_URL);
+    assert.equal(metas.get('twitter:card').content,'summary');
+    assert.equal(metas.get('twitter:description').content,t('metaDescription'));
+    assert.equal(metas.size,14);
   }
-  assert.ok(documentMetadata(makeT('en')).every(m=>!['og:url','og:image'].includes(m.property)));
+  assert.ok(documentMetadata(makeT('en')).some(m=>m.property==='og:url'&&m.content===PUBLIC_URL));
+  assert.ok(documentMetadata(makeT('en')).some(m=>m.property==='og:image'&&m.content===SOCIAL_IMAGE_URL));
+});
+test("default link-preview metadata is present in source HTML before JavaScript runs", () => {
+  const html=fs.readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/<meta name="description"/);
+  assert.match(html,/<meta property="og:url" content="https:\/\/climate-dashboard-podujeva\.onrender\.com"/);
+  assert.match(html,/<meta property="og:image" content="https:\/\/climate-dashboard-podujeva\.onrender\.com\/favicon\.svg"/);
+  assert.match(html,/<meta name="twitter:card" content="summary"/);
 });
 test("comparison lines have non-colour styles and estimated bars use hatching", () => {
   assert.equal(new Set(SERIES_DASHES).size,6);
   const src=fs.readFileSync(new URL('../components/LandslideRainfallIndicator.jsx',import.meta.url),'utf8');
   assert.match(src,/strokeDasharray=\{SERIES_DASHES/);
+  assert.match(src,/function SeriesMarker/);
+  for(const shape of ['<circle','<rect','<polygon','<path']) assert.ok(src.includes(shape),shape);
   const charts=fs.readFileSync(new URL('../components/Charts.jsx',import.meta.url),'utf8');
   assert.match(charts,/<pattern id=\{estimatedPattern\}/);assert.match(charts,/d.est \? `url\(#/);
+  const rain=fs.readFileSync(new URL('../components/RainyDaysIndicator.jsx',import.meta.url),'utf8');
+  assert.match(rain,/<pattern key=\{band.id\}/);assert.match(rain,/content=\{<SegmentLabel/);
+});
+
+test("long indicator methodology is collapsed consistently", () => {
+  for(const name of ['PrecipitationExtremesIndicator','TopRainfallDays','HotDaysInDrySpellsIndicator','SnowfallIndicator','HeavySnowfallIndicator','FreezeThawCyclesIndicator']) {
+    const src=fs.readFileSync(new URL(`../components/${name}.jsx`,import.meta.url),'utf8');
+    assert.match(src,/import Methodology from/);assert.match(src,/<Methodology t=\{t\}>/);
+  }
 });
 test("targeted text/control colours meet AA contrast on their backgrounds", () => {
   const luminance=hex=>{const c=hex.match(/\w\w/g).map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722;};

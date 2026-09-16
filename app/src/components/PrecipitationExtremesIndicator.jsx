@@ -1,4 +1,5 @@
 import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -216,8 +217,10 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
             </div>
           </div>
 
-          <p className="indicator-explanation">{t("precipitationExtremesDesc")}</p>
-          <p className="indicator-assumption">{t("precipitationExtremesAssumption")}</p>
+          <p className="indicator-assumption">{t("precipitationExtremesDesc")}</p>
+          <Methodology t={t}>
+            <p className="indicator-assumption">{t("precipitationExtremesAssumption")}</p>
+          </Methodology>
         </>
       )}
     </section>

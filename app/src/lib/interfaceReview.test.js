@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { buildSync } from "esbuild";
 import { makeT } from "../i18n.js";
 import { initialMapBounds, createInitialViewController } from "./mapViewPolicy.js";
-import { latestObservationDate } from "./footerMetadata.js";
+import { latestObservationDate, latestObservationTimestamp } from "./footerMetadata.js";
 
 const boundary = JSON.parse(fs.readFileSync(new URL("../../public/podujeve-boundary.geojson", import.meta.url), "utf8"));
 function component(name) {
@@ -82,6 +82,15 @@ test("latest observation is the maximum valid loaded observation date, not datab
   assert.equal(latestObservationDate([{ measurements: {} }]), null);
 });
 
+test("latest observation preserves the latest available hourly timestamp", () => {
+  const stations = [{ measurements: {
+    rain: { hourly: [{ d: "2025-02-03T22:00:00", v: 1 }, { d: "2025-02-03T23:00:00", v: 2 }], stats: { end: "2025-02-03" } },
+    temperature: { daily: [{ d: "2025-02-04", v: 3 }] },
+  } }];
+  assert.equal(latestObservationTimestamp(stations), "2025-02-04");
+  assert.equal(latestObservationTimestamp([{ measurements: { rain: stations[0].measurements.rain } }]), "2025-02-03T23:00");
+});
+
 test("footer renders supported EN/SQ metadata, package version and accurate observation scope", () => {
   const Footer = component("InstitutionalFooter");
   const pkg = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
@@ -90,10 +99,14 @@ test("footer renders supported EN/SQ metadata, package version and accurate obse
     const html = renderToStaticMarkup(React.createElement(Footer, { stations: [{ measurements: { rain: { stats: { end: "2025-02-03" } } } }], t }));
     assert.match(html, /^<footer/);
     assert.ok(html.includes(t("footerSources")) && html.includes(t("footerObservationScope")));
+    assert.ok(html.includes(t("footerOwnerValue")) && html.includes(t("footerFundingValue")));
     assert.ok(html.includes(`<time dateTime="2025-02-03">2025-02-03</time>`));
     assert.ok(html.includes(`<dd>${pkg.version}</dd>`));
     assert.ok(html.includes('href="https://www.openstreetmap.org/copyright"'));
-    assert.doesNotMatch(html, /mailto:|<img|href="#|href="\/about|href="\/methodology/);
+    assert.ok(html.includes('<img src="/favicon.svg"'));
+    assert.ok(html.includes('href="#methodology"') && html.includes('href="#terms-and-licence"'));
+    assert.ok(html.includes('href="https://github.com/oltapllana/Climate-Resilience-Dashboard/issues"'));
+    assert.ok(html.includes(t("footerMethodologyText")) && html.includes(t("footerTermsText")));
     const empty = renderToStaticMarkup(React.createElement(Footer, { stations: [], t }));
     assert.ok(!empty.includes("<time"));
   }
