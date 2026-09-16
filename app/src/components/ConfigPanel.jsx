@@ -38,8 +38,16 @@ export default function ConfigPanel({
                   </span>
                 </label>
                 {s.imported && (
-                  <button type="button" className="remove-btn" aria-label={t("removeStationNamed", { station: lang === "sq" ? s.name_sq : s.name_en })} onClick={() => removeImported(s.id)}>
-                    {t("removeStation")}
+                  <button
+                    type="button"
+                    className="remove-btn"
+                    aria-label={t("removeStationNamed", { station: lang === "sq" ? s.name_sq : s.name_en })}
+                    title={t("removeStationNamed", { station: lang === "sq" ? s.name_sq : s.name_en })}
+                    onClick={() => removeImported(s.id)}
+                  >
+                    <svg className="remove-icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+                      <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" />
+                    </svg>
                   </button>
                 )}
               </div>

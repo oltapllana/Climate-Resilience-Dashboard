@@ -78,7 +78,7 @@ export default function RainyDaysIndicator({ measurement, t }) {
               <defs>
                 {CLASSIFIED_BANDS.map((band, index) => <pattern key={band.id} id={`${patternPrefix}-${band.id}`} width="8" height="8" patternUnits="userSpaceOnUse">
                   <rect width="8" height="8" fill={band.color} />
-                  <path d={index === 0 ? "M-2 2L2 -2M0 8L8 0M6 10L10 6" : index === 1 ? "M0 4H8" : "M0 0L8 8M8 0L0 8"} stroke={index === 0 ? "#5b4300" : "#ffffff"} strokeWidth="1.4" opacity="0.8" />
+                  <path d={index === 0 ? "M-2 2L2 -2M0 8L8 0M6 10L10 6" : index === 1 ? "M0 4H8" : "M0 0L8 8M8 0L0 8"} stroke={index === 0 ? "#5b4300" : "#ffffff"} strokeWidth="1.2" opacity="0.28" />
                 </pattern>)}
               </defs>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
