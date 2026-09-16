@@ -27,7 +27,13 @@
   .station-pick, .remove-btn { min-height: 44px; }
 
   .top-row { gap: 12px; }
-  .config-panel .card { max-height: none; }
+  /* One scroll surface on a phone. The panel used to keep the desktop's fixed
+     --top-h height with the station list scrolling inside it, so a finger drag
+     over the list moved the list and never the page, trapping the reader at the
+     top of the dashboard. The panel now grows to its own content. */
+  .config-panel { height: auto; min-height: 0; }
+  .config-panel .card { max-height: none; height: auto; overflow: visible; }
+  .station-list { flex: none; overflow-y: visible; overscroll-behavior: auto; }
   .map-card { height: var(--top-h); }
   .map-card .map-head { padding: 12px 12px 8px; }
   .map-legend { gap: 8px 12px; padding: 8px 12px 11px; font-size: 11.5px; }
