@@ -1,5 +1,7 @@
+import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateSeasonalBand } from "../lib/seasonalBand.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { topLegendProps, yAxisLabel } from "./chartLabels.jsx";
@@ -26,7 +28,7 @@ export default function SeasonalBandChart({
   const result = useMemo(() => calculateSeasonalBand(measurement?.daily), [measurement]);
   if (result.days.length < 30 || !result.historicalYears.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const referenceLabel = result.historicalYears.length === 1
     ? `${result.historicalYears[0]}`
     : `${result.historicalYears[0]}–${result.historicalYears.at(-1)}`;
@@ -46,7 +48,7 @@ export default function SeasonalBandChart({
         {row.p10 != null && <span>10–90 %: {format(row.p10)} – {format(row.p90)} {unit}</span>}
         {row.samples > 0 && (
           <span>
-            {t("windowSampleSize").replace("{n}", row.samples).replace("{years}", row.referenceYears)}
+            {t("windowSampleSize", { values: t("referenceValueCount", { count: row.samples }), years: t("referenceYearCount", { count: row.referenceYears }) })}
           </span>
         )}
         {row.current != null && <span>{result.currentYear}: {format(row.current)} {unit}</span>}
@@ -77,7 +79,7 @@ export default function SeasonalBandChart({
         {t("referencePeriod")}: <strong>{referenceLabel}</strong>
         {result.currentYear != null && <> · {t("currentYearOverlay")}: <strong>{result.currentYear}</strong></>}
       </p>
-      <ResponsiveContainer width="100%" height={370}>
+      <ChartFrame t={t} rows={result.days} columns={[{"key":"slot","label":"Day of year"},{"key":"p10","label":"10th percentile"},{"key":"p25","label":"25th percentile"},{"key":"p50","label":"Median"},{"key":"p75","label":"75th percentile"},{"key":"p90","label":"90th percentile"},{"key":"current","label":"Current year"},{key:"unit",label:"Unit",value:()=>unit},{key:"currentYear",label:"Current year number",value:()=>result.currentYear},{key:"samples",label:"Reference values"},{key:"referenceYears",label:"Reference years"}]} indicator="seasonal-band-chart-1" width="100%" height={370}>
         <ComposedChart data={result.days} margin={{ top: 26, right: 30, left: 52, bottom: 30 }}>
           <CartesianGrid stroke="#eef2f6" />
           <XAxis
@@ -94,7 +96,7 @@ export default function SeasonalBandChart({
             ticks={scale.ticks}
             allowDataOverflow
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals, t.locale)}
             label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<SeasonTooltip />} />
@@ -108,28 +110,30 @@ export default function SeasonalBandChart({
             <Line dataKey="current" name={`${result.currentYear}`} stroke={CURRENT} strokeWidth={2.4} dot={false} connectNulls={false} isAnimationActive={false} />
           )}
         </ComposedChart>
-      </ResponsiveContainer>
-      <p className="indicator-explanation">{explanation}</p>
-      <p className="indicator-assumption">{assumption}</p>
-      <p className="indicator-assumption">
-        {t("seasonalBandBasis")
-          .replace("{years}", referenceLabel)
-          .replace("{n}", result.historicalYears.length)
-          .replace("{window}", result.windowDays)
-          .replace("{samples}", result.medianSampleSize)
-          .replace("{smooth}", result.smoothingDays)}
-      </p>
+      </ChartFrame>
+      <Methodology t={t}>
+        <p className="indicator-explanation">{explanation}</p>
+        <p className="indicator-assumption">{assumption}</p>
+        <p className="indicator-assumption">
+          {t("seasonalBandBasis")
+            .replace("{years}", referenceLabel)
+            .replace("{history}", t("referenceYearCount", { count: result.historicalYears.length }))
+            .replace("{window}", result.windowDays)
+            .replace("{samples}", t("referenceValueCount", { count: result.medianSampleSize }))
+            .replace("{smooth}", result.smoothingDays)}
+        </p>
+      </Methodology>
       {shallowDepth && (
         <p className="indicator-assumption">
           {t("seasonalBandDepthNote")
-            .replace("{depth}", result.medianYearDepth)
+            .replace("{depth}", t.number(result.medianYearDepth))
             .replace("{n}", result.historicalYears.length)
             .replace("{years}", referenceLabel)}
         </p>
       )}
       {fewReferenceYears && (
         <p className="indicator-assumption">
-          {t("referenceBandNarrowNote").replace("{years}", result.historicalYears.length)}{" "}
+          {t("referenceBandNarrowNote", { years: t("referenceYearCount", { count: result.historicalYears.length }) })}{" "}
           {t("seasonalBandOutageNote")}
         </p>
       )}

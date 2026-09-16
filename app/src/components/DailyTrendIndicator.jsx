@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateDailyTrend } from "../lib/dailyTrend.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
 import { EdgeLabel, topLegendProps, yAxisLabel } from "./chartLabels.jsx";
@@ -15,7 +16,7 @@ export default function DailyTrendIndicator({ measurement, unit, title, descript
   const result = useMemo(() => calculateDailyTrend(measurement?.daily), [measurement]);
   if (!result.daily.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { maximumFractionDigits: digits });
   const { longTermMean, maximum, minimum } = result;
   const departure = highlightDeparture ? result.departure : null;
 
@@ -55,14 +56,14 @@ export default function DailyTrendIndicator({ measurement, unit, title, descript
         <h2>{title}</h2>
         <p>{description}</p>
       </div>
-      <ResponsiveContainer width="100%" height={340}>
+      <ChartFrame t={t} rows={result.daily} columns={[{"key":"date","label":"Date"},{"key":"value","label":"Daily value"},{"key":"rolling","label":"30-day rolling mean"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="daily-trend-indicator-1" width="100%" height={340}>
         <ComposedChart data={result.daily} margin={{ top: 26, right: 26, left: 48, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <XAxis dataKey="date" minTickGap={54} tick={{ fontSize: 10 }} />
           <YAxis
             width={68}
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => formatForAxis(value, scale.decimals)}
+            tickFormatter={(value) => formatForAxis(value, scale.decimals, t.locale)}
             domain={scale.domain}
             ticks={scale.ticks}
             allowDataOverflow
@@ -86,7 +87,7 @@ export default function DailyTrendIndicator({ measurement, unit, title, descript
             />
           )}
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       {departure && (
         <p className="indicator-explanation">
@@ -97,10 +98,10 @@ export default function DailyTrendIndicator({ measurement, unit, title, descript
             .replace("{delta}", format(Math.abs(departure.delta)))
             .replace(/\{unit\}/g, unit)}{" "}
           {departure.complete
-            ? t("departureObserved").replace("{days}", departure.spanDays)
+            ? t("departureObserved").replace("{days}", t("dayCount", { count: departure.spanDays }))
             : t("departurePartial")
                 .replace("{observed}", departure.observedDays)
-                .replace("{days}", departure.spanDays)}
+                .replace("{days}", t("dayCount", { count: departure.spanDays }))}
         </p>
       )}
       <p className="indicator-assumption">{assumption}</p>

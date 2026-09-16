@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { quantile, whiskerSpread } from "./monthlyRainfall.js";
+import { calculateMonthlyRainfall, quantile, whiskerSpread } from "./monthlyRainfall.js";
 import { axisScale } from "./chartAxis.js";
 
 // Shajkoc, complete calendar months only: [mean, yearly totals]. These are the
@@ -84,4 +84,49 @@ test("rejects input it cannot draw", () => {
   assert.equal(whiskerSpread(null, 1, 2), null);
   assert.equal(whiskerSpread(10, null, 2), null);
   assert.equal(whiskerSpread(10, 1, null), null);
+});
+
+function dailyRecord(startYear, years, omit = () => false) {
+  const records = [];
+  for (let year = startYear; year < startYear + years; year++) {
+    for (let month = 0; month < 12; month++) {
+      for (let day = 1; day <= new Date(year, month + 1, 0).getDate(); day++) {
+        if (!omit(year, month, day)) records.push({ d: new Date(year, month, day, 12).toISOString(), v: year - startYear });
+      }
+    }
+  }
+  return records;
+}
+
+test("an unobserved interior month stays missing while a measured zero stays zero", () => {
+  const records = dailyRecord(2022, 1, (_year, month) => month === 5);
+  records.push({ d: new Date(2022, 5, 10).toISOString(), v: null });
+  const { monthly } = calculateMonthlyRainfall(records);
+  assert.equal(monthly[5].mean, null);
+  assert.equal(monthly[5].yearCount, 0);
+  assert.equal(monthly[4].mean, 0);
+  assert.equal(monthly[4].yearCount, 1);
+});
+
+test("quartiles require three complete years without changing monthly means", () => {
+  for (const years of [1, 2, 3]) {
+    const { monthly } = calculateMonthlyRainfall(dailyRecord(2022, years));
+    assert.equal(monthly[0].mean, 31 * (years - 1) / 2);
+    assert.equal(monthly[0].q1, years < 3 ? null : 15.5);
+    assert.equal(monthly[0].q3, years < 3 ? null : 46.5);
+  }
+});
+
+test("three occurrences of a month are insufficient when one year is incomplete", () => {
+  const { monthly } = calculateMonthlyRainfall(dailyRecord(2022, 3, (year, month) => year === 2023 && month === 5));
+  assert.equal(monthly[0].yearCount, 3);
+  assert.equal(monthly[0].mean, 31);
+  assert.equal(monthly[0].q1, null);
+  assert.equal(monthly[0].q3, null);
+});
+
+test("partial boundary months and empty records never invent a mean", () => {
+  assert.deepEqual(calculateMonthlyRainfall([]).monthly, []);
+  const { monthly } = calculateMonthlyRainfall([{ d: "2024-04-15T12:00:00", v: 1 }, { d: "2024-06-15T12:00:00", v: 2 }]);
+  assert.ok(monthly.every((row) => row.mean == null));
 });

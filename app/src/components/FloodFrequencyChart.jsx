@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
+import ChartFrame from "./ChartFrame.jsx";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, Scatter, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateFloodFrequency } from "../lib/floodFrequency.js";
 import { yAxisLabel } from "./chartLabels.jsx";
 
@@ -16,7 +17,7 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
   const result = useMemo(() => calculateFloodFrequency(measurement?.daily), [measurement]);
   if (!result.curve.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const complete = result.points.filter((point) => !point.partial);
   const partial = result.points.filter((point) => point.partial);
   const gridTicks = [2, 5, 10, 20, 50].filter((tick) => tick <= result.maxReturnPeriod);
@@ -29,7 +30,7 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
       <div className="indicator-tooltip">
         <strong>{row.year}{row.partial ? ` · ${t("partialYear")}` : ""}</strong>
         <span>{t("annualMaximum")}: {format(row.value)} {unit} ({row.date})</span>
-        <span>{t("returnPeriod")}: {row.returnPeriod.toFixed(1)} {t("yearsShort")}</span>
+        <span>{t("returnPeriod")}: {t.number(row.returnPeriod, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {t("yearsShort")}</span>
       </div>
     );
   }
@@ -41,9 +42,17 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
         <p>{description}</p>
       </div>
       <p className="indicator-callout">
-        {t("recordLength").replace("{n}", result.years)} · {t("completeYearsCount").replace("{n}", result.completeYears)} · {t("extrapolationCap").replace("{n}", result.maxReturnPeriod)}
+        {t("recordLength").replace("{n}", result.years)} · {t("completeYearsCount", { count: result.completeYears })} · {t("extrapolationCap").replace("{n}", result.maxReturnPeriod)}
       </p>
-      <ResponsiveContainer width="100%" height={380}>
+      <ChartFrame t={t} indicator="flood-frequency" rows={[
+        ...result.curve.map(row => ({ ...row, series: "Gumbel fit" })),
+        ...result.points.map(row => ({ ...row, series: "Annual maximum" })),
+      ]} columns={[
+        { key: "series", label: "Series" }, { key: "year", label: "Year" },
+        { key: "date", label: "Date" }, { key: "returnPeriod", label: "Return period (years)" },
+        { key: "value", label: `Value (${unit})` }, { key: "lower", label: `Lower confidence limit (${unit})` },
+        { key: "upper", label: `Upper confidence limit (${unit})` }, { key: "partial", label: "Partial year" },
+      ]} width="100%" height={380}>
         <ComposedChart data={result.curve} margin={{ top: 26, right: 30, left: 56, bottom: 40 }}>
           <CartesianGrid stroke="#eef2f6" />
           <XAxis
@@ -52,7 +61,7 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
             scale="log"
             domain={[1.05, result.maxReturnPeriod]}
             ticks={[1.1, 2, 5, 10, 20, 50].filter((tick) => tick <= result.maxReturnPeriod)}
-            tickFormatter={(value) => `${value}`}
+            tickFormatter={(value) => t.number(value)}
             tick={{ fontSize: 11 }}
             label={{ value: t("returnPeriodAxis"), position: "insideBottom", offset: -8, fontSize: 12, fontWeight: 600 }}
           />
@@ -61,7 +70,7 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
             type="number"
             domain={["auto", "auto"]}
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toFixed(1)}
+            tickFormatter={(value) => t.number(Number(value), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
             label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<FrequencyTooltip />} />
@@ -72,9 +81,9 @@ export default function FloodFrequencyChart({ measurement, unit, title, descript
           <Area dataKey="band" stackId="ci" name={t("confidenceBand")} stroke="none" fill={BAND} fillOpacity={0.75} isAnimationActive={false} />
           <Line dataKey="value" name={t("gumbelFit")} stroke={CURVE} strokeWidth={2.4} dot={false} isAnimationActive={false} />
           <Scatter data={complete} dataKey="value" name={t("completeYearMax")} fill={COMPLETE} isAnimationActive={false} />
-          <Scatter data={partial} dataKey="value" name={t("partialYearMax")} fill={PARTIAL} isAnimationActive={false} />
+          <Scatter data={partial} dataKey="value" name={t("partialYearMax")} fill={PARTIAL} shape="triangle" isAnimationActive={false} />
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       {gridTicks.length > 0 && (
         <p className="indicator-callout">
           {gridTicks.map((years) => {

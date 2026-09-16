@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { CartesianGrid, ComposedChart, Label, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, ComposedChart, Label, Line, ReferenceArea, ReferenceDot, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateThresholdHydrograph } from "../lib/thresholdHydrograph.js";
 import { dayTicks } from "../lib/seriesUtils.js";
 import { yAxisLabel } from "./chartLabels.jsx";
@@ -17,7 +18,7 @@ export default function ThresholdHydrograph({
   );
   if (result.series.length < 2 || result.boundaries.length < 1) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const values = result.series.map((row) => row.value);
   const lowest = Math.min(...values, result.boundaries[0]);
   const highest = Math.max(...values, result.boundaries.at(-1));
@@ -54,7 +55,7 @@ export default function ThresholdHydrograph({
         {" · "}
         {drawnBands.slice(1).map((band, index) => `${band.label} ≥ ${format(result.boundaries[index])} ${unit}`).join(" · ")}
       </p>
-      <ResponsiveContainer width="100%" height={380}>
+      <ChartFrame t={t} rows={result.series} columns={[{key:"time",label:"Time"},{key:"value",label:"Value"},{key:"unit",label:"Unit",value:()=>unit},...result.boundaries.map((v,i)=>({key:`threshold_${i+1}`,label:`Threshold ${i+1}`,value:()=>v}))]} indicator="threshold-hydrograph-1" width="100%" height={380}>
         <ComposedChart data={result.series} margin={{ top: 26, right: 116, left: 52, bottom: 30 }}>
           <CartesianGrid stroke="#eef2f6" />
           {drawnBands.map((band, index) => (
@@ -89,7 +90,7 @@ export default function ThresholdHydrograph({
             domain={domain}
             allowDataOverflow
             tick={{ fontSize: 11 }}
-            tickFormatter={(value) => Number(value).toFixed(digits === 0 ? 0 : 1)}
+            tickFormatter={(value) => t.number(Number(value), { minimumFractionDigits: digits === 0 ? 0 : 1, maximumFractionDigits: digits === 0 ? 0 : 1 })}
             label={yAxisLabel(axisLabel)}
           />
           <Tooltip content={<EventTooltip />} />
@@ -105,12 +106,12 @@ export default function ThresholdHydrograph({
             />
           </ReferenceDot>
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("coverage")}: {result.start} – {result.end} ({result.count.toLocaleString()} {t("records").toLowerCase()}).
-        {" "}{t("eventWindowNote").replace("{days}", windowDays)}
+        {t("coverage")}: {result.start} – {result.end} ({t.number(result.count, { maximumFractionDigits: 3 })} {t("records").toLowerCase()}).
+        {" "}{t("eventWindowNote", { days: t("dayCount", { count: windowDays }) })}
       </p>
     </section>
   );

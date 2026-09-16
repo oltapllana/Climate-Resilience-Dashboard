@@ -1,3 +1,5 @@
+import { windRoseRows, windRoseColumns } from "../lib/customChartData.js";
+import ChartFrame from "./ChartFrame.jsx";
 import React from "react";
 import { processWindData, SPEED_RANGES } from "../lib/windRose";
 import { niceStep } from "../lib/chartAxis.js";
@@ -6,6 +8,7 @@ const AXIS = "#475569";
 const GRID = "#e2e8f0";
 
 export function WindRose({ directionData, speedData, t }) {
+  const [hoveredBar, setHoveredBar] = React.useState(null);
   if (!directionData || !speedData) {
     return <div className="text-gray-500">{t("noData")}</div>;
   }
@@ -31,9 +34,13 @@ export function WindRose({ directionData, speedData, t }) {
   const ringCount = Math.max(1, Math.ceil(maxDirectionShare / ringStep));
   const axisMax = ringStep * ringCount;
   const ringSpacing = radius / ringCount;
+  const formatSpeedRange = (range) => {
+    const endpoint = (value) => t.number(value, { minimumFractionDigits: value === 0 ? 0 : 1, maximumFractionDigits: 1 });
+    return Number.isFinite(range.max) ? `${endpoint(range.min)} - ${endpoint(range.max)}` : `> ${endpoint(range.min)}`;
+  };
   const shareToRadius = (share) => (share / axisMax) * radius;
 
-  const [hoveredBar, setHoveredBar] = React.useState(null);
+
   const separator = "|||"; // Use unique separator for splitting
 
   // Convert polar to cartesian
@@ -65,17 +72,17 @@ export function WindRose({ directionData, speedData, t }) {
   };
 
   return (
-    <div style={{ width: "100%", backgroundColor: "#ffffff", borderRadius: "8px", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)" }}>
+    <ChartFrame custom description={t("windRoseDesc")} t={t} rows={windRoseRows(data)} columns={windRoseColumns} indicator="wind-rose" title={t("windRose")}><div style={{ width: "100%", backgroundColor: "#ffffff", borderRadius: "8px", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)" }}>
       {/* Main content */}
       <div className="wind-rose-layout">
         {/* Summary */}
         <div className="wind-rose-stats">
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{stats.dateRange}</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("meanWindSpeed")}: {stats.meanSpeed} m/s</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("maxWindSpeed")}: {stats.maxSpeed} m/s</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("calmWind")} (&lt;0.5 m/s): {stats.calmPercentage}%</p>
-          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("totalRecords")}: {stats.totalRecords > 999 ? (stats.totalRecords / 1000).toFixed(2) + 'K' : stats.totalRecords.toLocaleString()}</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("meanWindSpeed")}: {t.number(stats.meanSpeed, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m/s</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("maxWindSpeed")}: {t.number(stats.maxSpeed, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m/s</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("calmWind")} (&lt;{t.number(0.5)} m/s): {t.number(stats.calmPercentage, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937", margin: 0 }}>{t("totalRecords")}: {stats.totalRecords > 999 ? t.number(stats.totalRecords / 1000, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 'K' : t.number(stats.totalRecords, { maximumFractionDigits: 3 })}</p>
         </div>
       </div>
 
@@ -94,7 +101,7 @@ export function WindRose({ directionData, speedData, t }) {
 
             const directionTotalCount = directionStats[direction]?.count || 0;
             const directionMeanSpeed = directionMeanSpeeds[direction] || 0;
-            const speedRangeCount = Math.round((parseFloat(percentage) / 100) * stats.totalRecords);
+            const speedRangeCount = data.binCounts[direction][speedLabel];
 
             return (
               <div
@@ -121,20 +128,20 @@ export function WindRose({ directionData, speedData, t }) {
                   {direction}
                 </div>
                 <div style={{ marginBottom: "6px", color: "#e5e7eb" }}>
-                  {speedLabel} m/s
+                  {formatSpeedRange(range)} m/s
                 </div>
                 <div style={{ fontSize: "16px", fontWeight: "700", color: range.color, marginBottom: "8px" }}>
-                  {parseFloat(percentage).toFixed(1)}%
+                  {t.number(parseFloat(percentage), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                 </div>
                 <div style={{ borderTop: "1px solid #4b5563", paddingTop: "8px", fontSize: "12px", color: "#cbd5e0" }}>
                   <div>{t("totalRecords")}: {speedRangeCount}</div>
-                  <div>{t("directionAverage")}: {directionMeanSpeed} m/s</div>
+                  <div>{t("directionAverage")}: {t.number(directionMeanSpeed, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m/s</div>
                 </div>
               </div>
             );
           })()}
 
-            <svg viewBox="0 0 420 420" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "auto", maxHeight: "360px" }}>
+            <svg role="img" aria-label={t("windRoseDesc")} viewBox="0 0 420 420" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "auto", maxHeight: "360px" }}>
             <defs>
               <style>
                 {`
@@ -173,24 +180,6 @@ export function WindRose({ directionData, speedData, t }) {
             );
           })}
 
-          {/* Ring scale: without it the reader cannot tell whether a petal
-              reaching the third ring means 3 % of the record or 30 %. */}
-          {Array.from({ length: ringCount }).map((_, i) => (
-            <text
-              key={`ring-label-${i}`}
-              x={centerX + 4}
-              y={centerY - ringSpacing * (i + 1) - 3}
-              fontSize="10"
-              fontWeight="600"
-              fill={AXIS}
-              stroke="#ffffff"
-              strokeWidth="3"
-              paintOrder="stroke"
-            >
-              {`${+(ringStep * (i + 1)).toFixed(1)}%`}
-            </text>
-          ))}
-
           {/* Wind bars */}
           {directions.map((direction, dirIndex) => {
             let cumulative = 0;
@@ -226,6 +215,24 @@ export function WindRose({ directionData, speedData, t }) {
             );
           })}
 
+          {/* Ring scale: without it the reader cannot tell whether a petal
+              reaching the third ring means 3 % of the record or 30 %. */}
+          {Array.from({ length: ringCount }).map((_, i) => (
+            <text
+              key={`ring-label-${i}`}
+              x={centerX + 4}
+              y={centerY - ringSpacing * (i + 1) - 3}
+              fontSize="10"
+              fontWeight="600"
+              fill={AXIS}
+              stroke="#ffffff"
+              strokeWidth="3"
+              paintOrder="stroke"
+            >
+              {`${t.number(ringStep * (i + 1), { maximumFractionDigits: 1 })}%`}
+            </text>
+          ))}
+
           {/* Direction labels */}
           {directions.map((direction, dirIndex) => {
             const angle = dirIndex * 22.5;
@@ -257,8 +264,8 @@ export function WindRose({ directionData, speedData, t }) {
           <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", margin: 0 }}>{t("windSpeed")}</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {SPEED_RANGES.map((range, idx) => (
-              <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div
+              <div key={idx} data-export-legend-item style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div data-export-swatch
                   style={{
                     width: "20px",
                     height: "14px",
@@ -267,13 +274,13 @@ export function WindRose({ directionData, speedData, t }) {
                     flexShrink: 0,
                   }}
                 />
-                <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>{range.label}</span>
+                <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>{formatSpeedRange(range)} m/s</span>
               </div>
             ))}
             <div style={{ paddingTop: "12px", borderTop: "1px solid #e5e7eb" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
-                <div style={{ width: "20px", height: "14px", backgroundColor: "transparent", border: "2px dashed #cbd5e0", borderRadius: "2px" }} />
-                <span style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280" }}>{t("calmWind")} (&lt;0.5)</span>
+              <div data-export-legend-item style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
+                <div data-export-swatch style={{ width: "20px", height: "14px", backgroundColor: "transparent", border: "2px dashed #cbd5e0", borderRadius: "2px" }} />
+                <span style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280" }}>{t("calmWind")} (&lt;{t.number(0.5)})</span>
               </div>
             </div>
           </div>
@@ -282,12 +289,12 @@ export function WindRose({ directionData, speedData, t }) {
 
       {/* Footer note */}
       <div style={{ paddingTop: "24px", borderTop: "1px solid #e5e7eb", textAlign: "center" }}>
-        <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
+        <p data-export-caption style={{ fontSize: "12px", color: "#556170", margin: 0 }}>
           {t("windRoseNote")}
           {" "}
-          {t("windRoseRingNote").replace("{step}", +ringStep.toFixed(1))}
+          {t("windRoseRingNote").replace("{step}", t.number(ringStep, { maximumFractionDigits: 1 }))}
         </p>
       </div>
-    </div>
+    </div></ChartFrame>
   );
 }

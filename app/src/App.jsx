@@ -1,14 +1,17 @@
+import { ChartContext } from "./components/ChartFrame.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import MapView from "./components/MapView.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import ConfigPanel from "./components/ConfigPanel.jsx";
 import { makeT } from "./i18n.js";
+import { updateDocumentTitle } from "./lib/locale.js";
 import { importWorkbook, dedupeMeasurements, KNOWN_STATIONS } from "./lib/importExcel.js";
 import { geocodePlace } from "./lib/geocode.js";
 import { loadSavedStations, saveStation, deleteStation } from "./lib/stationsStore.js";
 import { supabaseEnabled } from "./lib/supabase.js";
 import { useAuth } from "./lib/useAuth.js";
 import AuthBar from "./components/AuthBar.jsx";
+import InstitutionalFooter from "./components/InstitutionalFooter.jsx";
 
 // Podujevë municipality center: fallback when a station name cannot be geocoded
 const FALLBACK = { lat: 42.911, lon: 21.193 };
@@ -32,8 +35,8 @@ export default function App() {
   // uploading requires sign-in; if Supabase isn't configured, allow local-only imports
   const canUpload = !supabaseEnabled || Boolean(session);
 
-  const baseT = useMemo(() => makeT(lang), [lang]);
-  const t = (k) => baseT(k);
+  const t = useMemo(() => makeT(lang), [lang]);
+  useEffect(() => { updateDocumentTitle(t); }, [t]);
 
   // load previously saved (user-imported) stations from Supabase on startup.
   // Known stations are snapped to their fixed catalogue coordinates/names (so
@@ -250,9 +253,9 @@ export default function App() {
           </div>
           <div className="header-right">
             <AuthBar session={session} t={t} />
-            <div className="lang-toggle">
-              <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
-              <button className={lang === "sq" ? "active" : ""} onClick={() => setLang("sq")}>SQ</button>
+            <div className="lang-toggle" role="group" aria-label={t("languageControl")}>
+              <button aria-pressed={lang === "en"} lang="en" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
+              <button aria-pressed={lang === "sq"} lang="sq" className={lang === "sq" ? "active" : ""} onClick={() => setLang("sq")}>SQ</button>
             </div>
           </div>
         </header>
@@ -286,6 +289,7 @@ export default function App() {
 
         {/* charts span the full width below */}
         <main className="charts-area">
+          <ChartContext.Provider value={{ station: activeData?.[`name_${lang}`] ?? activeData?.name_en, measurement: measId, t }}>
           <Dashboard
             data={activeData}
             measId={measId}
@@ -293,7 +297,9 @@ export default function App() {
             lang={lang}
             t={t}
           />
+        </ChartContext.Provider>
         </main>
+        <InstitutionalFooter stations={imported} t={t} />
 
       </div>
     </>

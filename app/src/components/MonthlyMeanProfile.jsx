@@ -1,5 +1,6 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, Label, Legend, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ErrorBar, Label, Legend, ReferenceDot, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateMonthlyMeanProfile } from "../lib/monthlyMeanProfile.js";
 import { SEASON_DEFINITIONS, seasonOf } from "../lib/seasons.js";
 import { yAxisLabel } from "./chartLabels.jsx";
@@ -18,7 +19,7 @@ export default function MonthlyMeanProfile({ measurement, unit, title, descripti
   );
 
   if (!data.some((row) => row.mean != null)) return null;
-  const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { maximumFractionDigits: digits });
   const { max, min } = result;
 
   const highs = data.filter((row) => row.mean != null).map((row) => row.high);
@@ -50,7 +51,7 @@ export default function MonthlyMeanProfile({ measurement, unit, title, descripti
           {t("max")}: <strong>{max ? t("monthsFull")[max.monthNumber - 1] : ""} ({format(max.mean)} {unit})</strong> · {t("min")}: <strong>{t("monthsFull")[min.monthNumber - 1]} ({format(min.mean)} {unit})</strong>
         </p>
       )}
-      <ResponsiveContainer width="100%" height={400}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"label","label":"Month"},{"key":"mean","label":"Mean"},{"key":"stdDev","label":"Standard deviation"},{key:"season",label:"Season"},{key:"yearCount",label:"Contributing years"},{key:"years",label:"Years"},{key:"unit",label:"Unit",value:()=>unit}]} indicator="monthly-mean-profile-1" width="100%" height={400}>
         <BarChart data={data} margin={{ top: 30, right: 26, left: 50, bottom: 42 }}>
           <CartesianGrid stroke="#eef2f6" vertical={false} />
           <XAxis dataKey="label" interval={0} tick={{ fontSize: 10 }} tickMargin={8} angle={-30} textAnchor="end" height={56} />
@@ -97,12 +98,12 @@ export default function MonthlyMeanProfile({ measurement, unit, title, descripti
             </ReferenceDot>
           )}
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
         {t("coverage")}: {result.firstDate} – {result.lastDate}.
-        {result.skippedMonths > 0 && ` ${t("monthlyProfileSkipped").replace("{n}", result.skippedMonths)}`}
+        {result.skippedMonths > 0 && ` ${t("monthlyProfileSkipped", { count: result.skippedMonths })}`}
       </p>
     </section>
   );

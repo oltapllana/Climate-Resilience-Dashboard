@@ -112,6 +112,7 @@ export function processWindData(directionData, speedData) {
 
   return {
     windRose: windRosePercent,
+    binCounts: windRose,
     stats,
     directions,
     speedRanges: SPEED_RANGES,
@@ -138,13 +139,14 @@ export function processWindRiskHeatmap(speedData) {
 
   // Process each hourly record - format is YYYY-MM-DDTHH:00
   speedData.hourly.forEach(entry => {
-    const dateStr = entry.d; // format: "2021-04-06T10:00"
+    const dateStr = String(entry?.d ?? ""); // format: "2021-04-06T10:00"
     const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):/);
     if (!match) return;
 
     const month = parseInt(match[2]) - 1; // 0-based month
     const hour = parseInt(match[4]);
     const speed = entry.v;
+    if (speed == null || String(speed).trim() === "" || !Number.isFinite(Number(speed))) return;
 
     const monthName = monthNames[month];
     if (heatmapData[monthName] && heatmapData[monthName][hour] !== undefined) {
@@ -163,12 +165,13 @@ export function processWindRiskHeatmap(speedData) {
       const data = heatmapData[month][hour];
       heatmapPercent[month][hour] = data.count > 0
         ? (data.highRiskCount / data.count * 100).toFixed(2)
-        : 0;
+        : null;
     }
   });
 
   return {
     heatmapData: heatmapPercent,
+    observations: heatmapData,
     months: monthNames,
     highWindThreshold: HIGH_WIND_THRESHOLD,
   };

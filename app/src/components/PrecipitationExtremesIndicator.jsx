@@ -1,3 +1,4 @@
+import ChartFrame from "./ChartFrame.jsx";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -7,25 +8,25 @@ import {
   ComposedChart,
   LabelList,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { calculatePrecipitationExtremes } from "../lib/precipitationExtremes.js";
 import { axisScale, formatForAxis } from "../lib/chartAxis.js";
-import { ChartEmptyState, EdgeLabel, yAxisLabel } from "./chartLabels.jsx";
+import { ChartEmptyState, yAxisLabel } from "./chartLabels.jsx";
 
-const RED = "#c63a2b";
-const MUTED = ["#9aaab4", "#719eac", "#aab8bf", "#6f98a6", "#b4c0c5", "#829da7"];
+import { CHART_PALETTE, REFERENCE_DASH } from "../lib/chartPalette.js";
 
-function fmt(value, digits = 3) {
-  return value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
+const RED = CHART_PALETTE.severity.extreme;
+
+function fmt(t, value, digits = 3) {
+  return value == null ? "—" : t.number(Number(value), { maximumFractionDigits: digits });
 }
 
 function thresholdLabel(value, t) {
   if (value == null) return "";
-  return `${t("percentileThreshold")}: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })} mm/ditë`;
+  return t("percentileThresholdValue").replace("{value}", t.number(Number(value), { maximumFractionDigits: 0 }));
 }
 
 function DailyTooltip({ active, payload, t }) {
@@ -34,7 +35,7 @@ function DailyTooltip({ active, payload, t }) {
   return (
     <div className="indicator-tooltip">
       <strong>{row.date}</strong>
-      <span>{t("dailyTotal")}: {fmt(row.total)} mm/ditë</span>
+      <span>{t("dailyTotalValue").replace("{value}", `${fmt(t, row.total)}`)}</span>
       <span>{row.isExtreme ? t("extremeDay") : ""}</span>
     </div>
   );
@@ -47,28 +48,28 @@ function YearTooltip({ active, payload, t }) {
     <div className="indicator-tooltip">
       <strong>{row.year}</strong>
       <span>{t("maximumDate")}: {row.maxDate}</span>
-      <span>{t("maximum")}: {fmt(row.maxTotal)} mm/ditë</span>
-      <span>{t("threshold")}: {fmt(row.threshold)} mm/ditë</span>
+      <span>{t("maximumValue").replace("{value}", `${fmt(t, row.maxTotal)}`)}</span>
+      <span>{t("thresholdValue").replace("{value}", `${fmt(t, row.threshold)}`)}</span>
     </div>
   );
 }
 
-function ExtremeLabel({ x, y, value, payload }) {
+function ExtremeLabel({ t, x, y, value, payload }) {
   if (!payload?.isExtreme) return null;
   return (
     <g transform={`translate(${x},${y - 10})`}>
       <text textAnchor="middle" fill="#17242b" fontSize="10" fontWeight="700">
         <tspan x="0" dy="0">{payload.date}</tspan>
-        <tspan x="0" dy="12">{fmt(value, 1)} mm</tspan>
+        <tspan x="0" dy="12">{fmt(t, value, 1)} mm</tspan>
       </text>
     </g>
   );
 }
 
-function YearLabel({ x, y, value }) {
+function YearLabel({ t, x, y, value }) {
   return (
     <text x={x} y={y - 8} textAnchor="middle" fill="#17242b" fontSize="11" fontWeight="700">
-      {fmt(value, 1)}
+      {fmt(t, value, 1)}
     </text>
   );
 }
@@ -137,7 +138,8 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                   the "no visible point above the threshold" the review flagged,
                   while the panel beside it counted two years over that same
                   threshold. A ComposedChart draws the bars it always had. */}
-              <ResponsiveContainer width="100%" height={360}>
+              <p className="indicator-callout">{thresholdLabel(threshold, t)} ({t("referenceDashed")})</p>
+              <ChartFrame t={t} rows={dailyData} columns={[{"key":"date","label":"Date"},{"key":"total","label":"Rainfall (mm)"},{"key":"isExtreme","label":"Extreme"},{key:"threshold",label:"Threshold (mm)",value:()=>threshold}]} indicator="precipitation-extremes-indicator-1" width="100%" height={360}>
                 <ComposedChart data={dailyData} margin={{ top: 22, right: 22, left: 54, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" />
                   {/* the first date label is centred on the first bar, which
@@ -150,26 +152,25 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                     allowDataOverflow
                     width={72}
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => formatForAxis(value, dailyScale.decimals)}
+                    tickFormatter={(value) => formatForAxis(value, dailyScale.decimals, t.locale)}
                     label={yAxisLabel(t("dailyPrecipitationAxis"))}
                   />
                   <Tooltip content={<DailyTooltip t={t} />} />
-                  <Bar dataKey="total" fill="#2b7fc4" minPointSize={(value) => (value ? 1 : 0)} isAnimationActive={false}>
-                    {dailyData.map((row, index) => (
-                      <Cell key={row.date} fill={row.isExtreme ? RED : MUTED[index % MUTED.length]} />
+                  <Bar dataKey="total" fill={CHART_PALETTE.rainfall} minPointSize={(value) => (value ? 1 : 0)} isAnimationActive={false}>
+                    {dailyData.map((row) => (
+                      <Cell key={row.date} fill={row.isExtreme ? RED : CHART_PALETTE.rainfall} />
                     ))}
-                    <LabelList content={<ExtremeLabel />} />
+                    <LabelList content={<ExtremeLabel t={t} />} />
                   </Bar>
-                  {/* after the bars, so the threshold and its label sit on top
+                  {/* after the bars, so the threshold sits on top
                       of them rather than behind — see DailyTrendIndicator */}
                   <ReferenceLine
                     y={threshold}
-                    stroke="#17242b"
-                    strokeDasharray="8 5"
-                    label={<EdgeLabel text={thresholdLabel(threshold, t)} fill="#17242b" topLimit={26} />}
+                    stroke={CHART_PALETTE.reference}
+                    strokeDasharray={REFERENCE_DASH}
                   />
                 </ComposedChart>
-              </ResponsiveContainer>
+              </ChartFrame>
             </div>
 
             <div className="indicator-panel">
@@ -177,7 +178,8 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                 <h2>{t("eachYearExtremeDay")}</h2>
                 <p>{t("annualExtremeDayDesc")}</p>
               </div>
-              <ResponsiveContainer width="100%" height={360}>
+              <p className="indicator-callout">{thresholdLabel(threshold, t)} ({t("referenceDashed")})</p>
+              <ChartFrame t={t} rows={yearlyData.map((row) => ({ ...row, threshold }))} columns={[{"key":"year","label":"Year"},{"key":"maxDate","label":"Maximum date"},{"key":"maxTotal","label":"Maximum rainfall (mm)"},{"key":"threshold","label":"Threshold (mm)"},{"key":"isPartial","label":"Partial year"}]} indicator="precipitation-extremes-indicator-2" width="100%" height={360}>
                 <BarChart data={yearlyData.map((row) => ({ ...row, threshold }))} margin={{ top: 30, right: 18, left: 54, bottom: 28 }}>
                   <CartesianGrid stroke="#dce5ea" vertical={false} />
                   <XAxis dataKey="year" tickFormatter={yearTick} />
@@ -187,26 +189,25 @@ export default function PrecipitationExtremesIndicator({ measurement, t }) {
                     ticks={yearlyScale.ticks}
                     allowDataOverflow
                     width={72}
-                    tickFormatter={(value) => formatForAxis(value, yearlyScale.decimals)}
+                    tickFormatter={(value) => formatForAxis(value, yearlyScale.decimals, t.locale)}
                     label={yAxisLabel(t("annualDailyMaximumAxis"))}
                   />
                   <Tooltip content={<YearTooltip t={t} />} />
                   <Bar dataKey="maxTotal" name={t("maximumDailyTotal")} radius={[3, 3, 0, 0]}>
                     {yearlyData.map((row) => (
-                      <Cell key={row.year} fill={row.exceedsThreshold ? RED : "#719eac"} />
+                      <Cell key={row.year} fill={row.exceedsThreshold ? RED : CHART_PALETTE.rainfall} />
                     ))}
-                    <LabelList content={<YearLabel />} />
+                    <LabelList content={<YearLabel t={t} />} />
                   </Bar>
-                  {/* after the bars, so the threshold and its label are read
+                  {/* after the bars, so the threshold is read
                       against them instead of disappearing behind 2024 and 2025 */}
                   <ReferenceLine
                     y={threshold}
-                    stroke="#17242b"
-                    strokeDasharray="8 5"
-                    label={<EdgeLabel text={thresholdLabel(threshold, t)} fill="#17242b" topLimit={30} />}
+                    stroke={CHART_PALETTE.reference}
+                    strokeDasharray={REFERENCE_DASH}
                   />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartFrame>
               {hasPartialYear && (
                 <p className="indicator-assumption">
                   {t("partialWettestDayNote")}

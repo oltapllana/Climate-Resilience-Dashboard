@@ -1,9 +1,63 @@
 // Lightweight i18n: English + Albanian (Shqip). Measurement/station labels
 // come from the data files (label_en / label_sq, name_en / name_sq).
+import { formatNumber } from "./lib/locale.js";
 
 export const STRINGS = {
   en: {
-    appTitle: "Podujevë Climate Resilience Dashboard",
+    chartMissingValue: "Not available",
+    chartYes: "Yes",
+    chartNo: "No",
+    chartMissingKey: "× No observations; — excluded from the displayed mean. See the data table for counts and coverage.",
+    chartMatrixKey: "× No observations; * partial coverage. A displayed 0 is a measured count of zero.",
+    chartTouchData: "Open “View chart data” for values, categories and coverage, including details shown on hover.",
+    chartStatusMissing: "No observations",
+    chartStatusExcluded: "Excluded: insufficient observations",
+    chartStatusObserved: "Observed",
+    metaDescription: "Explore weather observations and climate indicators from stations in the Podujeva area, including rainfall, temperature and wind.",
+    downloadCsv: "Download CSV",
+    downloadPng: "Download PNG",
+    exportingPng: "Preparing PNG…",
+    exportFailed: "The image could not be exported. Please try again once the chart is visible.",
+    viewChartData: "View chart data",
+    chartDataAlternative: "Chart values are available in the data table and CSV download.",
+    chartScrollLabel: "Chart: {chart}",
+    previousData: "Previous rows",
+    nextData: "Next rows",
+    dataPage: "Rows {start}–{end} of {total}",
+    languageControl: "Interface language",
+    appTitle: "Podujeva Climate Resilience Dashboard",
+    removeStationNamed: "Remove station: {station}",
+    footerSources: "Data source",
+    footerSensorSource: "Imported station sensor records.",
+    footerMap: "Base map attribution",
+    footerMapCredit: "OpenStreetMap contributors",
+    footerLatestObservation: "Latest observation date",
+    footerObservationScope: "Across loaded stations; not the platform update time.",
+    footerVersion: "Application version",
+    methodologyAndLimitations: "Methodology and limitations",
+    rainfallMethodSummary: "Quartiles require {n} complete years. Missing hours within observed months are treated as dry.",
+    dayCount_one: "{count} day",
+    dayCount_other: "{count} days",
+    yearCount_one: "{count} year",
+    yearCount_other: "{count} years",
+    referenceYearCount_one: "{count} reference year",
+    referenceYearCount_other: "{count} reference years",
+    referenceValueCount_one: "{count} reference value",
+    referenceValueCount_other: "{count} reference values",
+    observedDayCount_one: "{count} observed day",
+    observedDayCount_other: "{count} observed days",
+    completeYearsCount_one: "{count} fully observed year",
+    completeYearsCount_other: "{count} fully observed years",
+    heatWaveCount_one: "{count} heat wave",
+    heatWaveCount_other: "{count} heat waves",
+    coldPeriodCount_one: "{count} cold period",
+    coldPeriodCount_other: "{count} cold periods",
+    monthlyProfileSkipped_one: "{count} month-year was excluded for having fewer than 15 observed days.",
+    monthlyProfileSkipped_other: "{count} month-years were excluded for having fewer than 15 observed days.",
+    heatmapCellNote_one: "{count} month-year cell contains data.",
+    heatmapCellNote_other: "{count} month-year cells contain data.",
+    heatmapSkipped_one: "{count} was excluded for having fewer than 10 observed days.",
+    heatmapSkipped_other: "{count} were excluded for having fewer than 10 observed days.",
     appSubtitle: "Hydro-meteorological monitoring of the Llap basin",
     stations: "Monitoring stations",
     configTitle: "Configuration",
@@ -13,29 +67,30 @@ export const STRINGS = {
     hydro: "Hydrological",
     meteo: "Meteorological",
     overview: "Overview",
-    climatology: "Monthly Climatology",
+    climatology: "Monthly climatology",
     // "Monthly climatology" is the meteorologist's term, not the reader's. The
     // panel is named after what it actually plots for the measurement in view.
     climatologyRainfall: "Monthly rainfall",
     climatologyLevel: "Monthly mean water level",
     climatologyDesc: "Average monthly profile across all years of record",
-    evolution: "Annual Trend",
+    evolution: "Annual trend",
     evolutionDesc: "Monthly mean of the selected measurement over time",
-    anomalies: "Monthly Anomalies",
+    anomalies: "Monthly anomalies",
     anomaliesDesc: "Deviation of each month from the long-term monthly average",
+    anomaliesRequiresYears: "Monthly anomalies require at least {n} years with complete observations for each calendar month; unsupported months are unavailable.",
     daily: "Daily",
-    windRose: "Wind Rose",
+    windRose: "Wind rose",
     windRoseDesc: "Wind direction and speed distribution",
-    windRiskHeatmap: "Wind Risk Heatmap",
+    windRiskHeatmap: "Wind risk heatmap",
     windRiskDescription: "Percentage of hours with strong wind conditions",
-    hourOfDay: "Hour of Day",
+    hourOfDay: "Hour of day",
     dataSource: "Source: direct monitoring data",
     wmoStandard: "WMO standard for meteorological data representation (WMO-No. 8, Guide to Meteorological Instruments and Methods of Observation, 2018 Ed.)",
     meanWindSpeed: "Mean wind speed",
     maxWindSpeed: "Max wind speed",
     calm: "Calm",
     totalRecords: "Records",
-    windSpeed: "Wind Speed",
+    windSpeed: "Wind speed",
     windRoseNote: "Frequency is shown as percentage of total observations",
     selectStationHint: "Select a station on the map or from the list to explore its data.",
     period: "Period of measurement",
@@ -53,8 +108,8 @@ export const STRINGS = {
     legendHydro: "Hydrological station",
     legendMeteo: "Meteorological station",
     legendMunicipality: "Municipality boundary",
-    legendSettlements: "Matched settlement polygons",
-    legendFallbackLabels: "Unmatched settlement labels",
+    legendSettlements: "Settlements",
+    legendFallbackLabels: "Settlements without boundary data",
     legendStations: "Measurement points",
     boundary: "Podujevë municipality",
     city: "Podujevë city",
@@ -101,13 +156,15 @@ export const STRINGS = {
     landslideZeroFillWarning:
       "Hours without readings are treated as dry (zero); sensor outages may therefore be hidden.",
     landslideMethodologyNote:
-      "One stored row carries one clock hour, so its value is that hour's depth and is never multiplied by 60. Hours without a logged reading are treated as no rainfall.",
+      "Rainfall is assessed over fixed 1–5 day windows. Missing hourly readings are treated as zero rainfall, so sensor outages may affect the results.",
     landslideThresholdTriggered:
-      "Threshold check: the configured curve activated on {days} day(s) across {years} year(s). The strongest {duration}-day window reached {ratio}% of its threshold, so this threshold is not too high to ever trigger in this record.",
+      "The threshold was exceeded on {days} across {years}. The strongest {duration}-day window reached {ratio}% of the threshold.",
     landslideThresholdSilent:
-      "Threshold check: no activation was found. The strongest {duration}-day window reached only {ratio}% of its threshold. Treat this indicator as uncalibrated until a locally validated threshold is configured.",
+      "No threshold exceedance was recorded. The strongest {duration}-day window reached {ratio}% of the threshold. Local validation is needed before operational use.",
     landslideFullYearLegend: "Fully observed year",
     landslidePartialYearLegend: "Partly observed year",
+    landslideSafeBand: "Below threshold",
+    landslideCriticalBand: "Above threshold",
     landslidePartialYearNote:
       "* Partly observed year — its count covers only the displayed observation window and is not comparable with a complete year.",
     landslideDepthSourceNote:
@@ -136,19 +193,19 @@ export const STRINGS = {
     rainfallFromGauge:
       "Rainfall depth on this page comes from the station's rain gauge (mm, recorded as hourly totals).",
     rainfallFromIntensity:
-      "This station has no rain gauge, so rainfall depth is rebuilt from the rain-intensity series by reading each logged hour as an hour of rain at that rate. Because the logger records only while it is raining, this over-states how much fell — at Shajkoc, the one station with both, the same method gives about twice the gauge's annual total. Treat the depths below as an upper bound and do not compare them with gauge-based stations.",
+      "Rainfall depth is estimated from intensity, assuming each recorded rate lasts a full hour. This may overestimate rainfall and is not directly comparable with rain-gauge measurements.",
     observedDays: "Observed days",
     standardDeviation: "standard deviation",
     middleHalf: "Middle half of years",
     fullRange: "Full range across years",
-    completeYearsCounted: "Complete years used",
+    completeYearsCounted: "Years contributing to this month",
     longTermMean: "Long-term mean",
     rollingMean30: "30-day rolling mean",
 
     windDiurnalTitle: "Wind speed through the day",
     windDiurnalDesc: "Mean wind speed by hour of day (m/s), averaged over the whole record.",
     windDiurnalExplanation:
-      "Wind speed follows a daily cycle: calm overnight, strengthening after sunrise as the surface heats, peaking in the early afternoon, then easing again after sunset.",
+      "The curve shows how mean wind speed varies by hour across the available record.",
     windDiurnalAssumption:
       "Each hour averages every observation logged at that clock hour across the record; seasons are not separated here.",
     meanSpeedAxis: "Mean wind speed (m/s)",
@@ -162,44 +219,54 @@ export const STRINGS = {
     windDirectionAxis: "Wind direction",
     strongestWindsFrom: "Strongest winds come from",
 
+    rainfallNoData: "No complete monthly observations",
+    rainfallNoDataNote: "× beside a month means no complete monthly observations; no bar is drawn. An unmarked month at zero means a recorded total of 0 mm.",
+    estimatedBarsNote: "Hatched bars mark estimates from partially observed months.",
+    referenceDashed: "dashed reference line",
     monthlyRainfallTitle: "Mean monthly rainfall",
-    monthlyRainfallDesc: "Average rainfall per calendar month, with the middle half of the observed years.",
+    monthlyRainfallDesc: "Average rainfall per calendar month.",
     monthlyRainfallAxis: "Mean monthly rainfall (mm)",
     monthlyRainfallExplanation:
-      "Bars are coloured by season. The whiskers span the middle half of the observed years — from the lower quartile to the upper quartile — so a long whisker means that month varies a great deal from one year to the next.",
+      "Blue bars show mean rainfall; when sufficient history is available, whiskers show the lower to upper quartile (the middle half of complete-year totals for that month).",
     monthlyRainfallAssumption:
-      "Only calendar months observed end to end contribute to a mean, so partially recorded months are excluded rather than read as dry.",
+      "Means use calendar months covered end to end, excluding months without any observations. Within eligible months, missing hours retain the existing zero-rainfall reconstruction assumption.",
     highestRainfallMonth: "Month with the highest rainfall",
 
     topRainDaysTitle: "The {n} days with the highest rainfall",
-    topRainDaysDesc: "Record rainfall days — the highest flood risk.",
+    topRainDaysDesc: "The wettest days in the available record.",
     dailyRainfallAxis: "Total daily rainfall (mm)",
-    highRainfallMarker: "flood risk (80 mm)",
+    highRainfallMarker: "Rainfall band boundary (80 mm)",
+    missingMonthNote: "× marks an unobserved month; an observed zero remains 0.",
+    rainBandBelow: "<1 mm",
+    rainBandLight: "1–<30 mm",
+    rainBandModerate: "30–<50 mm",
+    rainBandHeavy: "50–<80 mm",
+    rainBandExtreme: "≥80 mm",
     topRainDaysExplanation:
-      "Bars use the same colour bands as the yearly chart, so red means the same thing in both. The dashed line marks the 80 mm boundary of the top band.",
+      "Bars use rainfall-intensity bands; the light-blue band marks days below 30 mm. The dashed line marks the 80 mm boundary of the top band.",
     topRainDaysAssumption:
-      "Daily totals are the sum of the hourly depths for that day. Intensity readings are never summed directly, which is what produces impossible totals in the thousands of millimetres.",
+      "Daily rainfall totals are calculated from hourly rainfall depths. Missing hourly readings are treated as zero rainfall.",
 
-    rainyDaysTitle: "Rain days per year",
-    rainyDaysDesc: "Days classified by how much rain fell: 30–50, 50–80 and over 80 mm.",
+    rainyDaysTitle: "Days with rainfall ≥30 mm per year",
+    rainyDaysDesc: "Days classified by rainfall: 30–<50, 50–<80 and ≥80 mm.",
     classifiedDays: "Days of 30 mm or more",
-    lightRainDays: "Days 1–30 mm",
-    rainyDaysMonthlyTitle: "Rain days by month (all years combined)",
+    lightRainDays: "Days 1–<30 mm",
+    rainyDaysMonthlyTitle: "Days with rainfall ≥30 mm by month (all years combined)",
     rainyDaysMonthlyDesc: "Every January, every February… of the record pooled together, so a bar can exceed 31 days. The line is the share of observed days.",
-    rainyDaysAxis: "Rain days",
-    rainyDaysAxisAllYears: "Rain days (all years)",
-    rainDays: "Rain days",
-    rainDaysAllYears: "Rain days, all years",
+    rainyDaysAxis: "Days with rainfall ≥30 mm",
+    rainyDaysAxisAllYears: "Days ≥30 mm (all years)",
+    rainDays: "Total rain days (≥1 mm)",
+    rainDaysAllYears: "Days ≥30 mm, all years",
     rainDaysPerYear: "Average per year",
     yearSingular: "year",
     yearPlural: "years",
     shareOfDays: "Share of observed days",
     rainyDaysExplanation:
-      "Bars count only days reaching 30 mm, in the three classified bands. Ordinary 1–30 mm days outnumber these roughly ten to one, so including them would flatten the three bands into invisible slivers; their count is in the tooltip instead, along with the total of all days above 1 mm.",
+      "Bars count days reaching 30 mm, grouped into the three displayed rainfall bands. The tooltip also reports lighter-rainfall days and the total number of rain days.",
     rainyDaysAssumption:
-      "Daily depths come from the hourly rainfall-intensity reconstruction. Years that do not cover a full calendar year are marked with an asterisk and are not comparable with complete years.",
+      "Daily totals use the rainfall source identified above. Years marked with an asterisk have partial coverage and are not comparable with complete years.",
 
-    solarTrendTitle: "Solar radiation 2021–2026",
+    solarTrendTitle: "Solar radiation over time",
     solarTrendDesc: "Daily mean solar radiation with a 30-day rolling mean.",
     solarTrendAxis: "Daily mean solar radiation (W/m²)",
     solarTrendExplanation:
@@ -243,7 +310,7 @@ export const STRINGS = {
       "Values are converted from W/m² to hours (h) by accumulating the mean hourly radiation over each one-hour interval: 1 h = {ref} W/m².",
     solarOptimalWindow: "Optimal window for solar energy (09:00–15:00)",
     solarProfileExplanation:
-      "Splitting the daily cycle by season shows what a single annual average hides: the summer curve is both taller and wider than the winter one, which matters for sizing solar capacity.",
+      "Seasonal curves compare the timing and magnitude of mean solar radiation through the day.",
     solarProfileAssumption:
       "Each point averages every observation at that clock hour within the season across all years of record. Peak hours:",
 
@@ -260,9 +327,9 @@ export const STRINGS = {
     departureAbove:
       "Most marked departure: {start} to {end}, averaging {mean} {unit} — {delta} {unit} above the long-term mean.",
     departureObserved:
-      "Every one of those {days} days carries observations, so the swing is measured data rather than a gap in the record.",
+      "Observations cover the full window ({days}).",
     departurePartial:
-      "Only {observed} of those {days} days carry observations, so part of the swing may reflect the gaps rather than the weather.",
+      "Observed coverage: {observed} of {days}. Gaps may affect this comparison.",
 
     partialMonth: "partly observed month",
     days: "days",
@@ -288,15 +355,15 @@ export const STRINGS = {
     pressureDiurnalDesc: "Mean hourly departure from each day's own mean pressure, one curve per season.",
     pressureDeviationAxis: "Departure from the daily mean (hPa)",
     dailyMeanLine: "Daily mean",
-    pressureMorningRise: "Pressure rises through the morning",
-    pressureAfternoonFall: "and falls through the afternoon",
+    pressureMorningRise: "Peak hourly departure",
+    pressureAfternoonFall: "Lowest hourly departure",
     dailyAmplitude: "Daily amplitude",
     pressureDiurnalExplanation:
       "This is the atmospheric tide — a real twice-daily oscillation driven by solar heating of the atmosphere. It is about ±1 hPa, while ordinary weather moves pressure by ±20 hPa, so the curves plot each hour's departure from that day's own mean. Averaging absolute pressure by hour would bury the signal entirely.",
     pressureDiurnalAssumption:
-      "Built from {days} days with at least 20 hourly readings across {years}; days with fewer hours are skipped because their mean is not comparable with a full day's. Seasons are meteorological (spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb). Amplitude per season:",
+      "Built from {days} with at least 20 hourly readings across {years}; days with fewer hours are skipped because their mean is not comparable with a full day's. Seasons are meteorological (spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb). Amplitude per season:",
 
-    monthlyTempTrendTitle: "Mean monthly temperature in Podujevë",
+    monthlyTempTrendTitle: "Mean monthly temperature",
     monthlyTempTrendDesc: "Monthly mean temperature over the record, with a fitted linear trend and the freezing point marked.",
     monthlyMeanTemp: "Monthly mean temperature",
     monthlyRangeBand: "Monthly min–max range",
@@ -329,19 +396,19 @@ export const STRINGS = {
     diurnalTempDesc: "Mean temperature by hour of day, one curve per season, shaded by ±1 standard deviation.",
     diurnalAmplitude: "Day–night amplitude",
     diurnalTempExplanation:
-      "A single annual curve hides the point: the summer day–night swing is far wider than the winter one, so the same average conceals two very different daily regimes. The shaded band shows how much individual days scatter around each curve.",
+      "Seasonal curves compare the daily temperature cycle. The shaded bands show variation around each seasonal mean.",
     diurnalTempAssumption:
       "Each point averages every observation at that clock hour within the season across {years} ({n} hourly readings). The band is ±1 standard deviation of those readings, so it describes day-to-day variability, not measurement uncertainty.",
 
     heatStressTitle: "Days by heat-stress class",
-    heatStressDesc: "Days per year counted by daily maximum temperature, using the review's thermal-stress classes.",
+    heatStressDesc: "Days per year classified by daily maximum temperature.",
     heatWaves: "Heat waves",
     warmestDay: "Warmest day",
-    heatWaveSummary: "{n} heat waves in the record ({days}+ consecutive days at or above {threshold} °C). Longest:",
+    heatWaveSummary: "{events} in the record ({days}+ consecutive days at or above {threshold} °C). Longest:",
     heatStressExplanation:
       "Classes are exclusive and read off the daily maximum, so each day falls into at most one and the stacked bars total the days of heat stress in that year.",
     heatStressAssumption:
-      "Thresholds are the review's (26–32 moderate, 32–38 strong, 38–46 very strong, above 46 extreme). Daily extremes use available hourly observations without interpolation. Years marked with an asterisk do not cover a full calendar year.",
+      "Temperature classes: 26–32°C moderate, 32–38°C strong, 38–46°C very strong, and above 46°C extreme. Daily extrema use available hourly observations without interpolation. An asterisk marks a partial calendar year.",
 
     coldestDay: "Coldest day",
 
@@ -355,7 +422,7 @@ export const STRINGS = {
     extremeDaysExplanation:
       "Bars run down from the zero line for the cold extremes and up from it for the hot ones, ordered from the coldest day on the left to the hottest on the right.",
     extremeDaysAssumption:
-      "Ranked across {days} observed days between {start} and {end}. Daily extremes use available hourly observations without interpolation, so a day with sensor gaps may record a less extreme value than it actually reached.",
+      "Ranked across {days} between {start} and {end}. Daily extremes use available hourly observations without interpolation, so a day with sensor gaps may record a less extreme value than it actually reached.",
 
     episodesTitle: "Heat waves and cold periods",
     episodesDesc: "Every qualifying episode in the record, longest first.",
@@ -369,7 +436,7 @@ export const STRINGS = {
     episodesExplanation:
       "Each bar is one continuous episode, so its length is the number of days in a row the condition held. The peak is the most extreme temperature reached inside that episode — it is what separates two episodes of equal length.",
     episodesAssumption:
-      "{heat} heat waves and {cold} cold periods in the record. Daily extremes use available hourly observations without interpolation, so a gap in the record can end an episode that in reality continued.",
+      "{heat} and {cold} in the record. Daily extrema use available hourly observations without interpolation; gaps can interrupt an episode.",
     episodesTruncated: "The chart shows the longest {shown} of each type; {hidden} shorter episodes are not drawn.",
 
     /* ---- water datasets: level, water temperature, salinity, TDS, conductivity ---- */
@@ -381,7 +448,7 @@ export const STRINGS = {
     partialYearMean: "Partial-year mean (not in trend)",
     yearsShort: "yr",
     completeYearsCount: "{n} fully observed years",
-    eventWindowNote: "The window is ±{days} days around the peak of the record.",
+    eventWindowNote: "The window is ±{days} around the peak of the record.",
     floodPeak: "Flood peak",
     dilutionMinimum: "Lowest reading",
     annualRangeLegend: "Annual min–max range",
@@ -393,7 +460,7 @@ export const STRINGS = {
     referencePeriod: "Reference period",
     currentYearOverlay: "Year drawn over it",
     seasonalBandBasis:
-      "Bands are the 10th/25th/50th/75th/90th percentile for each day of the year, taken over a {window}-day window centred on that day across the {n} reference years ({years}) — about {samples} values per day — and each percentile curve is then smoothed over {smooth} days. Each window is detrended against the seasonal cycle before it is ranked, so a steep spring does not widen the band on its own. The window is what makes the two bands separate: one value per year would put the 10th and 90th percentile on the record's minimum and maximum. The most recent year is drawn over the bands rather than counted in them.",
+      "Bands show the 10th/25th/50th/75th/90th percentiles for each day of the year, using a {window}-day window centred on that day. Reference history: {history} ({years}); typically {samples} per day. Each window is detrended against the seasonal cycle before ranking, and percentile curves are smoothed over {smooth} days. This pooling separates the inner and outer bands when there are few years. The most recent year is overlaid and excluded from the reference.",
     ofTimeExceeded: "of the time equalled or exceeded",
     medianValue: "Median",
     exceedanceAxis: "Percentage of time the value is equalled or exceeded (%)",
@@ -417,7 +484,7 @@ export const STRINGS = {
     bandWarning: "Warning",
     bandDanger: "Danger",
     waterLevelHydrographExplanation:
-      "A level in metres means nothing on its own; the bands are what make it readable. The shape matters too — this event rose from base flow to its peak in a few hours, which is the lead time an alert would actually have.",
+      "The curve shows how water level rose and fell around the largest recorded peak. The bands provide a retrospective reference, not a forecast.",
     waterLevelHydrographAssumption:
       "The band edges are percentiles of this record (99th, 99.9th, and the recorded maximum), not the operator's official alert levels. They must be replaced with the real thresholds before this is used operationally; as drawn, the chart is retrospective and carries no forecast.",
 
@@ -509,13 +576,13 @@ export const STRINGS = {
     axisTruncatedNote:
       "The vertical axis starts above zero so that the differences between months stay visible.",
     rainfallWhiskerNote:
-      "Quartiles are read off the years actually recorded, so the whisker can never reach a negative depth and a single exceptional year cannot stretch it. A quarter of the years sit below each whisker and a quarter above; hover a bar for the full range those outer years cover.",
+      "Quartiles appear only with at least {n} complete calendar years, using monthly totals from those years. Means may also include complete months from partial years. With less history, quartile whiskers and tooltip values are omitted.",
     dualAxisNote:
       "Bars are read against the left-hand axis (rain days), the line against the right-hand one (share of observed days).",
     landslideNoCriticalDetail:
-      "Across the {years} years of record no 1–5 day window reached the configured intensity-duration threshold. That is a statement about the threshold and this record, not a gap in the data — before the indicator is used operationally, confirm the threshold is the one the local geology calls for.",
+      "No 1–5 day window reached the threshold. Recorded coverage: {years}. Local validation is needed before operational use.",
     seasonalBandOutageNote:
-      "A stretch where the band narrows sharply is a sensor gap in one of those years showing through the percentiles, not a seasonal signal — read it against the coverage note above.",
+      "Sensor gaps can affect the width of these bands; interpret them alongside the available coverage.",
     weakTrendCaution:
       "R² = {r2}: the straight line accounts for only {pct} % of the month-to-month variation, so the slope is a screen for a direction, not a measured rate of warming.",
     trendIntervalCaution:
@@ -524,7 +591,7 @@ export const STRINGS = {
     fullYearLegend: "Fully observed year",
     observedWindow: "Observed window",
     noCompleteYearNote:
-      "No year here was recorded end to end, so every bar is grey — this is what the record holds, not a fault in the chart. Each share is taken over that year's own observed days, and those windows fall in different seasons, so the years are not directly comparable. Hover a bar for the dates it covers.",
+      "All years have partial coverage, shown in grey. Each percentage uses that year’s observed days; differing observation periods limit comparisons between years.",
     leftAxisSuffix: "left axis",
     rightAxisSuffix: "right axis",
     dailyValueLegend: "Daily value",
@@ -548,7 +615,7 @@ export const STRINGS = {
     noChartData: "This chart cannot be drawn",
     trendNotFitted: "No trend fitted — too few fully observed years",
     referenceBandNarrowNote:
-      "With only {years} reference years the bands describe this short record, not a climatological normal — the usual reference period is 30 years. Read them as ‘what this station has done so far around this time of year’.",
+      "Reference history: {years}. These bands describe a short record, not a long-term climate normal.",
     measurementAxisTemperature: "Temperature (°C)",
     measurementAxisHumidity: "Humidity (%)",
     measurementAxisRainIntensity: "Rainfall intensity (mm/h)",
@@ -566,7 +633,7 @@ export const STRINGS = {
     drySpellsAxis: "Qualifying dry days",
     drySpellsExplanation: "A day is classified as dry when its daily precipitation total is below 1 mm. Annual values count all days belonging to consecutive dry runs of at least 5 or 7 days during April–September.",
     drySpellsAssumption: "The calculation uses the per-day <1 mm interpretation, and the ≥7-day total is included within the ≥5-day total. Missing rainfall hours are reconstructed as zero under the existing project assumption.",
-    drySpellsCoverageNote: "2021 begins on 6 April. 2026 has only partial April coverage and is not comparable with complete years.",
+    drySpellsCoverageNote: "Partial seasonal coverage: {details}. These seasons are not comparable with complete April–September records.",
     freezeThawTitle: "Freeze–thaw cycles",
     freezeThawDesc: "Days with daily minimum below −2.2°C and daily maximum above 0°C, aggregated by calendar month.",
     freezeThawAnnualTitle: "Annual total",
@@ -575,7 +642,7 @@ export const STRINGS = {
     freezeThawExplanation: "A freeze–thaw day occurs when temperature falls below −2.2°C and rises above 0°C within the same calendar day.",
     freezeThawHeatmapNote: "Darker blue indicates more cycles; dashed blank cells are outside the available record. * Partial year",
     freezeThawYearNote: "Blue = full year; gray = partial year. * Partial year",
-    freezeThawMethodology: "Daily extrema use available hourly observations; missing temperature hours and days are not filled or interpolated. Results use calendar years rather than winter seasons. 2021 and 2026 are partial records. This is a single-station result.",
+    freezeThawMethodology: "Daily extrema use available hourly observations; missing temperature hours and days are not filled or interpolated. Results use calendar years rather than winter seasons. Partial years are marked on the chart. This is a single-station result.",
     available: "Available",
     heavySnowTitle: "Heavy snowfall",
     heavySnowDesc: "Month × year count of qualifying proxy days.",
@@ -583,14 +650,14 @@ export const STRINGS = {
     heavySnowHeatmapNote: "Darker cells contain events; dashed blank cells are outside common coverage. * Partial year",
     heavySnowEvents: "Qualifying events",
     heavySnowAxis: "Heavy-snowfall days per year",
-    heavySnowMethodology: "This is a liquid-equivalent snowfall proxy; the gauge does not measure precipitation phase. Rainfall inherits the existing missing-hour reconstruction assumption. Temperature means use available hourly observations without interpolation. Only same-station overlapping dates are combined. Results use calendar years. 2021 and 2026 are partial. Six events are too few to infer a trend.",
+    heavySnowMethodology: "This is a liquid-equivalent snowfall proxy; precipitation phase is not measured. Missing rainfall hours are treated as zero; temperature means use available observations without interpolation. Only overlapping dates from the same station are combined. Partial calendar years are marked. These proxy counts alone do not establish a climate trend.",
     snowfallTitle: "Snowfall",
     snowfallDesc: "Month × year count of qualifying snowfall-proxy days.",
     snowfallAnnualDesc: "Calendar-year sum of monthly snowfall-proxy days.",
     snowfallAxis: "Snowfall days per year",
     snowfallHeatmapNote: "Increasing color intensity indicates more snowfall-proxy days; dashed blank cells are outside common coverage. * Partial year",
     snowfallYearNote: "Blue = full year; gray = partial year. * Partial year",
-    snowfallMethodology: "This is a liquid-equivalent proxy; precipitation phase is not directly measured. Rainfall inherits the missing-hour reconstruction assumption. Temperature means use available observations without interpolation. Only same-station overlapping dates are combined. Results use calendar years. 2021 and 2026 are partial. The short record is insufficient for a confident trend.",
+    snowfallMethodology: "This is a liquid-equivalent snowfall proxy; precipitation phase is not measured. Missing rainfall hours are treated as zero; temperature means use available observations without interpolation. Only overlapping dates from the same station are combined. Partial calendar years are marked. These proxy counts alone do not establish a climate trend.",
     snowfallProxyDays: "Snowfall-proxy days",
     eventCountUnavailable: "Event count: N/A",
     partialMonthCoverage: "Partial month coverage",
@@ -639,6 +706,10 @@ export const STRINGS = {
     maximum: "Maximum",
     threshold: "Threshold",
     percentileThreshold: "99.9th percentile",
+    percentileThresholdValue: "99.9th percentile: {value} mm/day",
+    dailyTotalValue: "Daily total: {value} mm/day",
+    maximumValue: "Maximum: {value} mm/day",
+    thresholdValue: "Threshold: {value} mm/day",
     dailyPrecipitationAxis: "Daily precipitation (mm)",
     annualDailyMaximumAxis: "Annual daily maximum (mm)",
     maximumDailyTotal: "Maximum daily total",
@@ -682,14 +753,67 @@ export const STRINGS = {
     outsideDrySpell: "Outside qualifying dry spell",
     insideLongDrySpell: "Belongs to a ≥7-day spell",
     outsideLongDrySpell: "Not in a ≥7-day spell",
-    hotDryMethodology: "Compound ≥7-day counts are included in compound ≥5-day counts. Dry days use daily rainfall below 1 mm; temperature uses daily maximum ≥30°C. Existing missing-rainfall-hour reconstruction assumptions apply. Only overlapping dates from the same station are combined. 2021 and 2026 are partial records.",
+    hotDryMethodology: "Days in ≥7-day spells are included in the ≥5-day counts. Dry days have daily rainfall below 1 mm; hot days have a daily maximum of at least 30°C. Missing rainfall hours are treated as zero. Only overlapping dates from the same station are combined. Partial coverage is marked on the chart.",
     hotDryShareNote: "Percentages show the share of all hot days (daily maximum ≥30°C) that occurred within a ≥5-day dry spell; they do not compare the orange and red bars. * Partial record means the common April–September rainfall and temperature record does not cover the full season.",
-    windowSampleSize: "Based on {n} reference values from {years} reference year(s)",
+    windowSampleSize: "Based on {values} from {years}.",
     seasonalBandDepthNote:
-      "The reference spans {years}, but a typical day of the year is backed by only {depth} of those {n} years. Where that is one, the band is the day-to-day scatter of a single year around its own seasonal level rather than a difference between years — it is the normal wobble at this station, not the range the years disagree over.",
+      "Reference period: {years}. Typical number of years supporting a day: {depth} of {n}. Where only one year contributes, the band shows variation within that year, not differences between years.",
   },
   sq: {
-    appTitle: "Paneli i Rezeliencës Klimatike – Podujevë",
+    chartMissingValue: "Nuk ka të dhëna",
+    chartYes: "Po",
+    chartNo: "Jo",
+    chartMissingKey: "× Pa vëzhgime; — të përjashtuara nga mesatarja e shfaqur. Shikoni tabelën për numrin e vëzhgimeve dhe mbulimin.",
+    chartMatrixKey: "× Pa vëzhgime; * mbulim i pjesshëm. Vlera 0 tregon një numër të matur zero.",
+    chartTouchData: "Hapni “Shikoni të dhënat e grafikut” për vlerat, kategoritë dhe mbulimin, përfshirë hollësitë që shfaqen kur kaloni treguesin mbi grafik.",
+    chartStatusMissing: "Pa vëzhgime",
+    chartStatusExcluded: "Të përjashtuara: vëzhgime të pamjaftueshme",
+    chartStatusObserved: "Të vëzhguara",
+    metaDescription: "Shikoni vëzhgimet meteorologjike dhe treguesit klimatikë nga stacionet në zonën e Podujevës, përfshirë reshjet, temperaturën dhe erën.",
+    downloadCsv: "Shkarkoni CSV",
+    downloadPng: "Shkarkoni PNG",
+    exportingPng: "Duke përgatitur PNG…",
+    exportFailed: "Imazhi nuk mund të eksportohej. Provoni përsëri pasi grafiku të jetë i dukshëm.",
+    viewChartData: "Shikoni të dhënat e grafikut",
+    chartDataAlternative: "Vlerat e grafikut gjenden në tabelën e të dhënave dhe në skedarin CSV.",
+    chartScrollLabel: "Grafiku: {chart}",
+    previousData: "Rreshtat e mëparshëm",
+    nextData: "Rreshtat vijues",
+    dataPage: "Rreshtat {start}–{end} nga {total}",
+    languageControl: "Gjuha e ndërfaqes",
+    appTitle: "Paneli i Qëndrueshmërisë Klimatike – Podujevë",
+    removeStationNamed: "Hiqni stacionin: {station}",
+    footerSources: "Burimi i të dhënave",
+    footerSensorSource: "Regjistrime të importuara nga sensorët e stacioneve.",
+    footerMap: "Burimi i hartës bazë",
+    footerMapCredit: "Kontribuuesit e OpenStreetMap",
+    footerLatestObservation: "Data e vëzhgimit më të fundit",
+    footerObservationScope: "Nga stacionet e ngarkuara; jo koha e përditësimit të platformës.",
+    footerVersion: "Versioni i aplikacionit",
+    methodologyAndLimitations: "Metodologjia dhe kufizimet",
+    rainfallMethodSummary: "Kuartilet kërkojnë {n} vite të plota. Orët e munguara brenda muajve të vëzhguar trajtohen si të thata.",
+    dayCount_one: "{count} ditë",
+    dayCount_other: "{count} ditë",
+    yearCount_one: "{count} vit",
+    yearCount_other: "{count} vite",
+    referenceYearCount_one: "{count} vit referimi",
+    referenceYearCount_other: "{count} vite referimi",
+    referenceValueCount_one: "{count} vlerë referimi",
+    referenceValueCount_other: "{count} vlera referimi",
+    observedDayCount_one: "{count} ditë e vëzhguar",
+    observedDayCount_other: "{count} ditë të vëzhguara",
+    completeYearsCount_one: "{count} vit i vëzhguar plotësisht",
+    completeYearsCount_other: "{count} vite të vëzhguara plotësisht",
+    heatWaveCount_one: "{count} valë e të nxehtit",
+    heatWaveCount_other: "{count} valë të të nxehtit",
+    coldPeriodCount_one: "{count} periudhë e ftohtë",
+    coldPeriodCount_other: "{count} periudha të ftohta",
+    monthlyProfileSkipped_one: "{count} muaj-vit u përjashtua për shkak të më pak se 15 ditëve të vëzhguara.",
+    monthlyProfileSkipped_other: "{count} muaj-vite u përjashtuan për shkak të më pak se 15 ditëve të vëzhguara.",
+    heatmapCellNote_one: "{count} qelizë muaj-vit përmban të dhëna.",
+    heatmapCellNote_other: "{count} qeliza muaj-vit përmbajnë të dhëna.",
+    heatmapSkipped_one: "{count} u përjashtua për shkak të më pak se 10 ditëve të vëzhguara.",
+    heatmapSkipped_other: "{count} u përjashtuan për shkak të më pak se 10 ditëve të vëzhguara.",
     appSubtitle: "Monitorimi hidro-meteorologjik i pellgut të Llapit",
     stations: "Stacionet e monitorimit",
     configTitle: "Konfigurimi",
@@ -707,6 +831,7 @@ export const STRINGS = {
     evolutionDesc: "Mesatarja mujore e matjes së zgjedhur me kalimin e kohës",
     anomalies: "Anomalitë mujore",
     anomaliesDesc: "Devijimi i çdo muaji nga mesatarja afatgjate mujore",
+    anomaliesRequiresYears: "Anomalitë mujore kërkojnë së paku {n} vite me vëzhgime të plota për çdo muaj kalendarik; muajt pa histori të mjaftueshme nuk paraqiten.",
     daily: "Ditore",
     windRose: "Trëndafili i erës",
     windRoseDesc: "Shpërndarja e drejtimit dhe shpejtësisë së erës",
@@ -737,8 +862,8 @@ export const STRINGS = {
     legendHydro: "Stacion hidrologjik",
     legendMeteo: "Stacion meteorologjik",
     legendMunicipality: "Kufiri i komunës",
-    legendSettlements: "Poligonet e vendbanimeve",
-    legendFallbackLabels: "Etiketat pa poligon",
+    legendSettlements: "Vendbanimet",
+    legendFallbackLabels: "Vendbanimet pa të dhëna për kufijtë",
     legendStations: "Pikat e matjes",
     boundary: "Komuna e Podujevës",
     city: "Qyteti i Podujevës",
@@ -777,7 +902,7 @@ export const STRINGS = {
     landslideExplanation:
       "Ky tregues identifikon ditët kur intensiteti i reshjeve gjatë një periudhe 1–5 ditore tejkaloi pragun për rrëshqitje të dheut. Ai tregon kushte kritike reshjesh, jo një rrëshqitje të konfirmuar.",
     landslideThresholdSource:
-      "Pragu: I = 8.67·D⁻⁰·⁶¹ (I në mm/h, D në orë) — kurba intensitet-kohëzgjatje për zonën CADSES të Evropës qendrore dhe juglindore, që përfshin Kosovën, sipas Guzzetti, Peruccacci, Rossi & Stark (2007), Meteorology and Atmospheric Physics 98:239–267, Fig. 6C. Është e vlefshme për kohëzgjatje nga 5 minuta deri në 700 orë; dritaret 24–120 orëshe të përdorura këtu janë brenda atij intervali. Për 1 deri 5 ditë kjo del 30, 39, 46, 51 dhe 56 mm reshje.",
+      "Pragu: I = 8,67·D⁻⁰·⁶¹ (I në mm/h, D në orë) — kurba intensitet-kohëzgjatje për zonën CADSES të Evropës qendrore dhe juglindore, që përfshin Kosovën, sipas Guzzetti, Peruccacci, Rossi & Stark (2007), Meteorology and Atmospheric Physics 98:239–267, Fig. 6C. Është e vlefshme për kohëzgjatje nga 5 minuta deri në 700 orë; dritaret 24–120 orëshe të përdorura këtu janë brenda atij intervali. Për 1 deri 5 ditë kjo del 30, 39, 46, 51 dhe 56 mm reshje.",
     landslideThresholdCaveat:
       "Kurba është kufi i poshtëm: nën të nuk priten rrëshqitje, mbi të ato bëhen të mundshme. Kalimi i saj nuk do të thotë se ndodhi një rrëshqitje, dhe autorët theksojnë se këto pragje nuk parashikojnë rrëshqitje. Kurba e botuar i referohet kohëzgjatjes së një ngjarjeje shiu, ndërsa ky grafik e zbaton mbi dritare fikse 1–5 ditore që mund të përmbajnë orë të thata, prandaj tejkalimet këtu dalin më të shpeshta se me lexim sipas ngjarjes.",
     landslideUnitAssumption:
@@ -785,28 +910,30 @@ export const STRINGS = {
     landslideZeroFillWarning:
       "Orët pa matje trajtohen si të thata (zero); ndërprerjet e sensorit mund të fshihen.",
     landslideMethodologyNote:
-      "Një rresht i ruajtur mbulon një orë të plotë, prandaj vlera e tij është lartësia e asaj ore dhe nuk shumëzohet kurrë me 60. Orët pa matje të regjistruara trajtohen si pa reshje.",
+      "Reshjet vlerësohen në periudha fikse 1–5 ditore. Matjet orare që mungojnë trajtohen si zero reshje, prandaj ndërprerjet e sensorit mund të ndikojnë në rezultate.",
     landslideThresholdTriggered:
-      "Kontrolli i pragut: kurba e konfiguruar është aktivizuar në {days} ditë gjatë {years} viteve. Dritarja më e fortë {duration}-ditore arriti {ratio}% të pragut, prandaj ky prag nuk është aq i lartë sa të mos aktivizohet kurrë në këtë rekord.",
+      "Ditë me tejkalim të pragut: {days}. Vite me tejkalim: {years}. Periudha më e fortë {duration}-ditore arriti {ratio}% të pragut.",
     landslideThresholdSilent:
-      "Kontrolli i pragut: nuk u gjet asnjë aktivizim. Dritarja më e fortë {duration}-ditore arriti vetëm {ratio}% të pragut. Ky tregues duhet konsideruar i pakalibruar derisa të konfigurohet një prag i validuar lokalisht.",
+      "Nuk u regjistrua tejkalim i pragut. Periudha më e fortë {duration}-ditore arriti {ratio}% të pragut. Nevojitet vlerësim lokal para përdorimit operativ.",
     landslideFullYearLegend: "Vit i vëzhguar plotësisht",
     landslidePartialYearLegend: "Vit i vëzhguar pjesërisht",
+    landslideSafeBand: "Nën prag",
+    landslideCriticalBand: "Mbi prag",
     landslidePartialYearNote:
       "* Vit i vëzhguar pjesërisht — numri mbulon vetëm periudhën e paraqitur të vëzhgimit dhe nuk krahasohet me një vit të plotë.",
     landslideDepthSourceNote:
       "Burimi: vëzhgime të konfirmuara të thellësisë së reshjeve në mm; vlerat nuk nxirren nga mesataret orare të intensitetit.",
     landslideUnknownHoursWarning:
       "Intervalet që mungojnë mbeten të panjohura, përveç kur metadatat e sensorit vërtetojnë se mungesa e regjistrimit do të thotë mot i thatë.",
-    importData: "Importo Excel",
+    importData: "Importoni Excel",
     importing: "Duke lexuar skedarin…",
-    importHint: "Ngarko një skedar sensori .xlsx / .xls / .txt (p.sh. klima e Prishtinës). Lexohet në shfletues dhe shtohet si stacion.",
+    importHint: "Ngarkoni një skedar sensori .xlsx / .xls / .txt (p.sh. klima e Prishtinës). Lexohet në shfletues dhe shtohet si stacion.",
     imported: "Të importuara",
     importError: "Skedari nuk u lexua dot",
-    removeStation: "Hiq",
-    signIn: "Kyçu",
-    signOut: "Dil",
-    signInToUpload: "Kyçu për të ngarkuar të dhëna",
+    removeStation: "Hiqni",
+    signIn: "Kyçuni",
+    signOut: "Dilni",
+    signInToUpload: "Kyçuni për të ngarkuar të dhëna",
     emailPlaceholder: "ju@shembull.com",
     passwordPlaceholder: "Fjalëkalimi",
     signedInAs: "I kyçur si",
@@ -821,19 +948,19 @@ export const STRINGS = {
     rainfallFromGauge:
       "Lartësia e reshjeve në këtë faqe vjen nga matësi i shiut i stacionit (mm, të regjistruara si totale orare).",
     rainfallFromIntensity:
-      "Ky stacion nuk ka matës shiu, prandaj lartësia e reshjeve rindërtohet nga seria e intensitetit duke e lexuar çdo orë të regjistruar si një orë shi me atë ritëm. Meqë loguesi shkruan vetëm kur bie shi, kjo e mbivlerëson sasinë — në Shajkoc, i vetmi stacion me të dyja, e njëjta metodë jep rreth dyfishin e totalit vjetor të matësit. Trajtoji vlerat më poshtë si kufi të sipërm dhe mos i krahaso me stacionet që kanë matës.",
+      "Sasia e reshjeve vlerësohet nga intensiteti, duke supozuar se çdo intensitet i regjistruar zgjat një orë të plotë. Kjo mund të mbivlerësojë reshjet dhe nuk krahasohet drejtpërdrejt me matjet nga matësi i shiut.",
     observedDays: "Ditë të vëzhguara",
     standardDeviation: "devijimi standard",
     middleHalf: "Gjysma e mesme e viteve",
     fullRange: "Diapazoni i plotë mes viteve",
-    completeYearsCounted: "Vite të plota të përdorura",
+    completeYearsCounted: "Vitet që kontribuojnë në këtë muaj",
     longTermMean: "Mesatarja afatgjate",
     rollingMean30: "Mesatarja lëvizëse 30-ditore",
 
     windDiurnalTitle: "Rastisja e shpejtësisë së erës gjatë ditës (m/s)",
     windDiurnalDesc: "Shpejtësia mesatare e erës sipas orës së ditës (m/s), mesatarizuar për tërë periudhën.",
     windDiurnalExplanation:
-      "Shpejtësia e erës ndjek një cikël ditor: e qetë gjatë natës, forcohet pas lindjes së diellit ndërsa sipërfaqja nxehet, arrin kulmin herët pasdite dhe dobësohet përsëri pas perëndimit.",
+      "Kurba tregon si ndryshon shpejtësia mesatare e erës sipas orës në regjistrimin e disponueshëm.",
     windDiurnalAssumption:
       "Çdo orë mesatarizon të gjitha vëzhgimet e regjistruara në atë orë gjatë tërë periudhës; stinët nuk ndahen këtu.",
     meanSpeedAxis: "Shpejtësia mesatare (m/s)",
@@ -847,44 +974,54 @@ export const STRINGS = {
     windDirectionAxis: "Drejtimi i erës",
     strongestWindsFrom: "Erërat më të forta vijnë më shpesh nga",
 
+    rainfallNoData: "Pa vëzhgime të plota mujore",
+    rainfallNoDataNote: "× pranë muajit do të thotë se mungojnë vëzhgimet e plota mujore; nuk vizatohet shtyllë. Një muaj pa shenjë në zero tregon total të regjistruar prej 0 mm.",
+    estimatedBarsNote: "Shtyllat me vija të pjerrëta shënojnë vlerësimet nga muaj të vëzhguar pjesërisht.",
+    referenceDashed: "vijë reference me ndërprerje",
     monthlyRainfallTitle: "Reshjet mesatare mujore",
-    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik, me gjysmën e mesme të viteve të vëzhguara.",
+    monthlyRainfallDesc: "Reshjet mesatare për çdo muaj kalendarik.",
     monthlyRainfallAxis: "Reshjet mesatare mujore (mm)",
     monthlyRainfallExplanation:
-      "Shtyllat janë me ngjyra sipas stinës. Vijat vertikale mbulojnë gjysmën e mesme të viteve të vëzhguara — nga çerekshmërorja e poshtme te ajo e sipërme — prandaj një vijë e gjatë do të thotë se ai muaj ndryshon shumë nga viti në vit.",
+      "Shtyllat blu tregojnë reshjet mesatare; kur ka histori të mjaftueshme, vijat tregojnë kuartilin e poshtëm deri te kuartili i sipërm (gjysmën e mesme të totaleve të atij muaji nga vitet e plota).",
     monthlyRainfallAssumption:
-      "Vetëm muajt e vëzhguar plotësisht hyjnë në mesatare, prandaj muajt e regjistruar pjesërisht përjashtohen në vend që të lexohen si të thatë.",
+      "Mesataret përdorin muajt kalendarikë të mbuluar nga fillimi në fund, duke përjashtuar muajt pa asnjë vëzhgim. Brenda muajve të përfshirë, orët e munguara ruajnë supozimin ekzistues të rindërtimit me zero reshje.",
     highestRainfallMonth: "Muaji me sasinë më të lartë të reshjeve",
 
     topRainDaysTitle: "{n} ditët me reshjet më të larta",
-    topRainDaysDesc: "Ditët me reshje rekord — rreziku më i lartë nga vërshimet.",
+    topRainDaysDesc: "Ditët me më shumë reshje në regjistrimin e disponueshëm.",
     dailyRainfallAxis: "Reshjet totale ditore (mm)",
-    highRainfallMarker: "rrezik nga vërshimet (80 mm)",
+    highRainfallMarker: "Kufiri i kategorisë së reshjeve (80 mm)",
+    missingMonthNote: "× shënon muaj pa vëzhgime; zeroja e vëzhguar mbetet 0.",
+    rainBandBelow: "<1 mm",
+    rainBandLight: "1–<30 mm",
+    rainBandModerate: "30–<50 mm",
+    rainBandHeavy: "50–<80 mm",
+    rainBandExtreme: "≥80 mm",
     topRainDaysExplanation:
-      "Shtyllat përdorin të njëjtat breza ngjyrash si grafiku vjetor, prandaj e kuqja ka të njëjtin kuptim në të dy. Vija me ndërprerje shënon kufirin 80 mm të brezit më të lartë.",
+      "Shtyllat përdorin brezat e intensitetit të reshjeve; brezi blu i çelët shënon ditët nën 30 mm. Vija me ndërprerje shënon kufirin 80 mm të brezit më të lartë.",
     topRainDaysAssumption:
-      "Totalet ditore janë shuma e lartësive orare të asaj dite. Vlerat e intensitetit nuk mblidhen kurrë drejtpërdrejt, gjë që është shkaku i totaleve të pamundura prej mijëra milimetrash.",
+      "Totalet ditore të reshjeve llogariten nga sasitë orare. Matjet orare që mungojnë trajtohen si zero reshje.",
 
-    rainyDaysTitle: "Numri i ditëve me reshje sipas viteve",
-    rainyDaysDesc: "Ditët e klasifikuara sipas sasisë së reshjeve: 30–50, 50–80 dhe mbi 80 mm.",
+    rainyDaysTitle: "Ditët me reshje ≥30 mm sipas viteve",
+    rainyDaysDesc: "Ditët e klasifikuara sipas reshjeve: 30–<50, 50–<80 dhe ≥80 mm.",
     classifiedDays: "Ditë me 30 mm e më shumë",
-    lightRainDays: "Ditë 1–30 mm",
-    rainyDaysMonthlyTitle: "Ditët me reshje sipas muajit (të gjitha vitet së bashku)",
+    lightRainDays: "Ditë 1–<30 mm",
+    rainyDaysMonthlyTitle: "Ditët me reshje ≥30 mm sipas muajit (të gjitha vitet së bashku)",
     rainyDaysMonthlyDesc: "Çdo janar, çdo shkurt… i periudhës i mbledhur së bashku, prandaj një shtyllë mund të kalojë 31 ditë. Vija tregon përqindjen e ditëve të vëzhguara.",
-    rainyDaysAxis: "Ditë me reshje",
-    rainyDaysAxisAllYears: "Ditë me reshje (të gjitha vitet)",
-    rainDays: "Ditë me reshje",
-    rainDaysAllYears: "Ditë me reshje, të gjitha vitet",
+    rainyDaysAxis: "Ditë me reshje ≥30 mm",
+    rainyDaysAxisAllYears: "Ditë ≥30 mm (të gjitha vitet)",
+    rainDays: "Gjithsej ditë me reshje (≥1 mm)",
+    rainDaysAllYears: "Ditë ≥30 mm, të gjitha vitet",
     rainDaysPerYear: "Mesatarja për vit",
     yearSingular: "vit",
     yearPlural: "vite",
     shareOfDays: "Përqindja e ditëve të vëzhguara",
     rainyDaysExplanation:
-      "Shtyllat numërojnë vetëm ditët që arrijnë 30 mm, në tre brezat e klasifikuar. Ditët e zakonshme 1–30 mm janë rreth dhjetë herë më të shumta, prandaj përfshirja e tyre do t'i rrafshonte tre brezat në shirita të padukshëm; numri i tyre gjendet te tooltip-i, bashkë me totalin e të gjitha ditëve mbi 1 mm.",
+      "Shtyllat numërojnë ditët që arrijnë 30 mm, të grupuara në tre brezat e paraqitur të reshjeve. Informacioni mbi shtyllë paraqet edhe ditët me reshje më të pakta dhe numrin e përgjithshëm të ditëve me shi.",
     rainyDaysAssumption:
-      "Lartësitë ditore vijnë nga rindërtimi orar i intensitetit të reshjeve. Vitet që nuk mbulojnë një vit të plotë kalendarik shënohen me yll dhe nuk janë të krahasueshme me vitet e plota.",
+      "Totalet ditore përdorin burimin e reshjeve të shënuar më sipër. Vitet me yll kanë mbulim të pjesshëm dhe nuk krahasohen me vitet e plota.",
 
-    solarTrendTitle: "Rrezatimi diellor 2021–2026, St. Meteorologjik në Shajkoc (Podujevë)",
+    solarTrendTitle: "Rrezatimi diellor me kalimin e kohës",
     solarTrendDesc: "Rrezatimi mesatar ditor diellor me mesataren lëvizëse 30-ditore.",
     solarTrendAxis: "Rrezatimi diellor mesatar ditor (W/m²)",
     solarTrendExplanation:
@@ -928,7 +1065,7 @@ export const STRINGS = {
       "Vlerat konvertohen nga W/m² në orë (h) duke akumuluar rrezatimin mesatar orar gjatë intervaleve 1-orëshe: 1 h = {ref} W/m².",
     solarOptimalWindow: "Dritarja optimale për energji diellore (09:00–15:00)",
     solarProfileExplanation:
-      "Ndarja e ciklit ditor sipas stinës tregon atë që një mesatare e vetme vjetore e fsheh: lakorja e verës është më e lartë dhe më e gjerë se ajo e dimrit, gjë që ka rëndësi për dimensionimin e kapacitetit diellor.",
+      "Kurbat sezonale krahasojnë kohën dhe madhësinë e rrezatimit mesatar diellor gjatë ditës.",
     solarProfileAssumption:
       "Çdo pikë mesatarizon të gjitha vëzhgimet në atë orë brenda stinës për të gjitha vitet e regjistrimit. Orët e kulmit:",
 
@@ -945,9 +1082,9 @@ export const STRINGS = {
     departureAbove:
       "Shmangia më e theksuar: {start} deri {end}, mesatarisht {mean} {unit} — {delta} {unit} mbi mesataren afatgjate.",
     departureObserved:
-      "Secila nga ato {days} ditë ka vëzhgime, prandaj lëkundja është e dhënë e matur dhe jo boshllëk në seri.",
+      "Vëzhgimet mbulojnë të gjithë periudhën ({days}).",
     departurePartial:
-      "Vetëm {observed} nga ato {days} ditë kanë vëzhgime, prandaj një pjesë e lëkundjes mund të pasqyrojë boshllëqet e jo motin.",
+      "Mbulimi i vëzhguar: {observed} nga {days}. Boshllëqet mund të ndikojnë në këtë krahasim.",
 
     partialMonth: "muaj i vëzhguar pjesërisht",
     days: "ditë",
@@ -973,15 +1110,15 @@ export const STRINGS = {
     pressureDiurnalDesc: "Devijimi mesatar orar nga mesatarja ditore e shtypjes, një lakore për çdo stinë.",
     pressureDeviationAxis: "Devijimi nga mesatarja ditore (hPa)",
     dailyMeanLine: "Mesatarja ditore",
-    pressureMorningRise: "Shtypja rritet gjatë mëngjesit (ftohja)",
-    pressureAfternoonFall: "Shtypja bie gjatë pasdites (ngrohja)",
+    pressureMorningRise: "Devijimi orar më i lartë",
+    pressureAfternoonFall: "Devijimi orar më i ulët",
     dailyAmplitude: "Amplituda ditore",
     pressureDiurnalExplanation:
       "Ky është baticë-zbatica atmosferike — një lëkundje reale dyfishe brenda ditës, e shkaktuar nga ngrohja diellore e atmosferës. Ajo është rreth ±1 hPa, ndërsa moti i zakonshëm e lëviz shtypjen për ±20 hPa, prandaj lakoret paraqesin devijimin e çdo ore nga mesatarja e asaj dite. Mesatarizimi i shtypjes absolute sipas orës do ta fshihte plotësisht sinjalin.",
     pressureDiurnalAssumption:
-      "Ndërtuar nga {days} ditë me së paku 20 matje orare gjatë viteve {years}; ditët me më pak orë anashkalohen sepse mesatarja e tyre nuk është e krahasueshme me atë të një dite të plotë. Stinët janë meteorologjike (pranvera Mar–Maj, vera Qer–Gush, vjeshta Sht–Nën, dimri Dhj–Shk). Amplituda sipas stinës:",
+      "Ndërtuar nga {days} me së paku 20 matje orare gjatë periudhës {years}; ditët me më pak orë anashkalohen sepse mesatarja e tyre nuk është e krahasueshme me atë të një dite të plotë. Stinët janë meteorologjike (pranvera Mar–Maj, vera Qer–Gush, vjeshta Sht–Nën, dimri Dhj–Shk). Amplituda sipas stinës:",
 
-    monthlyTempTrendTitle: "Temperaturat mesatare mujore në Podujevë",
+    monthlyTempTrendTitle: "Temperatura mesatare mujore",
     monthlyTempTrendDesc: "Temperatura mesatare mujore gjatë periudhës, me vijë trendi lineare dhe pikën e ngrirjes të shënuar.",
     monthlyMeanTemp: "Temperatura mesatare mujore",
     monthlyRangeBand: "Shtrirja mujore min–maks",
@@ -1008,25 +1145,25 @@ export const STRINGS = {
     monthlyExtremesExplanation:
       "E kuqja është maksimumi dhe e kaltra minimumi, kështu që të dy lakoret lexohen saktë pa iu referuar legjendës. Çdo zonë e hijezuar tregon shtrirjen e atij muaji mes viteve — aty ku zona është e gjerë, mesatarja mujore nuk është pritshmëri e besueshme për asnjë vit të vetëm.",
     monthlyExtremesAssumption:
-      "Kontribuojnë vetëm muajt kalendarikë të vëzhguar plotësisht, prandaj numri i viteve ndryshon aty ku regjistrimi është i paplotë; tooltip-i i liston vitet pas çdo pike. Vlerat janë mesatarja e ekstremeve ditore, jo matja e vetme më e nxehtë ose më e ftohtë — ato jepen si shtrirja absolute.",
+      "Kontribuojnë vetëm muajt kalendarikë të vëzhguar plotësisht, prandaj numri i viteve ndryshon aty ku regjistrimi është i paplotë; kutiza informuese liston vitet pas çdo pike. Vlerat janë mesatarja e ekstremeve ditore, jo matja e vetme më e nxehtë ose më e ftohtë — ato jepen si shtrirja absolute.",
 
     diurnalTempTitle: "Ndryshimi ditor i temperaturës sipas stinës",
     diurnalTempDesc: "Temperatura mesatare sipas orës së ditës, një lakore për çdo stinë, e hijezuar me ±1 devijim standard.",
     diurnalAmplitude: "Amplituda ditë–natë",
     diurnalTempExplanation:
-      "Një lakore e vetme vjetore e fsheh thelbin: luhatja ditë–natë në verë është shumë më e madhe se ajo e dimrit, prandaj e njëjta mesatare mbulon dy regjime krejt të ndryshme ditore. Zona e hijezuar tregon sa shpërndahen ditët individuale rreth çdo lakoreje.",
+      "Kurbat sezonale krahasojnë ciklin ditor të temperaturës. Zonat e ngjyrosura tregojnë ndryshueshmërinë rreth çdo mesatareje sezonale.",
     diurnalTempAssumption:
       "Çdo pikë mesatarizon të gjitha vëzhgimet në atë orë brenda stinës gjatë viteve {years} ({n} matje orare). Zona është ±1 devijim standard i atyre matjeve, prandaj përshkruan ndryshueshmërinë ditë-për-ditë dhe jo pasigurinë e matjes.",
 
     heatStressTitle: "Ditët sipas nivelit të stresit termik",
-    heatStressDesc: "Numri i ditëve në vit sipas temperaturës maksimale ditore, me nivelet e stresit termik të kërkuara.",
+    heatStressDesc: "Ditët në vit të klasifikuara sipas temperaturës maksimale ditore.",
     heatWaves: "Valë të të nxehtit",
     warmestDay: "Dita më e nxehtë",
-    heatWaveSummary: "{n} valë të të nxehtit në periudhë ({days}+ ditë radhazi me së paku {threshold} °C). Më të gjatat:",
+    heatWaveSummary: "Në regjistrim: {events} ({days}+ ditë radhazi me së paku {threshold} °C). Më të gjatat:",
     heatStressExplanation:
       "Nivelet janë përjashtuese dhe lexohen nga temperatura maksimale ditore, prandaj çdo ditë bie në më së shumti një nivel dhe shtyllat e stivosura japin totalin e ditëve me stres termik për atë vit.",
     heatStressAssumption:
-      "Pragjet janë ato të kërkuara (26–32 stres mesatar, 32–38 i fortë, 38–46 shumë i fortë, mbi 46 ekstrem). Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim. Vitet e shënuara me yll nuk mbulojnë një vit të plotë kalendarik.",
+      "Klasat e temperaturës: 26–32°C mesatare, 32–38°C e fortë, 38–46°C shumë e fortë dhe mbi 46°C ekstreme. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim. Ylli shënon një vit kalendarik të pjesshëm.",
 
     coldestDay: "Dita më e ftohtë",
 
@@ -1040,7 +1177,7 @@ export const STRINGS = {
     extremeDaysExplanation:
       "Shtyllat zbresin nën vijën e zeros për ekstremet e ftohta dhe ngjiten mbi të për ato të nxehta, të renditura nga dita më e ftohtë majtas te më e nxehta djathtas.",
     extremeDaysAssumption:
-      "Renditur nga {days} ditë të vëzhguara mes {start} dhe {end}. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ditë me ndërprerje të sensorit mund të regjistrojë vlerë më pak ekstreme sesa ka arritur në realitet.",
+      "Renditur nga {days} mes {start} dhe {end}. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ditë me ndërprerje të sensorit mund të regjistrojë vlerë më pak ekstreme sesa ka arritur në realitet.",
 
     episodesTitle: "Valët e të nxehtit dhe periudhat e ftohta",
     episodesDesc: "Çdo episod kualifikues në periudhë, i renditur nga më i gjati.",
@@ -1054,7 +1191,7 @@ export const STRINGS = {
     episodesExplanation:
       "Çdo shtyllë është një episod i vazhdueshëm, prandaj gjatësia e saj tregon numrin e ditëve radhazi që kushti u plotësua. Kulmi është temperatura më ekstreme e arritur brenda atij episodi — ai është dallimi mes dy episodeve me gjatësi të njëjtë.",
     episodesAssumption:
-      "{heat} valë të të nxehtit dhe {cold} periudha të ftohta në periudhë. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim, prandaj një ndërprerje në regjistrim mund ta mbyllë një episod që në realitet ka vazhduar.",
+      "Në regjistrim: {heat} dhe {cold}. Ekstremet ditore përdorin vëzhgimet orare të disponueshme pa interpolim; boshllëqet mund të ndërpresin një periudhë.",
     episodesTruncated: "Grafiku paraqet {shown} më të gjatat për secilin lloj; {hidden} episode më të shkurtra nuk janë vizatuar.",
 
     /* ---- të dhënat ujore: niveli, temperatura e ujit, kripshmëria, TDS, përçueshmëria ---- */
@@ -1066,7 +1203,7 @@ export const STRINGS = {
     partialYearMean: "Mesatarja e vitit të pjesshëm (jashtë trendit)",
     yearsShort: "vit",
     completeYearsCount: "{n} vite të vëzhguara plotësisht",
-    eventWindowNote: "Dritarja është ±{days} ditë rreth kulmit të regjistrimit.",
+    eventWindowNote: "Periudha është ±{days} rreth kulmit të regjistrimit.",
     floodPeak: "Kulmi i përmbytjes",
     dilutionMinimum: "Vlera më e ulët",
     annualRangeLegend: "Diapazoni vjetor min–maks",
@@ -1078,7 +1215,7 @@ export const STRINGS = {
     referencePeriod: "Periudha e referencës",
     currentYearOverlay: "Viti i mbivendosur",
     seasonalBandBasis:
-      "Brezat janë percentilet 10/25/50/75/90 për çdo ditë të vitit, të llogaritura mbi një dritare {window}-ditore me qendër atë ditë gjatë {n} viteve të referencës ({years}) — rreth {samples} vlera për ditë — dhe secila kurbë percentili zbutet mbi {smooth} ditë. Çdo dritareje i hiqet trendi sezonal para renditjes, që një pranverë me ngjitje të shpejtë të mos e zgjerojë brezin vetvetiu. Dritarja është ajo që i ndan dy brezat: me një vlerë të vetme për vit, percentili 10 dhe 90 do të binin mbi minimumin dhe maksimumin e regjistrimit. Viti i fundit është vizatuar mbi brezat, jo i përfshirë në to.",
+      "Brezat tregojnë percentilet 10/25/50/75/90 për çdo ditë të vitit, duke përdorur një periudhë {window}-ditore me qendër atë ditë. Histori referimi: {history} ({years}); zakonisht {samples} për ditë. Para renditjes hiqet trendi sezonal dhe kurbat zbuten mbi {smooth} ditë. Ky grupim ndan brezat e brendshëm dhe të jashtëm kur ka pak vite. Viti më i fundit paraqitet mbi brezat dhe përjashtohet nga referenca.",
     ofTimeExceeded: "e kohës me vlerë të barabartë ose më të lartë",
     medianValue: "Mediana",
     exceedanceAxis: "Përqindja e kohës kur vlera barazohet ose tejkalohet (%)",
@@ -1102,9 +1239,9 @@ export const STRINGS = {
     bandWarning: "Paralajmërim",
     bandDanger: "Rrezik",
     waterLevelHydrographExplanation:
-      "Një nivel në metra nuk thotë asgjë i vetëm; brezat janë ata që e bëjnë të lexueshëm. Edhe forma ka rëndësi — kjo ngjarje u ngrit nga rrjedha bazë në kulm brenda pak orësh, dhe kaq është koha reale që do të kishte një alarm.",
+      "Kurba tregon si u ngrit dhe u ul niveli i ujit rreth kulmit më të lartë të regjistruar. Brezat japin një referencë retrospektive, jo parashikim.",
     waterLevelHydrographAssumption:
-      "Kufijtë e brezave janë percentile të këtij regjistrimi (i 99-ti, i 99.9-ti dhe maksimumi i regjistruar), jo nivelet zyrtare të alarmit të operatorit. Ata duhet të zëvendësohen me pragjet reale para përdorimit operativ; siç është, grafiku është retrospektiv dhe nuk përmban parashikim.",
+      "Kufijtë e brezave janë percentile të këtij regjistrimi (i 99-ti, i 99,9-ti dhe maksimumi i regjistruar), jo nivelet zyrtare të alarmit të operatorit. Ata duhet të zëvendësohen me pragjet reale para përdorimit operativ; siç është, grafiku është retrospektiv dhe nuk përmban parashikim.",
 
     levelDurationTitle: "Kurba e kohëzgjatjes së nivelit — sa shpesh lumi rrjedh lart, normal ose ulët",
     levelDurationDesc: "Pjesa e ditëve në të cilat çdo nivel barazohet ose tejkalohet, vitet e para kundrejt atyre të fundit.",
@@ -1194,13 +1331,13 @@ export const STRINGS = {
     axisTruncatedNote:
       "Boshti vertikal fillon mbi zero që dallimet mes muajve të mbeten të dukshme.",
     rainfallWhiskerNote:
-      "Çerekshmëroret llogariten nga vitet e regjistruara vërtet, prandaj vija nuk mund të arrijë kurrë thellësi negative dhe një vit i vetëm i jashtëzakonshëm nuk e zgjat dot. Një çerek i viteve qëndron nën çdo vijë dhe një çerek mbi të; kalo mbi shtyllë për diapazonin e plotë që mbulojnë ato vite anësore.",
+      "Kuartilet shfaqen vetëm kur ka së paku {n} vite të plota kalendarike, duke përdorur totalet mujore të atyre viteve. Mesataret mund të përfshijnë edhe muaj të plotë nga vite të pjesshme. Me më pak histori, vijat dhe vlerat e kuartileve nuk shfaqen.",
     dualAxisNote:
-      "Barrat lexohen sipas boshtit të majtë (ditët me shi), vija sipas atij të djathtë (pjesa e ditëve të vëzhguara).",
+      "Shtyllat lexohen sipas boshtit të majtë (ditët me shi), vija sipas atij të djathtë (pjesa e ditëve të vëzhguara).",
     landslideNoCriticalDetail:
-      "Gjatë {years} viteve të regjistruara asnjë dritare 1–5 ditore nuk e arriti pragun e konfiguruar intensitet-kohëzgjatje. Kjo është pohim për pragun dhe këtë regjistrim, jo mungesë e të dhënave — para përdorimit operativ, verifikoni që pragu është ai që kërkon gjeologjia lokale.",
+      "Asnjë periudhë 1–5 ditore nuk arriti pragun. Mbulimi i regjistruar: {years}. Nevojitet vlerësim lokal para përdorimit operativ.",
     seasonalBandOutageNote:
-      "Një segment ku brezi ngushtohet befas është ndërprerje e sensorit në një prej atyre viteve që shfaqet përmes përqindjeve, jo sinjal sezonal — lexojeni së bashku me shënimin e mbulimit më lart.",
+      "Boshllëqet e matjeve mund të ndikojnë në gjerësinë e brezave; interpretojini së bashku me mbulimin e disponueshëm.",
     weakTrendCaution:
       "R² = {r2}: vija e drejtë shpjegon vetëm {pct} % të luhatjes mes muajve, prandaj pjerrësia është tregues drejtimi, jo normë e matur e ngrohjes.",
     trendIntervalCaution:
@@ -1209,7 +1346,7 @@ export const STRINGS = {
     fullYearLegend: "Vit i vëzhguar plotësisht",
     observedWindow: "Periudha e vëzhguar",
     noCompleteYearNote:
-      "Asnjë vit këtu nuk është regjistruar nga fillimi në fund, prandaj të gjitha shtyllat janë gri — kështu i ka të dhënat, nuk është defekt i grafikut. Çdo përqindje llogaritet mbi ditët e vëzhguara të atij viti, dhe ato periudha bien në stinë të ndryshme, prandaj vitet nuk janë drejtpërdrejt të krahasueshme. Kalo mbi shtyllë për datat që mbulon.",
+      "Të gjitha vitet kanë mbulim të pjesshëm, të shënuar me gri. Çdo përqindje përdor ditët e vëzhguara të atij viti; periudhat e ndryshme kufizojnë krahasimet mes viteve.",
     leftAxisSuffix: "boshti i majtë",
     rightAxisSuffix: "boshti i djathtë",
     dailyValueLegend: "Vlera ditore",
@@ -1229,11 +1366,11 @@ export const STRINGS = {
     circularMeanNote:
       "Drejtimi mesatarizohet si vektor (mesatare rrethore): mesatarja e zakonshme e 1° dhe 359° do të ishte 180°, pra drejtimi i kundërt.",
     directionRoseHint:
-      "Një bar chart nuk mund të paraqesë drejtimin e erës — një muaj me mesatare 5° dhe një muaj me mesatare 355° fryjnë të dy nga veriu, por bien në skaje të kundërta të boshtit. Lexoni rrozën e erës më lart.",
+      "Një grafik me shtylla nuk mund të paraqesë drejtimin e erës — një muaj me mesatare 5° dhe një muaj me mesatare 355° fryjnë të dy nga veriu, por bien në skaje të kundërta të boshtit. Shihni trëndafilin e erës më lart.",
     noChartData: "Ky grafik nuk mund të vizatohet",
     trendNotFitted: "Pa trend të llogaritur — shumë pak vite të vëzhguara plotësisht",
     referenceBandNarrowNote:
-      "Me vetëm {years} vite referimi, brezat përshkruajnë këtë regjistrim të shkurtër, jo një normale klimatologjike — periudha e zakonshme e referencës është 30 vjet. Lexojini si ‘çfarë ka shënuar ky stacion deri tani rreth kësaj periudhe të vitit’.",
+      "Histori referimi: {years}. Këta breza përshkruajnë një regjistrim të shkurtër, jo një normale klimatike afatgjatë.",
     measurementAxisTemperature: "Temperatura (°C)",
     measurementAxisHumidity: "Lagështia (%)",
     measurementAxisRainIntensity: "Intensiteti i reshjeve (mm/h)",
@@ -1251,16 +1388,16 @@ export const STRINGS = {
     drySpellsAxis: "Ditët e thata kualifikuese",
     drySpellsExplanation: "Një ditë klasifikohet si e thatë kur reshjet ditore janë nën 1 mm. Vlerat vjetore numërojnë të gjitha ditët e periudhave të njëpasnjëshme të thata prej së paku 5 ose 7 ditësh gjatë prillit–shtatorit.",
     drySpellsAssumption: "Llogaritja përdor interpretimin ditor <1 mm dhe totali ≥7-ditor përfshihet në totalin ≥5-ditor. Orët e munguara të reshjeve rindërtohen si zero sipas supozimit ekzistues të projektit.",
-    drySpellsCoverageNote: "Viti 2021 fillon më 6 prill. Viti 2026 ka vetëm mbulim të pjesshëm të prillit dhe nuk krahasohet me vitet e plota.",
+    drySpellsCoverageNote: "Mbulim i pjesshëm sezonal: {details}. Këto sezone nuk krahasohen me regjistrimet e plota prill–shtator.",
     freezeThawTitle: "Ciklet ngrirje–shkrirje",
-    freezeThawDesc: "Ditët me minimum ditor nën −2.2°C dhe maksimum ditor mbi 0°C, të mbledhura sipas muajit kalendarik.",
+    freezeThawDesc: "Ditët me minimum ditor nën −2,2°C dhe maksimum ditor mbi 0°C, të mbledhura sipas muajit kalendarik.",
     freezeThawAnnualTitle: "Totali vjetor",
     freezeThawAnnualDesc: "Shuma e numrave mujorë të disponueshëm për vitin kalendarik.",
     freezeThawAxis: "Ditë ngrirje–shkrirje në vit",
-    freezeThawExplanation: "Një ditë ngrirje–shkrirjeje ndodh kur temperatura bie nën −2.2°C dhe rritet mbi 0°C brenda së njëjtës ditë kalendarike.",
+    freezeThawExplanation: "Një ditë ngrirje–shkrirjeje ndodh kur temperatura bie nën −2,2°C dhe rritet mbi 0°C brenda së njëjtës ditë kalendarike.",
     freezeThawHeatmapNote: "Bluja më e errët tregon më shumë cikle; qelizat bosh me vijë të ndërprerë janë jashtë regjistrimit të disponueshëm. * Vit i pjesshëm",
     freezeThawYearNote: "Blu = vit i plotë; gri = vit i pjesshëm. * Vit i pjesshëm",
-    freezeThawMethodology: "Ekstremet ditore përdorin vëzhgimet orare të disponueshme; orët dhe ditët me temperaturë që mungojnë nuk plotësohen ose interpolohen. Rezultatet përdorin vitet kalendarike dhe jo stinët e dimrit. Vitet 2021 dhe 2026 janë të pjesshme. Ky është regjistrim nga një stacion.",
+    freezeThawMethodology: "Ekstremet ditore përdorin vëzhgimet orare të disponueshme; orët dhe ditët që mungojnë nuk plotësohen ose interpolohen. Rezultatet përdorin vitet kalendarike dhe jo stinët e dimrit. Vitet e pjesshme shënohen në grafik. Ky është rezultat nga një stacion.",
     available: "E disponueshme",
     heavySnowTitle: "Reshje të dendura bore",
     heavySnowDesc: "Numri muaj × vit i ditëve kualifikuese si përafrim.",
@@ -1268,14 +1405,14 @@ export const STRINGS = {
     heavySnowHeatmapNote: "Qelizat më të errëta përmbajnë ngjarje; qelizat bosh me vijë të ndërprerë janë jashtë mbulimit të përbashkët. * Vit i pjesshëm",
     heavySnowEvents: "Ngjarje kualifikuese",
     heavySnowAxis: "Ditë bore të dendur në vit",
-    heavySnowMethodology: "Ky është një përafrim i borës me ekuivalentin në ujë; matësi nuk mat fazën e reshjeve. Reshjet trashëgojnë supozimin për rindërtimin e orëve të munguara. Temperaturat mesatare përdorin vëzhgimet e disponueshme pa interpolim. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Rezultatet përdorin vitet kalendarike. Vitet 2021 dhe 2026 janë të pjesshme. Gjashtë ngjarje janë shumë pak për të nxjerrë trend.",
+    heavySnowMethodology: "Ky është një përafrim i borës me ekuivalentin në ujë; faza e reshjeve nuk matet. Orët e munguara të reshjeve trajtohen si zero; mesataret e temperaturës përdorin vëzhgimet e disponueshme pa interpolim. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Vitet kalendarike të pjesshme shënohen. Vetëm këta numra të përafërt nuk përcaktojnë një trend klimatik.",
     snowfallTitle: "Reshje bore",
     snowfallDesc: "Numri muaj × vit i ditëve kualifikuese si përafrim i reshjeve të borës.",
     snowfallAnnualDesc: "Shuma vjetore e ditëve mujore të borës si përafrim.",
     snowfallAxis: "Ditë bore në vit",
     snowfallHeatmapNote: "Intensiteti në rritje i ngjyrës tregon më shumë ditë bore si përafrim; qelizat bosh me vijë të ndërprerë janë jashtë mbulimit të përbashkët. * Vit i pjesshëm",
     snowfallYearNote: "Blu = vit i plotë; gri = vit i pjesshëm. * Vit i pjesshëm",
-    snowfallMethodology: "Ky është një përafrim me ekuivalentin në ujë; faza e reshjeve nuk matet drejtpërdrejt. Reshjet trashëgojnë supozimin për rindërtimin e orëve të munguara. Temperaturat mesatare përdorin vëzhgimet e disponueshme pa interpolim. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Rezultatet përdorin vitet kalendarike. Vitet 2021 dhe 2026 janë të pjesshme. Regjistrimi i shkurtër nuk mjafton për një trend të sigurt.",
+    snowfallMethodology: "Ky është një përafrim i borës me ekuivalentin në ujë; faza e reshjeve nuk matet. Orët e munguara të reshjeve trajtohen si zero; mesataret e temperaturës përdorin vëzhgimet e disponueshme pa interpolim. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Vitet kalendarike të pjesshme shënohen. Vetëm këta numra të përafërt nuk përcaktojnë një trend klimatik.",
     snowfallProxyDays: "Ditë bore si përafrim",
     eventCountUnavailable: "Numri i ngjarjeve: I padisponueshëm",
     partialMonthCoverage: "Mbulim i pjesshëm i muajit",
@@ -1328,6 +1465,10 @@ export const STRINGS = {
     maximum: "Maksimumi",
     threshold: "Pragu",
     percentileThreshold: "Percentili 99,9",
+    percentileThresholdValue: "Percentili 99,9: {value} mm/ditë",
+    dailyTotalValue: "Totali ditor: {value} mm/ditë",
+    maximumValue: "Maksimumi: {value} mm/ditë",
+    thresholdValue: "Pragu: {value} mm/ditë",
     dailyPrecipitationAxis: "Reshjet ditore (mm)",
     annualDailyMaximumAxis: "Maksimumi ditor vjetor (mm)",
     maximumDailyTotal: "Totali maksimal ditor",
@@ -1371,15 +1512,28 @@ export const STRINGS = {
     outsideDrySpell: "Jashtë një periudhe të thatë kualifikuese",
     insideLongDrySpell: "I përket një periudhe ≥7-ditore",
     outsideLongDrySpell: "Nuk është në një periudhë ≥7-ditore",
-    hotDryMethodology: "Numrat e periudhave ≥7-ditore përfshihen në numrat e periudhave ≥5-ditore. Ditët e thata përdorin reshjet ditore nën 1 mm; temperatura përdor maksimumin ditor ≥30°C. Zbatohen supozimet ekzistuese për rindërtimin e orëve të munguara të reshjeve. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Vitet 2021 dhe 2026 janë të pjesshme.",
+    hotDryMethodology: "Ditët në periudha ≥7-ditore përfshihen në numrat e periudhave ≥5-ditore. Ditët e thata kanë reshje ditore nën 1 mm; ditët e nxehta kanë maksimum ditor së paku 30°C. Orët e munguara të reshjeve trajtohen si zero. Përfshihen vetëm datat që përputhen nga i njëjti stacion. Mbulimi i pjesshëm shënohet në grafik.",
     hotDryShareNote: "Përqindjet tregojnë pjesën e të gjitha ditëve të nxehta (maksimumi ditor ≥30°C) që ndodhën brenda një periudhe të thatë ≥5-ditore; ato nuk krahasojnë shtyllat portokalli dhe të kuqe. * Regjistrimi i pjesshëm do të thotë se regjistrimi i përbashkët i reshjeve dhe temperaturës prill–shtator nuk mbulon gjithë sezonin.",
-    windowSampleSize: "Bazuar në {n} vlera referimi nga {years} vit(e) referimi",
+    windowSampleSize: "Vlera referimi: {values}. Histori referimi: {years}.",
     seasonalBandDepthNote:
-      "Referenca shtrihet mbi {years}, por një ditë tipike e vitit mbështetet vetëm në {depth} nga ato {n} vite. Aty ku ky numër është një, brezi është luhatja ditë-për-ditë e një viti të vetëm rreth nivelit të vet sezonal, jo ndryshim mes viteve — është luhatja normale e këtij stacioni, jo intervali ku vitet nuk pajtohen.",
+      "Periudha e referimit: {years}. Numri tipik i viteve që mbështesin një ditë: {depth} nga {n}. Kur kontribuon vetëm një vit, brezi tregon ndryshueshmërinë brenda atij viti, jo dallimet mes viteve.",
   },
 };
 
 export function makeT(lang) {
   const dict = STRINGS[lang] || STRINGS.en;
-  return (key) => dict[key] ?? key;
+  const plurals = new Intl.PluralRules(STRINGS[lang] ? lang : "en");
+  const t = (key, values = {}) => {
+    const count = values.count == null || String(values.count).trim() === "" ? NaN : Number(values.count);
+    const pluralKey = Number.isFinite(count) ? `${key}_${plurals.select(count)}` : key;
+    const text = dict[pluralKey] ?? dict[key] ?? key;
+    // Keep array-valued translations (month names) and existing .replace()
+    // callers intact. Interpolate only parameters explicitly supplied.
+    return typeof text === "string"
+      ? text.replace(/\{(\w+)\}/g, (token, name) => values[name] == null ? token : typeof values[name] === "number" ? formatNumber(values[name], lang) : String(values[name]))
+      : text;
+  };
+  t.locale = STRINGS[lang] ? lang : "en";
+  t.number = (value, options) => formatNumber(value, t.locale, options);
+  return t;
 }

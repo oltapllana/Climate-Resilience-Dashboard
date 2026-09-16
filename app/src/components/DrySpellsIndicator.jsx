@@ -1,3 +1,6 @@
+import { dryTimelineRows, dryTimelineColumns } from "../lib/customChartData.js";
+import ChartFrame from "./ChartFrame.jsx";
+import Methodology from "./Methodology.jsx";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -5,7 +8,6 @@ import {
   CartesianGrid,
   LabelList,
   Legend,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -38,7 +40,7 @@ function RunTooltip({ run, x, y, t }) {
       <strong>{run.year}</strong>
       <span>{t("start")}: {run.startDate}</span>
       <span>{t("end")}: {run.endDate}</span>
-      <span>{t("duration")}: {run.length} {t("days")}</span>
+      <span>{t("duration")}: {t("dayCount", { count: run.length })}</span>
       <span>{run.classification}</span>
     </div>
   );
@@ -55,8 +57,8 @@ function RunsLegend({ t }) {
   return (
     <div className="swatch-legend">
       {items.map((item) => (
-        <span key={item.label}>
-          <i style={{ background: item.color }} />
+        <span key={item.label} data-export-legend-item>
+          <i data-export-swatch style={{ background: item.color }} />
           {item.label}
         </span>
       ))}
@@ -66,14 +68,16 @@ function RunsLegend({ t }) {
 
 function SeasonalRunsChart({ yearly, t }) {
   const [tooltip, setTooltip] = useState(null);
-  const height = 76 + yearly.length * 42;
+  const rowHeight = 52;
+  const height = 56 + yearly.length * rowHeight;
+  const chartHeight = Math.max(190, height + 12);
   const left = 96;
   const width = 500;
   const scale = width / SEASON_DAYS;
   return (
-    <div style={{ position: "relative", width: "100%" }} onMouseLeave={() => setTooltip(null)}>
+    <ChartFrame custom description={t("drySpellsDesc")} t={t} rows={dryTimelineRows(yearly)} columns={dryTimelineColumns} indicator="dry-spell-timeline"><div style={{ position: "relative", width: "100%" }} onMouseLeave={() => setTooltip(null)}>
       <RunsLegend t={t} />
-      <svg viewBox={`0 0 620 ${height + 12}`} role="img" aria-label={t("drySpellsAria")} style={{ display: "block", width: "100%", height: 360 }}>
+      <svg viewBox={`0 0 620 ${chartHeight}`} role="img" aria-label={t("drySpellsAria")} style={{ display: "block", width: "100%", height: chartHeight }}>
         {MONTHS.map(([month, offset]) => {
           const x = left + offset * scale;
           return (
@@ -93,7 +97,7 @@ function SeasonalRunsChart({ yearly, t }) {
         })}
         <text x={left + width / 2} y={height + 8} textAnchor="middle" fill="#5f7079" fontSize="10">{t("calendarDaySeason")}</text>
         {yearly.map((row, rowIndex) => {
-          const y = 40 + rowIndex * 42;
+          const y = 40 + rowIndex * rowHeight;
           return (
             <g key={row.year}>
               <text x={left - 10} y={y + 5} textAnchor="end" fill="#42545d" fontSize="12" fontWeight={row.isPartial ? 700 : 400}>
@@ -129,7 +133,7 @@ function SeasonalRunsChart({ yearly, t }) {
         })}
       </svg>
       <RunTooltip {...tooltip} t={t} />
-    </div>
+    </div></ChartFrame>
   );
 }
 
@@ -146,7 +150,7 @@ function AnnualTooltip({ active, payload, t }) {
       <strong>{row.year}{row.isPartial ? ` (${t("partialRecord")})` : ""}</strong>
       <span>{t("thresholdUsed")}: {item.dataKey === "daysAtLeast5" ? "≥5" : "≥7"}</span>
       <span>{t("qualifyingDays")}: {item.value}</span>
-      <span>{t("availableSeason")}: {row.availableSeasonalDays} {t("days")}</span>
+      <span>{t("availableSeason")}: {t("dayCount", { count: row.availableSeasonalDays })}</span>
       <span>{row.isPartial ? t("partialRecord") : t("fullAprSepRecord")}</span>
     </div>
   );
@@ -156,6 +160,10 @@ export default function DrySpellsIndicator({ measurement, t }) {
   const result = useMemo(() => calculateDrySpells(measurement?.hourly), [measurement]);
   if (!result.yearly.length) return null;
   const completeYearly = result.yearly.filter((row) => !row.isPartial);
+  const partialCoverage = result.yearly
+    .filter((row) => row.isPartial)
+    .map((row) => `${row.year}: ${row.availableStart} – ${row.availableEnd}`)
+    .join("; ");
 
   return (
     <section className="card landslide-indicator">
@@ -170,16 +178,16 @@ export default function DrySpellsIndicator({ measurement, t }) {
           <p className="indicator-assumption">{t("drySpellsPartialNote")}</p>
         </div>
 
-        <div className="indicator-panel">
+        {completeYearly.length > 0 && <div className="indicator-panel">
           <div className="indicator-heading">
             <h2>{t("drySpellsAnnualTitle")}</h2>
             <p>{t("drySpellsAnnualDesc")}</p>
           </div>
-          <ResponsiveContainer width="100%" height={360}>
+          <ChartFrame t={t} rows={completeYearly} columns={[{"key":"year","label":"Year"},{"key":"daysAtLeast5","label":"Days in spells at least 5 days"},{"key":"daysAtLeast7","label":"Days in spells at least 7 days"}]} indicator="dry-spells-indicator-1" width="100%" height={360}>
             <BarChart data={completeYearly} margin={{ top: 34, right: 18, left: 14, bottom: 28 }}>
               <CartesianGrid stroke="#dce5ea" vertical={false} />
               <XAxis dataKey="year" />
-              <YAxis width={64} allowDecimals={false} label={yAxisLabel(t("drySpellsAxis"))} />
+              <YAxis tickFormatter={(value) => t.number(value)} width={64} allowDecimals={false} label={yAxisLabel(t("drySpellsAxis"))} />
               <Tooltip content={<AnnualTooltip t={t} />} />
               <Legend verticalAlign="top" height={30} wrapperStyle={{ fontSize: 12, paddingBottom: 6 }} />
               <Bar dataKey="daysAtLeast5" name={t("dryRunFiveLegend")} fill={AMBER} radius={[3, 3, 0, 0]}>
@@ -189,12 +197,16 @@ export default function DrySpellsIndicator({ measurement, t }) {
                 <LabelList content={<BarLabel />} />
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+          </ChartFrame>
+        </div>}
       </div>
 
-      <p className="indicator-explanation">{t("drySpellsExplanation")}</p>
-      <p className="indicator-assumption">{t("drySpellsAssumption")} {t("drySpellsCoverageNote")}</p>
+      <p className="indicator-assumption">{t("landslideZeroFillWarning")}</p>
+      <Methodology t={t}>
+        <p className="indicator-explanation">{t("drySpellsExplanation")}</p>
+        <p className="indicator-assumption">{t("drySpellsAssumption")}</p>
+      </Methodology>
+      {partialCoverage && <p className="indicator-assumption">{t("drySpellsCoverageNote", { details: partialCoverage })}</p>}
     </section>
   );
 }

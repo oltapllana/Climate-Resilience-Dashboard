@@ -7,6 +7,8 @@
 import { reconstructHourlyRainfall } from "./landslideRainfall.js";
 import { SEASON_DEFINITIONS, seasonOf as seasonDefinitionOf } from "./seasons.js";
 
+export const MIN_QUARTILE_YEARS = 3;
+
 export const SEASONS = Object.fromEntries(
   SEASON_DEFINITIONS.map(({ id, months, color }) => [id, { months, color }]),
 );
@@ -68,17 +70,20 @@ function emptyResult() {
 // Only calendar months the sensor covered in full contribute to the mean — a
 // half-observed month reads as a dry month and would drag the normal down.
 export function calculateMonthlyRainfall(hourlyRecords) {
-  const hourly = reconstructHourlyRainfall(hourlyRecords);
+  const hourly = reconstructHourlyRainfall(Array.isArray(hourlyRecords)
+    ? hourlyRecords.filter((row) => row?.v != null && String(row.v).trim() !== "")
+    : []);
   if (!hourly.length) return emptyResult();
 
-  // hourly is a continuous grid, so a month present in it is covered end to end
-  // even where individual hours were reconstructed as zero
+  // Retain within-month zero reconstruction, but track whether any real
+  // observation exists so entirely absent months cannot become dry months.
   const spanned = new Map();
   for (const row of hourly) {
     const key = `${row.timestamp.getFullYear()}-${String(row.timestamp.getMonth() + 1).padStart(2, "0")}`;
-    const bucket = spanned.get(key) ?? { days: new Set(), total: 0 };
+    const bucket = spanned.get(key) ?? { days: new Set(), total: 0, hasObservation: false };
     bucket.days.add(row.timestamp.getDate());
     bucket.total += row.depthMm;
+    bucket.hasObservation ||= !row.filled;
     spanned.set(key, bucket);
   }
 
@@ -92,23 +97,31 @@ export function calculateMonthlyRainfall(hourlyRecords) {
         month,
         total: +bucket.total.toFixed(2),
         observedDays: bucket.days.size,
-        complete: bucket.days.size === daysInMonth(year, month),
+        complete: bucket.hasObservation && bucket.days.size === daysInMonth(year, month),
       };
     })
     .sort((a, b) => a.key.localeCompare(b.key));
 
+  // Keep the existing within-month reconstruction, but never count a wholly
+  // unobserved month (or a year containing one) as complete history.
+  const completeYears = [...new Set(monthTotals.map((row) => row.year))].filter(
+    (year) => monthTotals.filter((row) => row.year === year && row.complete).length === 12,
+  );
   const monthly = [];
   for (let month = 1; month <= 12; month += 1) {
     const complete = monthTotals.filter((row) => row.month === month && row.complete);
     const values = complete.map((row) => row.total);
+    const history = complete.filter((row) => completeYears.includes(row.year)).map((row) => row.total);
+    const hasQuartiles = history.length >= MIN_QUARTILE_YEARS;
     const mean = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     monthly.push({
       month,
       season: seasonOf(month),
       mean: mean == null ? null : +mean.toFixed(1),
       stdDev: values.length ? +standardDeviation(values).toFixed(1) : null,
-      q1: values.length ? +quantile(values, 0.25).toFixed(1) : null,
-      q3: values.length ? +quantile(values, 0.75).toFixed(1) : null,
+      q1: hasQuartiles ? +quantile(history, 0.25).toFixed(1) : null,
+      q3: hasQuartiles ? +quantile(history, 0.75).toFixed(1) : null,
+      quartileYearCount: history.length,
       lowest: values.length ? +Math.min(...values).toFixed(1) : null,
       highest: values.length ? +Math.max(...values).toFixed(1) : null,
       years: complete.map((row) => row.year),

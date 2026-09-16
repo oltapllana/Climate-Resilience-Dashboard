@@ -1,11 +1,24 @@
+import ChartFrame from "./ChartFrame.jsx";
+import { CHART_PALETTE, REFERENCE_DASH } from "../lib/chartPalette.js";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CLASSIFIED_BANDS, INTENSITY_BANDS, bandOf, calculateRainyDays } from "../lib/rainyDays.js";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
+import { INTENSITY_BANDS, bandOf, calculateRainyDays } from "../lib/rainyDays.js";
+import { axisScale } from "../lib/chartAxis.js";
 import { topLegendProps, xAxisLabel } from "./chartLabels.jsx";
 
 // Reshje — the wettest days on record, ranked. Bars carry the same band colours
 // as the yearly rain-day chart, so a red bar means the same thing in both.
 export const DEFAULT_TOP_DAYS = 15;
+
+const BELOW_RAIN_DAY = { id: "belowRainDay", color: CHART_PALETTE.severity.light };
+const rankedBand = total => bandOf(total) ?? BELOW_RAIN_DAY;
+const bandLabelKey = {
+  belowRainDay: "rainBandBelow",
+  light: "rainBandLight",
+  moderate: "rainBandModerate",
+  heavy: "rainBandHeavy",
+  extreme: "rainBandExtreme",
+};
 
 // The top classified band doubles as the high-rainfall marker: no new threshold
 // is invented, it is the ">80 mm" boundary already in use.
@@ -24,15 +37,16 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
     return ranked.map((row) => ({
       ...row,
       label: asDayMonthYear(row.date, t),
-      color: (bandOf(row.total) ?? INTENSITY_BANDS[0]).color,
+      color: rankedBand(row.total).color,
     }));
   }, [result.daily, count, t]);
 
   if (!data.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const format = (value) => t.number(Number(value), { maximumFractionDigits: 1 });
   const largest = data[0].total;
   const showThreshold = largest >= HIGH_RAINFALL_MM;
+  const rainfallScale = axisScale(data.map((row) => row.total), { unit: "mm", includeZero: true });
 
   function ValueLabel({ x, y, width, height, value }) {
     return (
@@ -45,12 +59,12 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
   function DayTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
-    const band = bandOf(row.total);
+    const band = rankedBand(row.total);
     return (
       <div className="indicator-tooltip">
         <strong>{row.label}</strong>
         <span>{t("dailyRainfallAxis")}: {format(row.total)} mm</span>
-        {band && <span>{band.label}</span>}
+        {band && <span>{t(bandLabelKey[band.id])}</span>}
       </div>
     );
   }
@@ -61,12 +75,13 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
         <h2>{t("topRainDaysTitle").replace("{n}", count)}</h2>
         <p>{t("topRainDaysDesc")}</p>
       </div>
-      <ResponsiveContainer width="100%" height={Math.max(354, data.length * 27 + 120)}>
+      <ChartFrame t={t} rows={data} columns={[{"key":"date","label":"Date"},{"key":"total","label":"Rainfall (mm)"},{key:"category",label:"Rainfall band",value:row=>t(bandLabelKey[rankedBand(row.total).id])}]} indicator="top-rainfall-days-1" width="100%" height={Math.max(354, data.length * 27 + 120)}>
         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 96, left: 90, bottom: 36 }}>
           <CartesianGrid stroke="#eef2f6" horizontal={false} />
-          <XAxis
+          <XAxis tickFormatter={(value) => t.number(value)}
             type="number"
-            domain={[0, Math.ceil(largest * 1.06)]}
+            domain={rainfallScale.domain}
+            ticks={rainfallScale.ticks}
             tick={{ fontSize: 10 }}
             label={xAxisLabel(t("dailyRainfallAxis"), -18)}
           />
@@ -84,14 +99,14 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
               landed on the "> 80 mm" entry of the legend. */}
           <Legend
             {...topLegendProps}
-            payload={CLASSIFIED_BANDS.map((band) => ({ value: band.label, type: "square", color: band.color }))}
+            payload={[...(data.some(row => row.total < 1) ? [BELOW_RAIN_DAY] : []), ...INTENSITY_BANDS].map((band) => ({ value: t(bandLabelKey[band.id]), type: "square", color: band.color }))}
           />
           {showThreshold && (
             <ReferenceLine
               x={HIGH_RAINFALL_MM}
-              stroke="#d64545"
-              strokeDasharray="5 4"
-              label={{ value: t("highRainfallMarker"), position: "top", fill: "#d64545", fontSize: 10, fontWeight: 700 }}
+              stroke={CHART_PALETTE.reference}
+              strokeDasharray={REFERENCE_DASH}
+              label={{ value: t("highRainfallMarker"), position: "top", fill: CHART_PALETTE.reference, fontSize: 10, fontWeight: 700 }}
             />
           )}
           <Bar dataKey="total" barSize={15} radius={[0, 3, 3, 0]} isAnimationActive={false}>
@@ -99,7 +114,7 @@ export default function TopRainfallDays({ measurement, count = DEFAULT_TOP_DAYS,
             <LabelList content={<ValueLabel />} />
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{t("topRainDaysExplanation")}</p>
       <p className="indicator-assumption">{t("topRainDaysAssumption")}</p>
       <p className="indicator-assumption">

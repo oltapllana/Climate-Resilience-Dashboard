@@ -1,3 +1,5 @@
+import { monthYearRows, monthYearColumns } from "../lib/customChartData.js";
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo, useState } from "react";
 import { calculateMonthYearGrid, rampColor, readableTextColor } from "../lib/monthYearGrid.js";
 
@@ -17,7 +19,7 @@ export default function MonthYearHeatmap({ measurement, unit, title, description
 
   if (!result.years.length) return null;
 
-  const format = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
+  const format = (value) => t.number(Number(value), { maximumFractionDigits: digits });
   const { years, cells, min, max, hottest, coldest } = result;
   const span = max - min || 1;
   const fractionOf = (value) => (value - min) / span;
@@ -40,8 +42,8 @@ export default function MonthYearHeatmap({ measurement, unit, title, description
         {t("max")}: <strong>{t("monthsFull")[hottest.monthNumber - 1]} {hottest.year} ({format(hottest.value)} {unit})</strong> · {t("min")}: <strong>{t("monthsFull")[coldest.monthNumber - 1]} {coldest.year} ({format(coldest.value)} {unit})</strong>
       </p>
 
-      <div style={{ overflowX: "auto" }}>
-        <svg width={width} height={height} style={{ display: "block" }} role="img">
+      <ChartFrame custom description={description} t={t} rows={monthYearRows(result)} columns={monthYearColumns(unit)} indicator="month-year-heatmap" title={title}><div style={{ overflowX: "auto" }}>
+        <svg width={width} height={height} style={{ display: "block" }} role="img" aria-label={title}>
           {years.map((year, columnIndex) => (
             <text
               key={`year-${year}`}
@@ -78,7 +80,8 @@ export default function MonthYearHeatmap({ measurement, unit, title, description
                   const key = `${year}-${monthNumber}`;
                   if (!cell) {
                     // no observations: left blank, never drawn as a zero
-                    return <rect key={key} x={x} y={y} width={CELL_WIDTH} height={CELL_HEIGHT} fill="#fbfcfd" stroke="#eef2f6" strokeWidth="1" />;
+                    const excluded = result.excludedCells.has(`${year}-${String(monthNumber).padStart(2, "0")}`);
+                    return <g key={key}><rect x={x} y={y} width={CELL_WIDTH} height={CELL_HEIGHT} fill="#fbfcfd" stroke="#64748b" strokeDasharray="3 2" strokeWidth="1" /><text x={x + CELL_WIDTH / 2} y={y + CELL_HEIGHT / 2 + 4} textAnchor="middle" fill="#475569">{excluded ? "—" : "×"}</text></g>;
                   }
                   const fraction = fractionOf(cell.value);
                   const isHovered = hovered === key;
@@ -107,7 +110,7 @@ export default function MonthYearHeatmap({ measurement, unit, title, description
                         {format(cell.value)}
                       </text>
                       <title>
-                        {`${t("monthsFull")[rowIndex]} ${year} — ${format(cell.value)} ${unit} (${cell.observedDays} ${t("observedDays").toLowerCase()})`}
+                    {`${t("monthsFull")[rowIndex]} ${year} — ${format(cell.value)} ${unit} (${t("observedDayCount", { count: cell.observedDays })})`}
                       </title>
                     </g>
                   );
@@ -161,13 +164,13 @@ export default function MonthYearHeatmap({ measurement, unit, title, description
             {t("year")}
           </text>
         </svg>
-      </div>
+      </div><p className="chart-axis-note" data-export-caption>{t("chartMissingKey")}</p></ChartFrame>
 
       <p className="indicator-explanation">{explanation}</p>
       <p className="indicator-assumption">{assumption}</p>
       <p className="indicator-assumption">
-        {t("heatmapCellNote").replace("{filled}", result.filledCells)}
-        {result.skippedCells > 0 && ` ${t("heatmapSkipped").replace("{n}", result.skippedCells)}`}
+        {t("heatmapCellNote", { count: result.filledCells })}
+        {result.skippedCells > 0 && ` ${t("heatmapSkipped", { count: result.skippedCells })}`}
       </p>
     </section>
   );

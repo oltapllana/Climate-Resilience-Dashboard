@@ -1,3 +1,4 @@
+import { CHART_PALETTE } from "./chartPalette.js";
 // Reshje 3 + Reshje 5: number of rain days per year, split into the intensity
 // bands the reviewer specified (30–50 mm yellow, 50–80 mm orange, >80 mm red).
 // A rain day is a calendar day with at least 1 mm — the WMO convention also used
@@ -7,10 +8,10 @@ import { reconstructHourlyRainfall } from "./landslideRainfall.js";
 export const RAIN_DAY_THRESHOLD_MM = 1;
 
 export const INTENSITY_BANDS = [
-  { id: "light", label: "1–30 mm", min: 1, max: 30, color: "#7fb3d5" },
-  { id: "moderate", label: "30–50 mm", min: 30, max: 50, color: "#e8c33c" },
-  { id: "heavy", label: "50–80 mm", min: 50, max: 80, color: "#e08a2b" },
-  { id: "extreme", label: "> 80 mm", min: 80, max: Infinity, color: "#c63a2b" },
+  { id: "light", label: "1–<30 mm", min: 1, max: 30, color: CHART_PALETTE.severity.light },
+  { id: "moderate", label: "30–<50 mm", min: 30, max: 50, color: CHART_PALETTE.severity.moderate },
+  { id: "heavy", label: "50–<80 mm", min: 50, max: 80, color: CHART_PALETTE.severity.heavy },
+  { id: "extreme", label: "≥80 mm", min: 80, max: Infinity, color: CHART_PALETTE.severity.extreme },
 ];
 
 // The three classified bands. Ordinary 1–30 mm days outnumber them roughly ten
@@ -31,7 +32,8 @@ function emptyResult() {
 }
 
 export function calculateRainyDays(hourlyRecords) {
-  const hourly = reconstructHourlyRainfall(hourlyRecords);
+  const hourly = reconstructHourlyRainfall(Array.isArray(hourlyRecords)
+    ? hourlyRecords.filter(row => row?.v != null && String(row.v).trim() !== "") : []);
   if (!hourly.length) return emptyResult();
 
   const byDate = new Map();
@@ -76,16 +78,20 @@ export function calculateRainyDays(hourlyRecords) {
     });
   }
 
-  // Monthly rows pool every year of the record: "May" is every May observed,
-  // so rainDays can exceed 31. averagePerYear is the per-May figure.
+  // Monthly rows pool every year of the record using the same >=30 mm
+  // classified-day definition as the yearly chart, so the two views reconcile.
+  // Filled hours do not establish that a calendar month was observed.
+  // Within a month with real observations, retain the documented reconstruction.
+  const observedMonths = new Set(hourly.filter(row => !row.filled).map(row => localDay(row.timestamp).slice(0, 7)));
   const monthly = [];
   for (let month = 1; month <= 12; month += 1) {
-    const rows = daily.filter((row) => Number(row.date.slice(5, 7)) === month);
-    const rainDays = rows.filter((row) => row.isRainDay).length;
+    const rows = daily.filter((row) => Number(row.date.slice(5, 7)) === month && observedMonths.has(row.date.slice(0, 7)));
+    const rainDays = rows.filter((row) => row.total >= 30).length;
     const years = new Set(rows.map((row) => row.date.slice(0, 4)));
     monthly.push({
       month,
-      rainDays,
+      rainDays: rows.length ? rainDays : null,
+      available: rows.length > 0,
       observedDays: rows.length,
       yearCount: years.size,
       years: [...years].sort(),

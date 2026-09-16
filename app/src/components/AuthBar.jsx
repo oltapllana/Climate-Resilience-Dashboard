@@ -52,14 +52,14 @@ export default function AuthBar({ session, t }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder={t("emailPlaceholder")}
+            aria-label={t("emailPlaceholder")} autoComplete="username" placeholder={t("emailPlaceholder")}
           />
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={t("passwordPlaceholder")}
+            aria-label={t("passwordPlaceholder")} autoComplete="current-password" placeholder={t("passwordPlaceholder")}
           />
           <button className="auth-btn" type="submit" disabled={busy}>
             {busy ? "…" : t("signIn")}

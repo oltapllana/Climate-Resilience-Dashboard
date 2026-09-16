@@ -3,18 +3,20 @@
 // Months the record never reached stay empty rather than being drawn as zero —
 // a missing month and a dark month are very different statements.
 import { mean } from "./dailyTemperature.js";
+import { contrastingText } from "./chartPalette.js";
 
 // Below this, a cell is a sample of whichever days the sensor was running
 // rather than a monthly mean.
 export const MIN_DAYS_PER_CELL = 10;
 
 function parseValue(value) {
+  if (value == null || String(value).trim() === "") return null;
   const parsed = typeof value === "number" ? value : Number(String(value ?? "").trim().replace(",", "."));
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 function emptyResult() {
-  return { years: [], cells: new Map(), min: null, max: null, hottest: null, coldest: null, filledCells: 0, skippedCells: 0 };
+  return { years: [], cells: new Map(), excludedCells: new Map(), min: null, max: null, hottest: null, coldest: null, filledCells: 0, skippedCells: 0 };
 }
 
 export function calculateMonthYearGrid(dailyRecords) {
@@ -32,10 +34,12 @@ export function calculateMonthYearGrid(dailyRecords) {
   }
 
   const cells = new Map();
+  const excludedCells = new Map();
   let skippedCells = 0;
   for (const [key, values] of buckets) {
     if (values.length < MIN_DAYS_PER_CELL) {
       skippedCells += 1;
+      excludedCells.set(key, { observedDays: values.length });
       continue;
     }
     cells.set(key, {
@@ -46,7 +50,7 @@ export function calculateMonthYearGrid(dailyRecords) {
       observedDays: values.length,
     });
   }
-  if (!cells.size) return { ...emptyResult(), skippedCells };
+  if (!cells.size) return { ...emptyResult(), skippedCells, excludedCells };
 
   const list = [...cells.values()];
   const years = [...new Set(list.map((cell) => cell.year))].sort((a, b) => a - b);
@@ -55,6 +59,7 @@ export function calculateMonthYearGrid(dailyRecords) {
   return {
     years,
     cells,
+    excludedCells,
     min: Math.min(...values),
     max: Math.max(...values),
     hottest: list.reduce((best, cell) => (cell.value > best.value ? cell : best), list[0]),
@@ -86,5 +91,5 @@ export function rampColor(fraction) {
 
 // White text once the cell is dark enough that black stops being legible.
 export function readableTextColor(fraction) {
-  return Number.isFinite(fraction) && fraction > 0.72 ? "#ffffff" : "#3f2a12";
+  return contrastingText(rampColor(fraction));
 }

@@ -1,9 +1,11 @@
+import { SERIES_DASHES } from "../lib/chartPalette.js";
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo } from "react";
-import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, Tooltip, XAxis, YAxis } from "recharts";
 import { OPTIMAL_WINDOW, SOLAR_HOUR_REFERENCE_W_M2, calculateSolarDiurnalProfile } from "../lib/solarDiurnalProfile.js";
 import { yAxisLabel } from "./chartLabels.jsx";
 
-const formatHours = (value) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const formatHours = (t, value) => t.number(Number(value), { maximumFractionDigits: 2 });
 const formatHour = (hour) => `${String(hour).padStart(2, "0")}:00`;
 
 export default function SolarDiurnalProfile({ measurement, t }) {
@@ -29,9 +31,9 @@ export default function SolarDiurnalProfile({ measurement, t }) {
     return (
       <div className="indicator-tooltip">
         <strong>{formatHour(row.hour)}</strong>
-        {result.seasons.map((season) => (
+        {result.seasons.map((season, index) => (
           <span key={season.season}>
-            {t(season.season)}: {row[season.season] == null ? "—" : `${formatHours(row[season.season])} h`}
+            {t(season.season)}: {row[season.season] == null ? "—" : `${formatHours(t, row[season.season])} h`}
             {row[`${season.season}_w`] == null ? "" : ` (${Math.round(row[`${season.season}_w`])} W/m²)`}
           </span>
         ))}
@@ -45,8 +47,8 @@ export default function SolarDiurnalProfile({ measurement, t }) {
         <h2>{t("solarProfileTitle")}</h2>
         <p>{t("solarProfileDesc")}</p>
       </div>
-      <p className="indicator-callout">{t("solarHourConversion").replace("{ref}", SOLAR_HOUR_REFERENCE_W_M2.toLocaleString())}</p>
-      <ResponsiveContainer width="100%" height={360}>
+      <p className="indicator-callout">{t("solarHourConversion").replace("{ref}", t.number(SOLAR_HOUR_REFERENCE_W_M2, { maximumFractionDigits: 3 }))}</p>
+      <ChartFrame t={t} rows={chartData} columns={[{key:"hour",label:"Hour"},...result.seasons.flatMap(s=>[{key:s.season,label:`${s.season} equivalent hours`},{key:`${s.season}_w`,label:`${s.season} mean (W/m²)`}])]} indicator="solar-diurnal-profile-1" width="100%" height={360}>
         <LineChart data={chartData} margin={{ top: 26, right: 26, left: 48, bottom: 30 }}>
           <CartesianGrid stroke="#dce5ea" />
           <ReferenceArea
@@ -67,20 +69,20 @@ export default function SolarDiurnalProfile({ measurement, t }) {
           <YAxis
             width={70}
             tick={{ fontSize: 12 }}
-            tickFormatter={formatHours}
+            tickFormatter={formatHours.bind(null, t)}
             label={yAxisLabel(t("solarHoursAxis"))}
           />
           <Tooltip content={<ProfileTooltip />} />
           <Legend
             verticalAlign="top"
             height={26}
-            payload={result.seasons.map((season) => ({ value: t(season.season), type: "line", color: season.color }))}
+            payload={result.seasons.map((season, index) => ({ value: t(season.season), type: "plainline", payload: { strokeDasharray: SERIES_DASHES[index % SERIES_DASHES.length] }, color: season.color }))}
           />
-          {result.seasons.map((season) => (
+          {result.seasons.map((season, index) => (
             <Line
               key={season.season}
               type="monotone"
-              dataKey={season.season}
+              strokeDasharray={SERIES_DASHES[index % SERIES_DASHES.length]} dataKey={season.season}
               stroke={season.color}
               strokeWidth={2.4}
               dot={{ r: 2.5, fill: season.color }}
@@ -89,12 +91,12 @@ export default function SolarDiurnalProfile({ measurement, t }) {
             />
           ))}
         </LineChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       <p className="indicator-explanation">{t("solarProfileExplanation")}</p>
       <p className="indicator-assumption">
         {t("solarProfileAssumption")} {result.seasons
           .filter((season) => season.peakHour != null)
-          .map((season) => `${t(season.season)}: ${formatHour(season.peakHour)} (${formatHours(season.peakHoursEquivalent)} h)`)
+          .map((season) => `${t(season.season)}: ${formatHour(season.peakHour)} (${formatHours(t, season.peakHoursEquivalent)} h)`)
           .join(" · ")}.
       </p>
     </section>

@@ -1,5 +1,7 @@
+import { compoundTimelineRows, compoundTimelineColumns } from "../lib/customChartData.js";
+import ChartFrame from "./ChartFrame.jsx";
 import { useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { calculateHotDaysInDrySpells } from "../lib/hotDaysInDrySpells.js";
 
 const AMBER = "#f5a742";
@@ -13,7 +15,7 @@ function TimelineTooltip({ item, x, y, t }) {
   return (
     <div className="indicator-tooltip" style={{ position: "absolute", left: x + 10, top: y + 10, zIndex: 2, pointerEvents: "none" }}>
       <strong>{item.type === "run" ? item.year : item.date}</strong>
-      {item.type === "run" ? <><span>{t("start")}: {item.startDate}</span><span>{t("end")}: {item.endDate}</span><span>{t("duration")}: {item.length} {t("days")}</span><span>{item.length >= 7 ? t("hotDryRunLong") : t("hotDryRunShort")}</span></> : <><span>{t("dailyMaximumShort")}: {item.temperature.toLocaleString(undefined, { maximumFractionDigits: 1 })}°C</span><span>{item.inside5 ? t("insideDrySpell") : t("outsideDrySpell")}</span><span>{item.inside7 ? t("insideLongDrySpell") : t("outsideLongDrySpell")}</span></>}
+      {item.type === "run" ? <><span>{t("start")}: {item.startDate}</span><span>{t("end")}: {item.endDate}</span><span>{t("duration")}: {t("dayCount", { count: item.length })}</span><span>{item.length >= 7 ? t("hotDryRunLong") : t("hotDryRunShort")}</span></> : <><span>{t("dailyMaximumShort")}: {t.number(item.temperature, { maximumFractionDigits: 1 })}°C</span><span>{item.inside5 ? t("insideDrySpell") : t("outsideDrySpell")}</span><span>{item.inside7 ? t("insideLongDrySpell") : t("outsideLongDrySpell")}</span></>}
     </div>
   );
 }
@@ -31,8 +33,8 @@ function TimelineLegend({ t }) {
   return (
     <div className="swatch-legend">
       {items.map((item) => (
-        <span key={item.label}>
-          <i className={item.round ? "round" : undefined} style={{ background: item.color }} />
+        <span key={item.label} data-export-legend-item>
+          <i data-export-swatch className={item.round ? "round" : undefined} style={{ background: item.color }} />
           {item.label}
         </span>
       ))}
@@ -48,10 +50,10 @@ function CompoundTimeline({ yearly, t }) {
   const height = 76 + yearly.length * 42;
   const show = (event, item) => setTooltip({ item, x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY });
   return (
-    <div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
+    <ChartFrame custom description={t("hotDryDesc")} t={t} rows={compoundTimelineRows(yearly)} columns={compoundTimelineColumns} indicator="compound-timeline"><div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
       <TimelineLegend t={t} />
       <svg viewBox={`0 0 620 ${height}`} style={{ width: "100%", height: 360, display: "block" }} role="img" aria-label={t("hotDryAria")}>
-        {MONTHS.map(([month, offset]) => <g key={month}><line x1={left + offset * scale} x2={left + offset * scale} y1="26" y2={height - 28} stroke="#dce5ea" /><text x={left + offset * scale + 3} y={height - 8} fill="#5f7079" fontSize="11">{month}</text></g>)}
+        {MONTHS.map(([month, offset], monthIndex) => <g key={month}><line x1={left + offset * scale} x2={left + offset * scale} y1="26" y2={height - 28} stroke="#dce5ea" /><text x={left + offset * scale + 3} y={height - 8} fill="#5f7079" fontSize="11">{t("months")[monthIndex + 3]}</text></g>)}
         {yearly.map((row, index) => {
           const y = 40 + index * 42;
           const coverageX = left + seasonOffset(row.availableCommonStart) * scale;
@@ -68,7 +70,7 @@ function CompoundTimeline({ yearly, t }) {
         })}
       </svg>
       <TimelineTooltip {...tooltip} t={t} />
-    </div>
+    </div></ChartFrame>
   );
 }
 
@@ -91,19 +93,19 @@ export default function HotDaysInDrySpellsIndicator({ rainfallMeasurement, tempe
     <div className="indicator-grid">
       <div className="indicator-panel"><div className="indicator-heading"><h2>{t("hotDryTitle")}</h2><p>{t("hotDryDesc")}</p></div><CompoundTimeline yearly={result.yearly} t={t} /><p className="indicator-assumption">* {t("partialYearExcluded")}</p></div>
       <div className="indicator-panel"><div className="indicator-heading"><h2>{t("hotDryAnnualTitle")}</h2><p>{t("hotDryAnnualDesc")}</p></div>
-        <ResponsiveContainer width="100%" height={360}><BarChart data={completeYearly} margin={{ top: 66, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" /><YAxis width={64} allowDecimals={false} label={{ value: t("compoundDaysAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip t={t} />} /><Legend verticalAlign="top" height={48} wrapperStyle={{ fontSize: 12, paddingBottom: 12, lineHeight: "20px" }} /><Bar dataKey="compound5Count" name={t("hotDaysInFiveDry")} fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name={t("hotDaysInSevenDry")} fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ResponsiveContainer>
-        <div className="compound-share-panel">
-          <strong>{t("hotDryShare")}</strong>
+        <ChartFrame t={t} rows={completeYearly} columns={[{"key":"year","label":"Year"},{"key":"compound5Count","label":"Hot days in spells at least 5 days"},{"key":"compound7Count","label":"Hot days in spells at least 7 days"},{"key":"totalHotDays","label":"Total hot days"},{"key":"compound5Share","label":"Hot days in spells at least 5 days (%)"},{"key":"compound7Share","label":"Hot days in spells at least 7 days (%)"}]} indicator="hot-days-in-dry-spells-indicator-1" width="100%" height={360}><BarChart data={completeYearly} margin={{ top: 66, right: 18, left: 14, bottom: 28 }}><CartesianGrid stroke="#dce5ea" vertical={false} /><XAxis dataKey="year" /><YAxis tickFormatter={(value) => t.number(value)} width={64} allowDecimals={false} label={{ value: t("compoundDaysAxis"), angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#475569", fontSize: 12, fontWeight: 600 } }} /><Tooltip content={<CompoundTooltip t={t} />} /><Legend verticalAlign="top" height={48} wrapperStyle={{ fontSize: 12, paddingBottom: 12, lineHeight: "20px" }} /><Bar dataKey="compound5Count" name={t("hotDaysInFiveDry")} fill={AMBER} radius={[3, 3, 0, 0]}><LabelList dataKey="compound5Count" content={<CountLabel />} /></Bar><Bar dataKey="compound7Count" name={t("hotDaysInSevenDry")} fill={RED} minPointSize={(value) => (value ? 2 : 0)} radius={[3, 3, 0, 0]}><LabelList dataKey="compound7Count" content={<CountLabel />} /></Bar></BarChart></ChartFrame>
+        <div className="compound-share-panel" data-export-caption>
+          <strong>{t("hotDryShare")}: </strong>
           <div className="compound-share-grid">
             {completeYearly.map((row) => (
               <span key={row.year} className="compound-share-item">
-                <span>{row.year}{row.isPartial ? "*" : ""}</span>
-                <strong>{Math.round(row.compound5Share)}%</strong>
+                <span>{row.year}{row.isPartial ? "*" : ""}: </span>
+                <strong>{Math.round(row.compound5Share)}% </strong>
               </span>
             ))}
           </div>
         </div>
-        <p className="indicator-assumption">{t("hotDryShareNote")}</p>
+        <p className="indicator-assumption" data-export-caption>{t("hotDryShareNote")}</p>
       </div>
     </div>
     <p className="indicator-explanation">{t("hotDryDesc")}</p>
