@@ -100,6 +100,8 @@ test("footer renders supported EN/SQ metadata, package version and accurate obse
     assert.match(html, /^<footer/);
     assert.ok(html.includes(t("footerSources")) && html.includes(t("footerObservationScope")));
     assert.ok(html.includes(t("footerOwnerValue")) && html.includes(t("footerFundingValue")));
+    assert.ok(html.includes(t("footerCippName")) && html.includes(t("footerUniversityName")));
+    assert.ok(html.includes('src="/clipp-logo.png"') && html.includes('src="/university-of-prishtina-logo.png"'));
     assert.ok(html.includes(`<time dateTime="2025-02-03">2025-02-03</time>`));
     assert.ok(html.includes(`<dd>${pkg.version}</dd>`));
     assert.ok(html.includes('href="https://www.openstreetmap.org/copyright"'));
