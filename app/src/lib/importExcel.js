@@ -108,7 +108,7 @@ export const KNOWN_STATIONS = [
   { id: "imported_millosheve", municipality: "Obiliq", settlement: "Milloshevë",      name_en: "Milloshevë",            name_sq: "Milloshevë",          lat: 42.72261, lon: 21.08361, aliases: ["milloshev"] },
   { id: "imported_batllave", municipality: "Podujevë", settlement: "Batllavë",        name_en: "Batllavë (reservoir)",  name_sq: "Batllavë (liqeni)",   lat: 42.83674, lon: 21.25282, aliases: ["batllav"] },
   { id: "imported_kerpimeh", municipality: "Podujevë", settlement: "Kërpimeh",        name_en: "Kërpimeh",              name_sq: "Kërpimeh",            lat: 42.99384, lon: 21.15722, aliases: ["kerpimeh"] },
-  { id: "imported_podujeve", municipality: "Podujevë", settlement: "Podujevë",        name_en: "Podujevë (town)",       name_sq: "Podujevë (qyteti)",   lat: 42.90780, lon: 21.19253, aliases: ["podujev"] },
+  { id: "imported_podujeve", municipality: "Podujevë", settlement: "Podujevë",        name_en: "Podujeva (town)",       name_sq: "Podujevë (qyteti)",   lat: 42.90780, lon: 21.19253, aliases: ["podujev"] },
   { id: "imported_pollate", municipality: "Podujevë", settlement: "Pollatë",         name_en: "Pollatë",               name_sq: "Pollatë",             lat: 43.05227, lon: 21.11822, aliases: ["pollat"] },
   { id: "imported_shajkoc", municipality: "Podujevë", settlement: "Shajkoc",         name_en: "Shajkoc (auto meteo)",  name_sq: "Shajkoc (meteo automatike)", lat: 42.85690, lon: 21.24971, aliases: ["shajkoc"] },
 ];

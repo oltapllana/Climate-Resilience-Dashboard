@@ -134,3 +134,12 @@ export function matchStationsToSettlementBoundaries(stations, boundaryIndex) {
     unmatched,
   };
 }
+
+/**
+ * The index key a boundary feature would be filed under — the bridge back from
+ * a polygon the reader clicked on the map to the station it belongs to.
+ */
+export function settlementKeyOfFeature(feature) {
+  const props = getBoundaryProperties(feature);
+  return settlementKey(props.municipality, props.settlement);
+}

@@ -69,9 +69,18 @@ test("station picker renders a named native single-selection radio group in EN a
     assert.equal(radios[0].match(/name="([^"]+)"/)[1], radios[1].match(/name="([^"]+)"/)[1]);
     for (const radio of radios) assert.ok(html.includes(`id="${radio.match(/aria-labelledby="([^"]+)"/)[1]}"`));
     assert.ok(html.includes(`<legend class="cfg-label">${t("station")}</legend>`));
-    assert.equal((html.match(/class="remove-btn"/g) ?? []).length, 1);
-    assert.ok(html.includes(t("removeStationNamed", { station: markers[1][`name_${lang}`] })));
     assert.ok(!html.includes("✕"));
+
+    // Removing a station is the same privilege as adding one: a reader without
+    // upload rights gets the picker without any destructive control.
+    assert.equal((html.match(/class="remove-btn"/g) ?? []).length, 0);
+    assert.ok(!html.includes(t("removeStationNamed", { station: markers[1][`name_${lang}`] })));
+
+    const withUpload = renderToStaticMarkup(React.createElement(ConfigPanel, { markers, selectedId: "b", lang, t, onSelect() {}, removeImported() {}, canUpload: true }));
+    // Only the imported station carries one, never the built-in station.
+    assert.equal((withUpload.match(/class="remove-btn"/g) ?? []).length, 1);
+    assert.ok(withUpload.includes(t("removeStationNamed", { station: markers[1][`name_${lang}`] })));
+    assert.ok(!withUpload.includes(t("removeStationNamed", { station: markers[0][`name_${lang}`] })));
   }
 });
 

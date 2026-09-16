@@ -413,6 +413,36 @@ header.masthead {
 .institution-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
 .institution-logo--clipp { padding: 1px; }
 .institution-logo--up { padding: 3px 0; }
+.institution-logo--municipality { padding: 2px; }
+
+/* Funder band. The EU emblem may not be cropped, recoloured or set on a
+   coloured ground, so it keeps a white plate and its own 3:2 box. */
+.footer-funding { margin-top: 18px; padding-top: 16px; border-top: 1px solid #d3e2d5; }
+.footer-funding h2 { margin: 0 0 12px; color: var(--ink); font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+/* A logo file that has not been supplied yet must leave no empty plate: the
+   grid/place-items display above would otherwise beat the UA [hidden] rule. */
+.institution-logo-link[hidden], .funder-logo-link[hidden] { display: none !important; }
+.footer-funding-programme { margin: -4px 0 12px; color: var(--ink); font-size: 12.5px; font-weight: 600; }
+.footer-funder-list { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px 18px; margin: 0; padding: 0; list-style: none; }
+.footer-funder { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 10px 14px; border: 1px solid rgba(47, 125, 50, .16); border-radius: 12px; background: rgba(255,255,255,.82); }
+.footer-funder strong { color: var(--ink); font-size: 12.5px; line-height: 1.35; }
+.funder-logo-link { display: grid; place-items: center; flex: 0 0 auto; padding: 4px; border: 1px solid #e0e5e1; border-radius: 8px; background: #fff; }
+.funder-logo-link:hover { border-color: #a9bdaa; box-shadow: 0 3px 10px rgba(34, 63, 41, .1); }
+.funder-logo-link:focus-visible { outline: 3px solid rgba(47, 125, 50, .28); outline-offset: 2px; }
+.funder-logo { display: block; object-fit: contain; }
+/* Both plates share one height so the funder row reads as a single band. */
+.funder-logo-link { box-sizing: border-box; min-height: 58px; }
+/* The EU lockup carries its own wording, so it gets room to stay legible. */
+.funder-logo--eu { width: 196px; height: 41px; }
+/* Pathways2Resilience publishes only the light-on-dark wordmark, so the plate
+   is dark rather than the asset recoloured. */
+.footer-funder--p2r .funder-logo-link { background: #23313f; border-color: #23313f; padding: 7px 10px; }
+.funder-logo--p2r { width: 84px; height: 43px; }
+/* The grant disclaimer is a standing legal statement, not a footnote, so it
+   takes the same card treatment as the observation-freshness box above. */
+.footer-grant-statement { max-width: 100%; margin: 14px 0 0; padding: 12px 14px;
+  border: 1px solid rgba(47, 125, 50, .2); border-left: 3px solid var(--green-dark); border-radius: 10px;
+  background: rgba(255,255,255,.88); color: var(--muted); font-size: 11.5px; line-height: 1.55; }
 .institutional-footer dt { color: var(--green-dark); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .institutional-footer dd { margin: 4px 0 0; color: #3f4d57; line-height: 1.45; }
 .institutional-footer a { color: var(--green-dark); font-weight: 650; }
@@ -553,3 +583,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* A settlement polygon is a control, not decoration: it selects its station. */
+.settlement-region { cursor: pointer; transition: fill-opacity .15s ease; }
+.settlement-region:hover { fill-opacity: .36; }
+.settlement-region:focus { outline: 2px solid #0b4f4a; outline-offset: 1px; }

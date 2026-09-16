@@ -9,7 +9,14 @@ import { makeT, STRINGS } from "../i18n.js";
 test("Institutional titles are translated without changing geographic names", () => {
   assert.equal(makeT("en")("appTitle"), "Podujeva Climate Resilience Dashboard");
   assert.equal(makeT("sq")("appTitle"), "Paneli i Qëndrueshmërisë Klimatike – Podujevë");
-  assert.equal(makeT("en")("boundary"), "Podujevë municipality");
+  // The English interface uses the English exonym throughout; the Albanian
+  // interface keeps the Albanian form. Review request, September 2026.
+  assert.equal(makeT("en")("boundary"), "Podujeva municipality");
+  assert.equal(makeT("en")("city"), "Podujeva city");
+  assert.equal(makeT("sq")("boundary"), "Komuna e Podujevës");
+  for (const [key, text] of Object.entries(STRINGS.en)) {
+    if (typeof text === "string") assert.ok(!text.includes("Podujevë"), `English string ${key} still uses the Albanian toponym`);
+  }
   const html = fs.readFileSync(new URL("../../index.html", import.meta.url), "utf8");
   assert.ok(html.includes(`<title>${makeT("en")("appTitle")}</title>`));
 });

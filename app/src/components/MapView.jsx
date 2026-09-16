@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildSettlementBoundaryIndex,
   matchStationsToSettlementBoundaries,
+  settlementKeyOfFeature,
 } from "../lib/gis.js";
 
 // Current study-area view. Settlement highlighting is data-driven and can
@@ -22,6 +23,14 @@ const SETTLEMENT_STYLE = {
   weight: 2,
   fillColor: "#14b8a6",
   fillOpacity: 0.23,
+};
+// Selecting from the list already moves the map; clicking the polygon now
+// selects the station, so the highlight has to read in both directions.
+const SETTLEMENT_SELECTED_STYLE = {
+  color: "#0b4f4a",
+  weight: 3.5,
+  fillColor: "#0f766e",
+  fillOpacity: 0.42,
 };
 const CITY_HALO_STYLE = {
   color: "#0f766e",
@@ -214,6 +223,32 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
     () => buildStationDisplayPositions(matchedSettlements),
     [matchedSettlements]
   );
+  // A settlement polygon is the largest thing on the map and the easiest to
+  // hit, but it used to be inert: clicking it highlighted nothing and left the
+  // station list untouched, so the map and the panel disagreed. Both directions
+  // now run through the same selection.
+  const stationIdBySettlement = useMemo(() => {
+    const index = new Map();
+    for (const settlement of matchedSettlements) {
+      const station = settlement.stations[0];
+      if (station) index.set(settlement.key, station.id);
+    }
+    return index;
+  }, [matchedSettlements]);
+
+  const settlementLabels = useMemo(() => {
+    const index = new Map();
+    for (const settlement of matchedSettlements) index.set(settlement.key, settlement.stations);
+    return index;
+  }, [matchedSettlements]);
+
+  const selectedSettlementKey = useMemo(() => {
+    for (const settlement of matchedSettlements) {
+      if (settlement.stations.some((station) => station.id === selectedId)) return settlement.key;
+    }
+    return null;
+  }, [matchedSettlements, selectedId]);
+
   const displayStations = useMemo(
     () =>
       stations.map((station) => {
@@ -227,6 +262,40 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
       }),
     [stations, stationDisplayPositions]
   );
+
+  // Leaflet builds the polygon layer once and keeps it, so the click handler
+  // reaches the current callback through a ref instead of a stale closure.
+  const selectHandler = useRef(onSelect);
+  selectHandler.current = onSelect;
+
+  function onEachSettlement(feature, layer) {
+    const key = settlementKeyOfFeature(feature);
+    const settlementStations = settlementLabels.get(key) ?? [];
+    const name = settlementStations.map((s) => (lang === "sq" ? s.name_sq : s.name_en)).join(" · ");
+    if (name) layer.bindTooltip(name, { direction: "top", sticky: true });
+    const select = () => {
+      const stationId = stationIdBySettlement.get(key);
+      if (stationId) selectHandler.current(stationId);
+    };
+    layer.on("click", select);
+    layer.on("keydown", (event) => {
+      const pressed = event.originalEvent?.key;
+      if (pressed !== "Enter" && pressed !== " ") return;
+      event.originalEvent.preventDefault();
+      select();
+    });
+  }
+
+  // Keep the highlight on the settlement whose station is selected, whichever
+  // side the selection came from. Leaflet applies `style` when it builds the
+  // layer, so the layer is rebuilt on a selection change rather than restyled
+  // in place: nine polygons make that free, and it cannot drift out of step
+  // with the list the way an imperative setStyle pass did.
+  function settlementStyle(feature) {
+    const key = settlementKeyOfFeature(feature);
+    const base = key != null && key === selectedSettlementKey ? SETTLEMENT_SELECTED_STYLE : SETTLEMENT_STYLE;
+    return { ...base, className: "settlement-region" };
+  }
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}podujeve-boundary.geojson`)
@@ -312,8 +381,10 @@ export default function MapView({ stations, selectedId, onSelect, t, lang }) {
         )}
         {matchedFeatureCollection.features.length > 0 && (
           <GeoJSON
+            key={`settlements:${matchedFeatureCollection.features.length}:${lang}:${selectedSettlementKey ?? ""}`}
             data={matchedFeatureCollection}
-            style={SETTLEMENT_STYLE}
+            style={settlementStyle}
+            onEachFeature={onEachSettlement}
           />
         )}
         <CircleMarker

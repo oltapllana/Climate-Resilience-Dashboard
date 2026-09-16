@@ -37,7 +37,7 @@ export default function ConfigPanel({
                     </span>
                   </span>
                 </label>
-                {s.imported && (
+                {canUpload && s.imported && (
                   <button
                     type="button"
                     className="remove-btn"

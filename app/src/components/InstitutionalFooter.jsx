@@ -12,7 +12,28 @@ const OSM_LICENCE_URL = "https://www.openstreetmap.org/copyright";
 const INSTITUTIONS = [
   { key: "clipp", href: "https://clipp.uni-pr.edu/", name: "footerCippName", role: "footerInitiativeRole", logo: "/clipp-logo.png", width: 174, height: 187 },
   { key: "up", href: "https://uni-pr.edu/", name: "footerUniversityName", role: "footerAcademicRole", logo: "/university-of-prishtina-logo.png", width: 574, height: 434 },
+  // Files in app/public are served from the site root, so the URL is the bare
+  // filename — not the path they sit at on disk.
+  { key: "municipality", href: "https://kk.rks-gov.net/podujeve/", name: "footerMunicipalityName", role: "footerMunicipalRole", logo: "/podujeva-municipality-logo.png", width: 140, height: 171 },
 ];
+
+// Funder attribution is a separate obligation from partner credit, and the
+// grant conditions require the emblem, the wording and the disclaimer to
+// travel together — so it gets its own band rather than a fourth logo slot.
+// `lockup` marks an asset that already carries its own wording, so repeating
+// the name beside it would print the same sentence twice. The EU emblem and
+// its statement are one indivisible mark under the grant's visual rules.
+const FUNDERS = [
+  { key: "eu", href: "https://european-union.europa.eu/", name: "footerEuFunding", logo: "/eu-funding-logo.png", width: 1200, height: 252, lockup: true },
+  { key: "p2r", href: "https://pathways2resilience.eu/", name: "footerP2rName", logo: "/pathways2resilience-logo.png", width: 426, height: 220, lockup: true },
+];
+
+// A logo file that has not been supplied yet must not leave a broken-image
+// glyph in an institutional footer; the name beside it already carries the
+// credit, so the picture simply steps aside.
+function hideBrokenLogo(event) {
+  event.currentTarget.closest(".institution-logo-link, .funder-logo-link")?.setAttribute("hidden", "");
+}
 
 export default function InstitutionalFooter({ stations, t }) {
   const latest = useMemo(() => latestObservationTimestamp(stations), [stations]);
@@ -63,10 +84,11 @@ export default function InstitutionalFooter({ stations, t }) {
       <section className="footer-column" aria-labelledby="footer-col-governance">
         <h2 id="footer-col-governance">{t("footerColumnGovernance")}</h2>
         <dl>
+          {/* The funding programme has its own band below, with the emblem and
+              the grant disclaimer the terms require; repeating the heading here
+              only made the reader read it twice. */}
           <dt>{t("footerOwner")}</dt>
           <dd>{t("footerOwnerValue")}</dd>
-          <dt>{t("footerFunding")}</dt>
-          <dd>{t("footerFundingValue")}</dd>
         </dl>
       </section>
 
@@ -86,7 +108,7 @@ export default function InstitutionalFooter({ stations, t }) {
         {INSTITUTIONS.map((institution) => (
           <li key={institution.key} className="footer-institution">
             <a className="institution-logo-link" href={institution.href} target="_blank" rel="noreferrer" aria-label={t(institution.name)}>
-              <img className={`institution-logo institution-logo--${institution.key}`} src={institution.logo} width={institution.width} height={institution.height} alt="" loading="lazy" />
+              <img className={`institution-logo institution-logo--${institution.key}`} src={institution.logo} width={institution.width} height={institution.height} alt="" loading="lazy" onError={hideBrokenLogo} />
             </a>
             <div><small>{t(institution.role)}</small><strong>{t(institution.name)}</strong></div>
           </li>
@@ -94,11 +116,31 @@ export default function InstitutionalFooter({ stations, t }) {
       </ul>
     </div>
 
+    {/* Band 3b — the funder. The emblem, the "Funded by the European Union"
+        wording and the grant disclaimer are one unit under the grant terms. */}
+    <div className="footer-funding">
+      <h2>{t("footerFunding")}</h2>
+      <p className="footer-funding-programme">{t("footerFundingValue")}</p>
+      <ul className="footer-funder-list" role="list">
+        {FUNDERS.map((funder) => (
+          <li key={funder.key} className={`footer-funder footer-funder--${funder.key}`}>
+            <a className="funder-logo-link" href={funder.href} target="_blank" rel="noreferrer" aria-label={t(funder.name)}>
+              <img className={`funder-logo funder-logo--${funder.key}`} src={funder.logo} width={funder.width} height={funder.height} alt={t(funder.name)} loading="lazy" onError={hideBrokenLogo} />
+            </a>
+            {!funder.lockup && <strong>{t(funder.name)}</strong>}
+          </li>
+        ))}
+      </ul>
+      <p className="footer-grant-statement">{t("footerGrantStatement")}</p>
+    </div>
+
     {/* Band 4 — the long-form statements the column links point at, kept on
         the page so a shared link lands on the text rather than a missing page. */}
     <div className="footer-disclosures">
       <details id="methodology"><summary>{t("footerMethodology")}</summary><p>{t("footerMethodologyText")}</p></details>
-      <details id="terms-and-licence"><summary>{t("footerTerms")}</summary><p>{t("footerTermsText")}</p></details>
+      {/* The coat of arms comes from a CC BY-SA scan, so the credit travels
+          with it; swapping in the municipality's own file removes the need. */}
+      <details id="terms-and-licence"><summary>{t("footerTerms")}</summary><p>{t("footerTermsText")}</p><p>{t("footerEmblemCredit")}</p></details>
       <details id="accessibility"><summary>{t("footerAccessibility")}</summary><p>{t("footerAccessibilityText")}</p></details>
     </div>
 
