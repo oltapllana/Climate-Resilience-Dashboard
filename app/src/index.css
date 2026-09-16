@@ -374,15 +374,35 @@ header.masthead {
   content: ""; position: absolute; inset: 0 0 auto; height: 4px;
   background: linear-gradient(90deg, var(--green-dark), var(--green), var(--blue));
 }
-.footer-intro { display: grid; grid-template-columns: minmax(280px, .85fr) minmax(440px, 1.15fr); gap: 24px; align-items: stretch; }
-.footer-brand { display: flex; align-items: flex-start; gap: 14px; padding: 4px 0; }
+.footer-masthead { display: flex; flex-wrap: wrap; gap: 18px 24px; align-items: flex-start; justify-content: space-between; }
+.footer-brand { display: flex; align-items: flex-start; gap: 14px; padding: 4px 0; flex: 1 1 320px; min-width: 0; }
 .footer-app-mark { display: grid; place-items: center; flex: 0 0 auto; width: 62px; height: 62px; border: 1px solid #cfe1d1; border-radius: 15px; background: #fff; box-shadow: var(--shadow); }
 .footer-brand img { display: block; border-radius: 11px; }
 .footer-brand > div { display: grid; align-content: start; gap: 3px; }
 .footer-eyebrow { color: var(--green-dark); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .footer-brand strong { color: var(--ink); font-size: 17px; line-height: 1.25; }
 .footer-brand p { max-width: 520px; margin: 3px 0 0; line-height: 1.5; }
-.footer-institutions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* data freshness: the one fact a monitoring platform is judged on, so it gets
+   its own card in the brand band rather than a row among the attributions */
+.footer-freshness { flex: 0 1 260px; margin: 0; padding: 12px 14px; border: 1px solid rgba(47, 125, 50, .2); border-left: 3px solid var(--green-dark); border-radius: 10px; background: rgba(255,255,255,.88); }
+.footer-freshness dd { margin: 3px 0 0; color: var(--ink); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.footer-freshness dd.footer-freshness-scope { margin-top: 5px; color: var(--muted); font-size: 11px; font-weight: 400; line-height: 1.4; }
+
+/* the conventional link/attribution columns */
+.footer-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 20px 26px; margin-top: 22px; padding-top: 20px; border-top: 1px solid #d3e2d5; }
+.footer-column { min-width: 0; }
+.footer-column h2 { margin: 0 0 10px; color: var(--ink); font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.footer-column ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.footer-column a { text-decoration: none; }
+.footer-column a:hover { text-decoration: underline; }
+.footer-column dl { margin: 0; }
+.footer-column dd { margin: 4px 0 11px; }
+.footer-column dd:last-child { margin-bottom: 0; }
+
+/* responsible institutions, as a labelled strip of their own */
+.footer-partners { margin-top: 20px; padding-top: 18px; border-top: 1px solid #d3e2d5; }
+.footer-partners h2 { margin: 0 0 12px; color: var(--ink); font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.footer-partner-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
 .footer-institution { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 12px; border: 1px solid rgba(47, 125, 50, .16); border-radius: 12px; background: rgba(255,255,255,.82); }
 .footer-institution > div { display: grid; gap: 2px; min-width: 0; }
 .footer-institution small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
@@ -393,26 +413,29 @@ header.masthead {
 .institution-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
 .institution-logo--clipp { padding: 1px; }
 .institution-logo--up { padding: 3px 0; }
-.footer-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; margin: 22px 0 0; border: 1px solid #dbe6dc; border-radius: 12px; background: #dbe6dc; overflow: hidden; }
-.footer-meta > div { padding: 13px 15px; background: rgba(255,255,255,.9); }
 .institutional-footer dt { color: var(--green-dark); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .institutional-footer dd { margin: 4px 0 0; color: #3f4d57; line-height: 1.45; }
 .institutional-footer a { color: var(--green-dark); font-weight: 650; }
-.footer-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.footer-links a { padding: 8px 12px; border: 1px solid #c9d9cb; border-radius: 999px; background: rgba(255,255,255,.72); text-decoration: none; }
-.footer-links a:hover { border-color: var(--green-dark); background: #fff; }
-.footer-links .footer-link-primary { border-color: var(--green-dark); background: var(--green-dark); color: #fff; }
-.footer-disclosures { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.footer-disclosures { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #d3e2d5; }
 .footer-disclosures details { border: 1px solid #d7e3d8; border-radius: 10px; background: rgba(255,255,255,.72); padding: 9px 12px; }
 .footer-disclosures summary { color: var(--ink); font-weight: 700; cursor: pointer; }
 .footer-disclosures p { margin: 8px 0 2px; line-height: 1.55; }
+
+/* the thin legal baseline every institutional site closes on */
+.footer-baseline { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; justify-content: space-between; margin-top: 18px; padding-top: 15px; border-top: 1px solid #d3e2d5; }
+.footer-copyright { margin: 0; max-width: 72ch; color: var(--muted); line-height: 1.5; }
+.footer-version { display: flex; gap: 7px; align-items: baseline; margin: 0; white-space: nowrap; }
+.footer-version dt { position: relative; top: -1px; }
+.footer-version dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; }
+
 @media (max-width: 900px) {
   .institutional-footer { padding: 22px 18px; }
-  .footer-intro { grid-template-columns: 1fr; gap: 16px; }
+  .footer-masthead { gap: 16px; }
+  .footer-freshness { flex: 1 1 100%; }
 }
 @media (max-width: 620px) {
-  .footer-institutions, .footer-disclosures { grid-template-columns: 1fr; }
-  .footer-meta { grid-template-columns: 1fr; }
+  .footer-columns, .footer-partner-list, .footer-disclosures { grid-template-columns: 1fr; }
+  .footer-baseline { flex-direction: column; align-items: flex-start; }
 }
 .station-item .nm { font-weight: 600; }
 .station-item .meta { color: var(--muted); font-size: 12px; }
